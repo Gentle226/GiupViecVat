@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import { tasksAPI } from "../services/api";
 import { TaskCategory } from "../../../shared/types";

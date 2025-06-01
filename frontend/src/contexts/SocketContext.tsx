@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useRef } from "react";
 import io from "socket.io-client";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "./AuthContext";
 import type { Message } from "../../../shared/types";
 
 interface SocketContextType {

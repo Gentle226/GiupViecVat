@@ -32,7 +32,7 @@ const initialState: AuthState = {
   user: null,
   token: localStorage.getItem("token"),
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: localStorage.getItem("token") ? true : false, // Show loading if token exists
   error: null,
 };
 

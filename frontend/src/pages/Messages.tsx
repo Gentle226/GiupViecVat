@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { messagesAPI } from "../services/api";
 import type { Conversation, Message } from "../../../shared/types";
