@@ -1,0 +1,101 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const Message_1 = require("../models/Message");
+const auth_1 = require("../middleware/auth");
+const router = express_1.default.Router();
+// Get user's conversations
+router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const conversations = await Message_1.Conversation.find({
+            participants: req.user._id,
+        })
+            .populate("participants", "firstName lastName avatar")
+            .populate("lastMessage")
+            .populate("taskId", "title status")
+            .sort({ updatedAt: -1 });
+        res.json({
+            success: true,
+            data: conversations,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch conversations",
+            error: error.message,
+        });
+    }
+});
+// Get messages for a conversation
+router.get("/conversations/:id/messages", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const { page = 1, limit = 50 } = req.query;
+        // Check if user is participant
+        const conversation = await Message_1.Conversation.findById(req.params.id);
+        if (!conversation || !conversation.participants.includes(req.user._id)) {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to view this conversation",
+            });
+        }
+        const messages = await Message_1.Message.find({ conversationId: req.params.id })
+            .populate("senderId", "firstName lastName avatar")
+            .sort({ timestamp: -1 })
+            .limit(parseInt(limit))
+            .skip((parseInt(page) - 1) * parseInt(limit));
+        // Mark messages as read
+        await Message_1.Message.updateMany({
+            conversationId: req.params.id,
+            senderId: { $ne: req.user._id },
+            readBy: { $ne: req.user._id },
+        }, { $push: { readBy: req.user._id } });
+        res.json({
+            success: true,
+            data: messages.reverse(), // Return in chronological order
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch messages",
+            error: error.message,
+        });
+    }
+});
+// Create or get conversation
+router.post("/conversations", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const { participantId, taskId } = req.body;
+        // Check if conversation already exists
+        let conversation = await Message_1.Conversation.findOne({
+            participants: { $all: [req.user._id, participantId] },
+            taskId: taskId || null,
+        });
+        if (!conversation) {
+            conversation = new Message_1.Conversation({
+                participants: [req.user._id, participantId],
+                taskId: taskId || null,
+            });
+            await conversation.save();
+        }
+        await conversation.populate("participants", "firstName lastName avatar");
+        await conversation.populate("taskId", "title status");
+        res.json({
+            success: true,
+            data: conversation,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to create conversation",
+            error: error.message,
+        });
+    }
+});
+exports.default = router;
+//# sourceMappingURL=messages.js.map

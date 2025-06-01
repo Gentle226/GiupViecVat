@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "args": [],
+      "command": "npm run dev",
+      "group": "build",
+      "isBackground": true,
+      "label": "Start Frontend Development Server",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "args": [],
+      "command": "npm run dev",
+      "group": "build",
+      "isBackground": true,
+      "label": "Start Backend Development Server",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "type": "shell"
+    },
+    {
+      "dependsOn": [
+        "Start Backend Development Server",
+        "Start Frontend Development Server"
+      ],
+      "label": "Start All Development Servers",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
