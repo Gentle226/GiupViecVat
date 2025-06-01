@@ -76,7 +76,7 @@ A modern task marketplace platform connecting clients with skilled taskers for v
 1. **Clone the repository**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Gentle226/HomeEasy.git
    cd HomeEasy
    ```
 
