@@ -56,6 +56,29 @@ router.get("/", async (req, res) => {
       success: false,
       message: "Failed to fetch tasks",
       error: error.message,
+    });  }
+});
+
+// Get user's tasks
+router.get("/my-tasks", authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const filter = { postedBy: req.user._id };
+    const options = {
+      sort: "createdAt",
+      order: "desc",
+    };
+
+    const result = await db.findTasks(filter, options);
+
+    res.json({
+      success: true,
+      data: result.tasks,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch your tasks",
+      error: error.message,
     });
   }
 });
@@ -211,8 +234,7 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
       success: false,
       message: "Failed to fetch bids",
       error: error.message,
-    });
-  }
+    });  }
 });
 
 export default router;
