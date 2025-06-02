@@ -28,12 +28,21 @@ export interface Task {
   };
   suggestedPrice: number;
   status: TaskStatus;
-  postedBy: string; // User ID
+  postedBy: string | PopulatedUser; // User ID or populated user data
   assignedTo?: string; // User ID
   createdAt: Date;
   updatedAt: Date;
   dueDate?: Date;
   completedAt?: Date;
+}
+
+export interface PopulatedUser {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  rating: number;
+  reviewCount: number;
+  avatar?: string;
 }
 
 export interface TaskBid {

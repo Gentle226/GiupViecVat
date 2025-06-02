@@ -124,9 +124,11 @@ export class DatabaseAdapter {
     const page = options.page || 1;
     const limit = options.limit || 10;
     const skip = (page - 1) * limit;
-
     const [tasks, total] = await Promise.all([
-      query.skip(skip).limit(limit),
+      query
+        .populate("postedBy", "firstName lastName rating reviewCount avatar")
+        .skip(skip)
+        .limit(limit),
       Models.Task.countDocuments(filter),
     ]);
 
@@ -137,12 +139,14 @@ export class DatabaseAdapter {
       totalPages: Math.ceil(total / limit),
     };
   }
-
   async findTaskById(id: string) {
     if (this.useMemoryStore) {
       return await memoryStore.findTaskById(id);
     }
-    return await Models.Task.findById(id);
+    return await Models.Task.findById(id).populate(
+      "postedBy",
+      "firstName lastName rating reviewCount avatar"
+    );
   }
   async updateTask(id: string, updates: any) {
     if (this.useMemoryStore) {

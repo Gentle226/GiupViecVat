@@ -46,8 +46,6 @@ class DatabaseAdapter {
     }
     async initialize() {
         try {
-            // Force memory store for testing
-            throw new Error("Using memory store for testing");
             // Try to connect to MongoDB
             await mongoose_1.default.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/homeeasy");
             console.log("Connected to MongoDB");
@@ -149,7 +147,7 @@ class DatabaseAdapter {
         const limit = options.limit || 10;
         const skip = (page - 1) * limit;
         const [tasks, total] = await Promise.all([
-            query.skip(skip).limit(limit),
+            query.populate("postedBy", "firstName lastName rating reviewCount avatar").skip(skip).limit(limit),
             Models.Task.countDocuments(filter),
         ]);
         return {
@@ -163,13 +161,19 @@ class DatabaseAdapter {
         if (this.useMemoryStore) {
             return await memoryStore_1.memoryStore.findTaskById(id);
         }
-        return await Models.Task.findById(id);
+        return await Models.Task.findById(id).populate("postedBy", "firstName lastName rating reviewCount avatar");
     }
     async updateTask(id, updates) {
         if (this.useMemoryStore) {
             return await memoryStore_1.memoryStore.updateTask(id, updates);
         }
         return await Models.Task.findByIdAndUpdate(id, updates, { new: true });
+    }
+    async deleteTask(id) {
+        if (this.useMemoryStore) {
+            return await memoryStore_1.memoryStore.deleteTask(id);
+        }
+        return await Models.Task.findByIdAndDelete(id);
     }
     // Bid operations
     async createBid(bidData) {

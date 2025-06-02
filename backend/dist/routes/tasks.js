@@ -4,8 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const Task_1 = require("../models/Task");
-const Bid_1 = require("../models/Bid");
 const auth_1 = require("../middleware/auth");
 const adapter_1 = require("../data/adapter");
 const router = express_1.default.Router();
@@ -14,49 +12,29 @@ router.get("/", async (req, res) => {
     try {
         const { category, status = "open", lat, lng, radius = 50, // km
         page = 1, limit = 20, search, } = req.query;
-        const query = {};
+        const filter = {};
         if (category) {
-            query.category = category;
+            filter.category = category;
         }
         if (status) {
-            query.status = status;
+            filter.status = status;
         }
-        // Search by title or description
         if (search) {
-            query.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
-            ];
+            filter.search = search;
         }
-        // Location-based search
-        if (lat && lng) {
-            query.location = {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [parseFloat(lng), parseFloat(lat)],
-                    },
-                    $maxDistance: parseInt(radius) * 1000, // Convert km to meters
-                },
-            };
-        }
-        const tasks = await Task_1.Task.find(query)
-            .populate("postedBy", "firstName lastName rating reviewCount avatar")
-            .populate("assignedTo", "firstName lastName rating reviewCount avatar")
-            .sort({ createdAt: -1 })
-            .limit(parseInt(limit))
-            .skip((parseInt(page) - 1) * parseInt(limit));
-        const total = await Task_1.Task.countDocuments(query);
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sort: "createdAt",
+            order: "desc",
+        };
+        const result = await adapter_1.db.findTasks(filter, options);
         res.json({
             success: true,
             data: {
-                tasks,
-                pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total,
-                    pages: Math.ceil(total / parseInt(limit)),
-                },
+                tasks: result.tasks,
+                total: result.total,
+                pages: Math.ceil(result.total / parseInt(limit)),
             },
         });
     }
@@ -71,9 +49,7 @@ router.get("/", async (req, res) => {
 // Get single task
 router.get("/:id", async (req, res) => {
     try {
-        const task = await Task_1.Task.findById(req.params.id)
-            .populate("postedBy", "firstName lastName rating reviewCount avatar bio")
-            .populate("assignedTo", "firstName lastName rating reviewCount avatar bio");
+        const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -118,7 +94,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
 // Update task
 router.put("/:id", auth_1.authenticateToken, async (req, res) => {
     try {
-        const task = await Task_1.Task.findById(req.params.id);
+        const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -132,12 +108,7 @@ router.put("/:id", auth_1.authenticateToken, async (req, res) => {
                 message: "Not authorized to update this task",
             });
         }
-        const updatedTask = await Task_1.Task.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
-        })
-            .populate("postedBy", "firstName lastName rating reviewCount avatar")
-            .populate("assignedTo", "firstName lastName rating reviewCount avatar");
+        const updatedTask = await adapter_1.db.updateTask(req.params.id, req.body);
         res.json({
             success: true,
             data: updatedTask,
@@ -155,7 +126,7 @@ router.put("/:id", auth_1.authenticateToken, async (req, res) => {
 // Delete task
 router.delete("/:id", auth_1.authenticateToken, async (req, res) => {
     try {
-        const task = await Task_1.Task.findById(req.params.id);
+        const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -169,7 +140,7 @@ router.delete("/:id", auth_1.authenticateToken, async (req, res) => {
                 message: "Not authorized to delete this task",
             });
         }
-        await Task_1.Task.findByIdAndDelete(req.params.id);
+        await adapter_1.db.deleteTask(req.params.id);
         res.json({
             success: true,
             message: "Task deleted successfully",
@@ -186,7 +157,7 @@ router.delete("/:id", auth_1.authenticateToken, async (req, res) => {
 // Get task bids
 router.get("/:id/bids", auth_1.authenticateToken, async (req, res) => {
     try {
-        const task = await Task_1.Task.findById(req.params.id);
+        const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -200,9 +171,7 @@ router.get("/:id/bids", auth_1.authenticateToken, async (req, res) => {
                 message: "Not authorized to view bids for this task",
             });
         }
-        const bids = await Bid_1.Bid.find({ taskId: req.params.id })
-            .populate("bidderId", "firstName lastName rating reviewCount avatar bio skills")
-            .sort({ createdAt: -1 });
+        const bids = await adapter_1.db.findBidsByTask(req.params.id);
         res.json({
             success: true,
             data: bids,

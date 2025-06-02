@@ -89,7 +89,26 @@ export const createTask = async (
 };
 
 export const findTaskById = async (id: string): Promise<Task | null> => {
-  return tasks.find((task) => task._id === id) || null;
+  const task = tasks.find((task) => task._id === id);
+  if (!task) return null;
+
+  // Populate user data for postedBy field
+  const postedByUser = users.find((user) => user._id === task.postedBy);
+  if (postedByUser) {
+    return {
+      ...task,
+      postedBy: {
+        _id: postedByUser._id,
+        firstName: postedByUser.name.split(" ")[0] || "User",
+        lastName: postedByUser.name.split(" ")[1] || "",
+        rating: postedByUser.rating,
+        reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
+        avatar: postedByUser.avatar,
+      } as any,
+    };
+  }
+
+  return task;
 };
 
 export const getAllTasks = async (filters?: any): Promise<Task[]> => {
@@ -119,7 +138,24 @@ export const getAllTasks = async (filters?: any): Promise<Task[]> => {
     );
   }
 
-  return filteredTasks;
+  // Populate user data for each task
+  return filteredTasks.map((task) => {
+    const postedByUser = users.find((user) => user._id === task.postedBy);
+    if (postedByUser) {
+      return {
+        ...task,
+        postedBy: {
+          _id: postedByUser._id,
+          firstName: postedByUser.name.split(" ")[0] || "User",
+          lastName: postedByUser.name.split(" ")[1] || "",
+          rating: postedByUser.rating,
+          reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
+          avatar: postedByUser.avatar,
+        } as any,
+      };
+    }
+    return task;
+  });
 };
 
 export const updateTask = async (

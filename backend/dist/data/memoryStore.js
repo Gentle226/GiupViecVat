@@ -72,7 +72,25 @@ const createTask = async (taskData) => {
 };
 exports.createTask = createTask;
 const findTaskById = async (id) => {
-    return tasks.find((task) => task._id === id) || null;
+    const task = tasks.find((task) => task._id === id);
+    if (!task)
+        return null;
+    // Populate user data for postedBy field
+    const postedByUser = users.find((user) => user._id === task.postedBy);
+    if (postedByUser) {
+        return {
+            ...task,
+            postedBy: {
+                _id: postedByUser._id,
+                firstName: postedByUser.name.split(' ')[0] || 'User',
+                lastName: postedByUser.name.split(' ')[1] || '',
+                rating: postedByUser.rating,
+                reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
+                avatar: postedByUser.avatar,
+            }
+        };
+    }
+    return task;
 };
 exports.findTaskById = findTaskById;
 const getAllTasks = async (filters) => {
@@ -89,7 +107,24 @@ const getAllTasks = async (filters) => {
     if (filters?.location) {
         filteredTasks = filteredTasks.filter((task) => task.location.toLowerCase().includes(filters.location.toLowerCase()));
     }
-    return filteredTasks;
+    // Populate user data for each task
+    return filteredTasks.map((task) => {
+        const postedByUser = users.find((user) => user._id === task.postedBy);
+        if (postedByUser) {
+            return {
+                ...task,
+                postedBy: {
+                    _id: postedByUser._id,
+                    firstName: postedByUser.name.split(' ')[0] || 'User',
+                    lastName: postedByUser.name.split(' ')[1] || '',
+                    rating: postedByUser.rating,
+                    reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
+                    avatar: postedByUser.avatar,
+                }
+            };
+        }
+        return task;
+    });
 };
 exports.getAllTasks = getAllTasks;
 const updateTask = async (id, updates) => {

@@ -300,7 +300,12 @@ const TaskList: React.FC = () => {
                     </div>{" "}
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <UserIcon className="h-4 w-4" />
-                      <span>Posted by User</span>
+                      <span>
+                        Posted by{" "}
+                        {typeof task.postedBy === "string"
+                          ? "User"
+                          : `${task.postedBy.firstName} ${task.postedBy.lastName}`}
+                      </span>
                     </div>
                   </div>
                   {/* Action Button */}
