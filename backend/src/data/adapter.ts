@@ -6,8 +6,6 @@ export class DatabaseAdapter {
   private useMemoryStore: boolean = false;
   async initialize(): Promise<void> {
     try {
-      // Force memory store for testing
-      throw new Error("Using memory store for testing");
       // Try to connect to MongoDB
       await mongoose.connect(
         process.env.MONGODB_URI || "mongodb://localhost:27017/homeeasy"
