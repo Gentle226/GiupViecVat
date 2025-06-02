@@ -12,6 +12,7 @@ import TaskDetail from "./pages/TaskDetail";
 import CreateTask from "./pages/CreateTask";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import DevTools from "./pages/DevTools";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/tasks" element={<TaskList />} />
                   <Route path="/tasks/:id" element={<TaskDetail />} />
+                  <Route path="/dev-tools" element={<DevTools />} />
                   <Route
                     path="/post-task"
                     element={

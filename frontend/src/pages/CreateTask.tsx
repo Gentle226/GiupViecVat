@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { useTask } from "../contexts/TaskContext";
 import { tasksAPI } from "../services/api";
 import { TaskCategory } from "../../../shared/types";
 import {
@@ -17,7 +16,6 @@ import {
 const CreateTask: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { createTask } = useTask();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -149,9 +147,7 @@ const CreateTask: React.FC = () => {
         },
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
       };
-
       const response = await tasksAPI.createTask(taskData);
-      await createTask(taskData);
       alert("Task created successfully!");
       if (response.data?._id) {
         navigate(`/tasks/${response.data._id}`);

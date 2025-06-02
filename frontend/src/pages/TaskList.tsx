@@ -275,16 +275,17 @@ const TaskList: React.FC = () => {
                       </div>
                       <div className="text-xs text-gray-500">Budget</div>
                     </div>
-                  </div>
-
+                  </div>{" "}
                   {/* Task Title and Description */}
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                     {task.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  <p className="text-gray-600 text-sm mb-2 line-clamp-3">
                     {task.description}
                   </p>
-
+                  <p className="text-xs text-gray-400 mb-4 font-mono">
+                    ID: {task._id}
+                  </p>
                   {/* Task Details */}
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -302,7 +303,6 @@ const TaskList: React.FC = () => {
                       <span>Posted by User</span>
                     </div>
                   </div>
-
                   {/* Action Button */}
                   <Link
                     to={`/tasks/${task._id}`}

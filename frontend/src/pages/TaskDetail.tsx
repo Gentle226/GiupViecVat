@@ -31,6 +31,14 @@ const TaskDetail: React.FC = () => {
   const [bidAmount, setBidAmount] = useState("");
   const [bidMessage, setBidMessage] = useState("");
   const [submittingBid, setSubmittingBid] = useState(false);
+  const [availableTasks, setAvailableTasks] = useState<
+    Array<{ _id: string; title: string }>
+  >([]);
+
+  // Basic task ID format validation (should be alphanumeric string)
+  const isValidTaskIdFormat = (taskId: string): boolean => {
+    return /^[a-zA-Z0-9]+$/.test(taskId) && taskId.length >= 5;
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +46,22 @@ const TaskDetail: React.FC = () => {
     const fetchTaskDetails = async () => {
       try {
         setLoading(true);
+
+        // Validate task ID format before making API calls
+        if (!isValidTaskIdFormat(id)) {
+          setError("Invalid task ID format");
+          // Fetch available tasks for suggestions
+          try {
+            const tasksResponse = await tasksAPI.getTasks();
+            if (tasksResponse.data?.tasks) {
+              setAvailableTasks(tasksResponse.data.tasks.slice(0, 5)); // Show up to 5 suggestions
+            }
+          } catch (e) {
+            console.error("Error fetching available tasks:", e);
+          }
+          setLoading(false);
+          return;
+        }
         const [taskResponse, bidsResponse] = await Promise.all([
           tasksAPI.getTask(id),
           bidsAPI.getTaskBids(id),
@@ -48,9 +72,25 @@ const TaskDetail: React.FC = () => {
         if (bidsResponse.data) {
           setBids(bidsResponse.data);
         }
-      } catch (err) {
-        setError("Failed to load task details");
+      } catch (err: unknown) {
+        // Enhanced error handling with suggestions
         console.error("Error fetching task details:", err);
+
+        const error = err as { response?: { status?: number } };
+        if (error.response?.status === 404) {
+          setError("Task not found");
+          // Fetch available tasks for suggestions
+          try {
+            const tasksResponse = await tasksAPI.getTasks();
+            if (tasksResponse.data?.tasks) {
+              setAvailableTasks(tasksResponse.data.tasks.slice(0, 5)); // Show up to 5 suggestions
+            }
+          } catch (e) {
+            console.error("Error fetching available tasks:", e);
+          }
+        } else {
+          setError("Failed to load task details");
+        }
       } finally {
         setLoading(false);
       }
@@ -125,21 +165,49 @@ const TaskDetail: React.FC = () => {
       </div>
     );
   }
-
   if (error || !task) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto px-4">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Task Not Found
           </h2>
           <p className="text-gray-600 mb-4">
-            {error || "The task you're looking for doesn't exist."}
+            {error === "Invalid task ID format"
+              ? "The task ID format is invalid. Task IDs should be alphanumeric."
+              : error === "Task not found"
+              ? `The task with ID "${id}" doesn't exist.`
+              : error || "The task you're looking for doesn't exist."}
           </p>
+
+          {availableTasks.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
+                Available Tasks
+              </h3>
+              <div className="space-y-2">
+                {availableTasks.map((availableTask) => (
+                  <button
+                    key={availableTask._id}
+                    onClick={() => navigate(`/tasks/${availableTask._id}`)}
+                    className="w-full p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-sm transition-all duration-200"
+                  >
+                    <div className="text-sm font-medium text-indigo-600 mb-1">
+                      ID: {availableTask._id}
+                    </div>
+                    <div className="text-sm text-gray-700 truncate">
+                      {availableTask.title}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => navigate("/tasks")}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
           >
             Back to Tasks
           </button>
