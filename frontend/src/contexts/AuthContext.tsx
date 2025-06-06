@@ -1,32 +1,7 @@
-import React, { createContext, useReducer, useEffect } from "react";
-import type {
-  User,
-  LoginRequest,
-  RegisterRequest,
-} from "../../../shared/types";
+import React, { useReducer, useEffect } from "react";
+import type { LoginRequest, RegisterRequest } from "../../../shared/types";
 import { authAPI } from "../services/api";
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
-
-interface AuthContextType extends AuthState {
-  login: (credentials: LoginRequest) => Promise<void>;
-  register: (userData: RegisterRequest) => Promise<void>;
-  logout: () => void;
-  clearError: () => void;
-}
-
-type AuthAction =
-  | { type: "AUTH_START" }
-  | { type: "AUTH_SUCCESS"; payload: { user: User; token: string } }
-  | { type: "AUTH_FAILURE"; payload: string }
-  | { type: "LOGOUT" }
-  | { type: "CLEAR_ERROR" };
+import { AuthContext, type AuthState, type AuthAction } from "./AuthContext";
 
 const initialState: AuthState = {
   user: null,
@@ -80,10 +55,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return state;
   }
 }
-
-export const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -199,15 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         clearError,
       }}
     >
-      {children}
+      {children}{" "}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = React.useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 };
