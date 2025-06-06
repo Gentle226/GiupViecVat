@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from "react";
+import React, { useReducer, useEffect, useCallback } from "react";
 import type { LoginRequest, RegisterRequest } from "../../../shared/types";
 import { authAPI } from "../services/api";
 import { AuthContext, type AuthState, type AuthAction } from "./AuthContext";
@@ -63,34 +63,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Check if user is logged in on app start
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        dispatch({ type: "AUTH_START" });
+        const response = await authAPI.me();
+        if (response.success && response.data) {
+          dispatch({
+            type: "AUTH_SUCCESS",
+            payload: {
+              user: response.data,
+              token: localStorage.getItem("token")!,
+            },
+          });
+        } else {
+          localStorage.removeItem("token");
+          dispatch({ type: "AUTH_FAILURE", payload: "Invalid token" });
+        }
+      } catch {
+        localStorage.removeItem("token");
+        dispatch({ type: "AUTH_FAILURE", payload: "Authentication failed" });
+      }
+    };
+
     const token = localStorage.getItem("token");
     if (token) {
       checkAuth();
     }
-  }, []);
+  }, []); // Empty dependency array - this effect should only run once on mount
 
-  const checkAuth = async () => {
-    try {
-      dispatch({ type: "AUTH_START" });
-      const response = await authAPI.me();
-      if (response.success && response.data) {
-        dispatch({
-          type: "AUTH_SUCCESS",
-          payload: {
-            user: response.data,
-            token: localStorage.getItem("token")!,
-          },
-        });
-      } else {
-        localStorage.removeItem("token");
-        dispatch({ type: "AUTH_FAILURE", payload: "Invalid token" });
-      }
-    } catch {
-      localStorage.removeItem("token");
-      dispatch({ type: "AUTH_FAILURE", payload: "Authentication failed" });
-    }
-  };
-  const login = async (credentials: LoginRequest) => {
+  const login = useCallback(async (credentials: LoginRequest) => {
     try {
       dispatch({ type: "AUTH_START" });
       console.log("Login attempt with:", credentials.email);
@@ -121,9 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         payload: error instanceof Error ? error.message : "Login failed",
       });
     }
-  };
+  }, []);
 
-  const register = async (userData: RegisterRequest) => {
+  const register = useCallback(async (userData: RegisterRequest) => {
     try {
       dispatch({ type: "AUTH_START" });
       const response = await authAPI.register(userData);
@@ -149,16 +150,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         payload: error instanceof Error ? error.message : "Registration failed",
       });
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     dispatch({ type: "LOGOUT" });
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: "CLEAR_ERROR" });
-  };
+  }, []);
 
   return (
     <AuthContext.Provider
