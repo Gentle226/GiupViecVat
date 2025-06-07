@@ -224,6 +224,24 @@ export const messagesAPI = {
     });
     return response.data;
   },
+
+  getUnreadCount: async (): Promise<
+    ApiResponse<{
+      count: number;
+      conversationCounts: { [key: string]: number };
+    }>
+  > => {
+    const response = await api.get("/api/messages/unread-count");
+    return response.data;
+  },
+  markConversationAsRead: async (
+    conversationId: string
+  ): Promise<ApiResponse<{ success: boolean }>> => {
+    const response = await api.post(
+      `/api/messages/conversations/${conversationId}/mark-read`
+    );
+    return response.data;
+  },
 };
 
 // Payments API

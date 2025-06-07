@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { TaskProvider } from "./contexts/TaskContext";
 import { SocketProvider } from "./contexts/SocketContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -23,52 +24,54 @@ function App() {
       <Router>
         <div className="min-h-screen bg-gray-50">
           <SocketProvider>
-            <TaskProvider>
-              <Navbar />
-              <main>
-                {" "}
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/tasks" element={<TaskList />} />
-                  <Route path="/tasks/:id" element={<TaskDetail />} />
-                  <Route path="/dev-tools" element={<DevTools />} />{" "}
-                  <Route
-                    path="/post-task"
-                    element={
-                      <RoleProtectedRoute allowedRoles={["client"]}>
-                        <CreateTask />
-                      </RoleProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/messages"
-                    element={
-                      <ProtectedRoute>
-                        <Messages />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile/:userId?"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </main>
-            </TaskProvider>
+            <NotificationProvider>
+              <TaskProvider>
+                <Navbar />
+                <main>
+                  {" "}
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/tasks" element={<TaskList />} />
+                    <Route path="/tasks/:id" element={<TaskDetail />} />
+                    <Route path="/dev-tools" element={<DevTools />} />{" "}
+                    <Route
+                      path="/post-task"
+                      element={
+                        <RoleProtectedRoute allowedRoles={["client"]}>
+                          <CreateTask />
+                        </RoleProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/messages"
+                      element={
+                        <ProtectedRoute>
+                          <Messages />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile/:userId?"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />{" "}
+                  </Routes>
+                </main>
+              </TaskProvider>
+            </NotificationProvider>
           </SocketProvider>
         </div>
       </Router>

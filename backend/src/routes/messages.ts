@@ -193,4 +193,95 @@ router.post(
   }
 );
 
+// Get unread message count for user
+router.get(
+  "/unread-count",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      // Get all conversations for the user
+      const conversations = await Conversation.find({
+        participants: new mongoose.Types.ObjectId(req.userId),
+      });
+
+      let totalUnreadCount = 0;
+      const conversationCounts: { [key: string]: number } = {};
+
+      // For each conversation, count unread messages
+      for (const conversation of conversations) {
+        const unreadCount = await Message.countDocuments({
+          conversationId: conversation._id,
+          senderId: { $ne: new mongoose.Types.ObjectId(req.userId) },
+          readBy: { $ne: new mongoose.Types.ObjectId(req.userId) },
+        });
+
+        if (unreadCount > 0) {
+          totalUnreadCount += unreadCount;
+          conversationCounts[conversation._id.toString()] = unreadCount;
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          count: totalUnreadCount,
+          conversationCounts,
+        },
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch unread count",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Mark conversation messages as read
+router.post(
+  "/conversations/:id/mark-read",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const conversationId = req.params.id;
+
+      // Verify user is participant in the conversation
+      const conversation = await Conversation.findById(conversationId);
+      if (
+        !conversation ||
+        !conversation.participants.includes(
+          new mongoose.Types.ObjectId(req.userId)
+        )
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to access this conversation",
+        });
+      }
+
+      // Mark all messages in the conversation as read by this user
+      await Message.updateMany(
+        {
+          conversationId: new mongoose.Types.ObjectId(conversationId),
+          senderId: { $ne: new mongoose.Types.ObjectId(req.userId) },
+          readBy: { $ne: new mongoose.Types.ObjectId(req.userId) },
+        },
+        { $push: { readBy: new mongoose.Types.ObjectId(req.userId) } }
+      );
+
+      res.json({
+        success: true,
+        data: { success: true },
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to mark messages as read",
+        error: error.message,
+      });
+    }
+  }
+);
+
 export default router;

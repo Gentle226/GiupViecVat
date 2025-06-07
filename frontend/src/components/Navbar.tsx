@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import {
   Home,
   Search,
@@ -13,6 +14,7 @@ import {
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -65,11 +67,10 @@ const Navbar: React.FC = () => {
                     <Plus className="w-4 h-4" />
                     <span>Post Task</span>
                   </Link>
-                )}
-
+                )}{" "}
                 <Link
                   to="/messages"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
                     isActive("/messages")
                       ? "text-blue-600 bg-blue-50"
                       : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
@@ -77,8 +78,12 @@ const Navbar: React.FC = () => {
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>Messages</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
-
                 <button className="p-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors">
                   <Bell className="w-5 h-5" />
                 </button>
@@ -154,10 +159,10 @@ const Navbar: React.FC = () => {
                 <Plus className="w-5 h-5" />
                 <span>Post Task</span>
               </Link>
-            )}
+            )}{" "}
             <Link
               to="/messages"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium relative ${
                 isActive("/messages")
                   ? "text-blue-600 bg-blue-50"
                   : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
@@ -165,6 +170,11 @@ const Navbar: React.FC = () => {
             >
               <MessageCircle className="w-5 h-5" />
               <span>Messages</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 left-4 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
             <Link
               to="/dashboard"

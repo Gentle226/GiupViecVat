@@ -154,5 +154,74 @@ router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req,
         });
     }
 });
+// Get unread message count for user
+router.get("/unread-count", auth_1.authenticateToken, async (req, res) => {
+    try {
+        // Get all conversations for the user
+        const conversations = await Message_1.Conversation.find({
+            participants: new mongoose_1.default.Types.ObjectId(req.userId),
+        });
+        let totalUnreadCount = 0;
+        const conversationCounts = {};
+        // For each conversation, count unread messages
+        for (const conversation of conversations) {
+            const unreadCount = await Message_1.Message.countDocuments({
+                conversationId: conversation._id,
+                senderId: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+                readBy: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+            });
+            if (unreadCount > 0) {
+                totalUnreadCount += unreadCount;
+                conversationCounts[conversation._id.toString()] = unreadCount;
+            }
+        }
+        res.json({
+            success: true,
+            data: {
+                count: totalUnreadCount,
+                conversationCounts,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch unread count",
+            error: error.message,
+        });
+    }
+});
+// Mark conversation messages as read
+router.post("/conversations/:id/mark-read", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const conversationId = req.params.id;
+        // Verify user is participant in the conversation
+        const conversation = await Message_1.Conversation.findById(conversationId);
+        if (!conversation ||
+            !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to access this conversation",
+            });
+        }
+        // Mark all messages in the conversation as read by this user
+        await Message_1.Message.updateMany({
+            conversationId: new mongoose_1.default.Types.ObjectId(conversationId),
+            senderId: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+            readBy: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+        }, { $push: { readBy: new mongoose_1.default.Types.ObjectId(req.userId) } });
+        res.json({
+            success: true,
+            data: { success: true },
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to mark messages as read",
+            error: error.message,
+        });
+    }
+});
 exports.default = router;
 //# sourceMappingURL=messages.js.map

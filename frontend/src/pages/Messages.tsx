@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
+import { useNotifications } from "../contexts/NotificationContext";
 import { messagesAPI } from "../services/api";
 import type { PopulatedConversation, Message } from "../../../shared/types";
 import {
@@ -24,6 +25,8 @@ interface PopulatedMessage extends Omit<Message, "senderId"> {
 const Messages: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { socket, sendMessage, joinConversation } = useSocket();
+  const { newMessageNotifications, markConversationAsRead } =
+    useNotifications();
   const [conversations, setConversations] = useState<PopulatedConversation[]>(
     []
   );
@@ -130,6 +133,16 @@ const Messages: React.FC = () => {
   ) => {
     setActiveConversation(conversation);
     await fetchMessages(conversation._id);
+
+    // Mark conversation as read in notification context
+    markConversationAsRead(conversation._id);
+
+    // Also mark as read on the backend
+    try {
+      await messagesAPI.markConversationAsRead(conversation._id);
+    } catch (error) {
+      console.error("Error marking conversation as read:", error);
+    }
   };
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,51 +251,81 @@ const Messages: React.FC = () => {
             </div>
           ) : (
             <div>
-              {filteredConversations.map((conversation) => (
-                <div
-                  key={conversation._id}
-                  onClick={() => handleConversationSelect(conversation)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                    activeConversation?._id === conversation._id
-                      ? "bg-indigo-50 border-indigo-200"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center">
-                      <User className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="ml-3 flex-1 min-w-0">
-                      {" "}
-                      <div className="flex items-center justify-between">
+              {" "}
+              {filteredConversations.map((conversation) => {
+                const unreadCount =
+                  newMessageNotifications[conversation._id] || 0;
+                const hasUnread = unreadCount > 0;
+
+                return (
+                  <div
+                    key={conversation._id}
+                    onClick={() => handleConversationSelect(conversation)}
+                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 relative ${
+                      activeConversation?._id === conversation._id
+                        ? "bg-indigo-50 border-indigo-200"
+                        : hasUnread
+                        ? "bg-blue-50"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`h-12 w-12 rounded-full flex items-center justify-center relative ${
+                          hasUnread ? "bg-indigo-600" : "bg-gray-400"
+                        }`}
+                      >
+                        <User className="h-6 w-6 text-white" />
+                        {hasUnread && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="ml-3 flex-1 min-w-0">
                         {" "}
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {conversation.participants
-                            .filter((p) => p._id !== user?._id)
-                            .map((p) => `${p.firstName} ${p.lastName}`)
-                            .join(", ") || "Other User"}
-                        </p>{" "}
-                        {conversation.lastMessage && (
-                          <p className="text-xs text-gray-500">
-                            {formatTime(conversation.lastMessage.timestamp)}
+                        <div className="flex items-center justify-between">
+                          {" "}
+                          <p
+                            className={`text-sm truncate ${
+                              hasUnread
+                                ? "font-semibold text-gray-900"
+                                : "font-medium text-gray-900"
+                            }`}
+                          >
+                            {conversation.participants
+                              .filter((p) => p._id !== user?._id)
+                              .map((p) => `${p.firstName} ${p.lastName}`)
+                              .join(", ") || "Other User"}
+                          </p>{" "}
+                          {conversation.lastMessage && (
+                            <p className="text-xs text-gray-500">
+                              {formatTime(conversation.lastMessage.timestamp)}
+                            </p>
+                          )}
+                        </div>{" "}
+                        {/* Show task context if available */}
+                        {conversation.taskId && (
+                          <p className="text-xs text-indigo-600 truncate">
+                            Task: {conversation.taskId.title}
                           </p>
                         )}
-                      </div>{" "}
-                      {/* Show task context if available */}
-                      {conversation.taskId && (
-                        <p className="text-xs text-indigo-600 truncate">
-                          Task: {conversation.taskId.title}
-                        </p>
-                      )}
-                      {conversation.lastMessage && (
-                        <p className="text-sm text-gray-500 truncate">
-                          {conversation.lastMessage.content}
-                        </p>
-                      )}
+                        {conversation.lastMessage && (
+                          <p
+                            className={`text-sm truncate ${
+                              hasUnread
+                                ? "font-medium text-gray-700"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {conversation.lastMessage.content}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

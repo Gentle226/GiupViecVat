@@ -40,8 +40,8 @@ const setupSocketHandlers = (io) => {
                     content,
                     messageType,
                 });
-                console.log('Created message:', message);
-                console.log('Message ID:', message._id);
+                console.log("Created message:", message);
+                console.log("Message ID:", message._id);
                 // Update conversation's last message
                 await adapter_1.db.updateConversation(conversationId, {
                     lastMessage: message._id,
