@@ -351,7 +351,7 @@ const TaskDetail: React.FC = () => {
   console.log("Is assigned tasker:", isAssignedTasker);
   console.log(
     "Should show close button:",
-    (isTaskOwner || isAssignedTasker) &&
+    isTaskOwner &&
       (task.status === TaskStatus.ASSIGNED ||
         task.status === TaskStatus.IN_PROGRESS)
   );
@@ -386,9 +386,22 @@ const TaskDetail: React.FC = () => {
               >
                 {task.status.replace("_", " ")}
               </span>
-            </div>
+            </div>{" "}
+            <div className="flex items-center gap-3">
+              {/* Complete Task Button - for assigned/in_progress tasks (clients only) */}
+              {isTaskOwner &&
+                (task.status === TaskStatus.ASSIGNED ||
+                  task.status === TaskStatus.IN_PROGRESS) && (
+                  <button
+                    onClick={() => setShowCompleteConfirmation(true)}
+                    disabled={completingTask}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {completingTask ? "Closing..." : "Close Task"}
+                  </button>
+                )}
 
-            <div className="flex items-center gap-4">
               {/* Cancel Task Button - for task owners on cancellable tasks */}
               {isTaskOwner &&
                 (task.status === TaskStatus.OPEN ||
@@ -410,29 +423,9 @@ const TaskDetail: React.FC = () => {
                 </div>
                 <div className="text-sm text-gray-500">Budget</div>
               </div>
-            </div>
+            </div>{" "}
           </div>
           {/* Task Actions */}
-          {/* Complete Task Action - for assigned/in_progress tasks */}
-          {(isTaskOwner || isAssignedTasker) &&
-            (task.status === TaskStatus.ASSIGNED ||
-              task.status === TaskStatus.IN_PROGRESS) && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowCompleteConfirmation(true)}
-                  disabled={completingTask}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
-                >
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  {completingTask ? "Closing Task..." : "Close Task"}
-                </button>
-                <p className="text-sm text-gray-500 mt-2">
-                  {isTaskOwner
-                    ? "Mark this task as completed when the work is finished to your satisfaction."
-                    : "Mark this task as completed when you have finished the work."}
-                </p>
-              </div>
-            )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {" "}
             <div className="flex items-center text-gray-600">

@@ -253,6 +253,7 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
 router.patch(
   "/:id/complete",
   authenticateToken,
+  requireClient,
   async (req: AuthRequest, res) => {
     try {
       console.log("=== COMPLETE TASK DEBUG ===");
@@ -275,25 +276,21 @@ router.patch(
         postedById: (task.postedBy as any)?._id || task.postedBy,
         assignedTo: task.assignedTo,
         status: task.status,
-      }); // Only task owner (client) or assigned tasker can complete
+      }); // Only task owner (client) can complete tasks
       const postedById = (task.postedBy as any)?._id || task.postedBy;
       const isTaskOwner = postedById.toString() === req.userId.toString();
-      const isAssignedTasker =
-        task.assignedTo && task.assignedTo.toString() === req.userId.toString();
 
       console.log("Authorization check:", {
         isTaskOwner,
-        isAssignedTasker,
         postedById: postedById.toString(),
-        assignedTo: task.assignedTo?.toString(),
         currentUserId: req.userId.toString(),
       });
 
-      if (!isTaskOwner && !isAssignedTasker) {
+      if (!isTaskOwner) {
         console.log("Authorization failed");
         return res.status(403).json({
           success: false,
-          message: "Not authorized to complete this task",
+          message: "Only the task owner can complete this task",
         });
       }
 
