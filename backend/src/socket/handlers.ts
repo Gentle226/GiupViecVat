@@ -43,9 +43,7 @@ export const setupSocketHandlers = (io: Server) => {
               message: "Unauthorized to send message to this conversation",
             });
             return;
-          }
-
-          // Create message
+          } // Create message
           const message = await db.createMessage({
             conversationId,
             senderId: userId,
@@ -53,13 +51,12 @@ export const setupSocketHandlers = (io: Server) => {
             messageType,
           });
 
+          console.log("Created message:", message);
+          console.log("Message ID:", message._id);
+
           // Update conversation's last message
           await db.updateConversation(conversationId, {
-            lastMessage: {
-              content,
-              senderId: userId,
-              timestamp: message.timestamp,
-            },
+            lastMessage: message._id,
           });
 
           // Emit message to all participants in the conversation

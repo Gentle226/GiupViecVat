@@ -35,7 +35,8 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req,
             });
         } // Check if user already has a pending bid
         const existingBids = await adapter_1.db.findBidsByTaskRaw(taskId);
-        const existingBid = existingBids.find((bid) => bid.bidderId.toString() === req.userId.toString() && bid.status === "pending");
+        const existingBid = existingBids.find((bid) => bid.bidderId.toString() === req.userId.toString() &&
+            bid.status === "pending");
         if (existingBid) {
             return res.status(400).json({
                 success: false,

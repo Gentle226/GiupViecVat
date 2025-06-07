@@ -17,14 +17,13 @@ const setupSocketHandlers = (io) => {
         socket.on("join_conversation", (conversationId) => {
             socket.join(`conversation_${conversationId}`);
             console.log(`User ${userId} joined conversation ${conversationId}`);
-        });
-        // Handle leaving conversation rooms
+        }); // Handle leaving conversation rooms
         socket.on("leave_conversation", (conversationId) => {
             socket.leave(`conversation_${conversationId}`);
             console.log(`User ${userId} left conversation ${conversationId}`);
         });
         // Handle sending messages
-        socket.on("send_message", async (data) => {
+        socket.on("sendMessage", async (data) => {
             try {
                 const { conversationId, content, messageType = "text" } = data;
                 // Verify user is participant in conversation
@@ -34,24 +33,21 @@ const setupSocketHandlers = (io) => {
                         message: "Unauthorized to send message to this conversation",
                     });
                     return;
-                }
-                // Create message
+                } // Create message
                 const message = await adapter_1.db.createMessage({
                     conversationId,
                     senderId: userId,
                     content,
                     messageType,
                 });
+                console.log('Created message:', message);
+                console.log('Message ID:', message._id);
                 // Update conversation's last message
                 await adapter_1.db.updateConversation(conversationId, {
-                    lastMessage: {
-                        content,
-                        senderId: userId,
-                        timestamp: message.timestamp,
-                    },
+                    lastMessage: message._id,
                 });
                 // Emit message to all participants in the conversation
-                io.to(`conversation_${conversationId}`).emit("new_message", message);
+                io.to(`conversation_${conversationId}`).emit("newMessage", message);
                 // Also emit to individual user rooms for notifications
                 conversation.participants.forEach((participantId) => {
                     if (participantId !== userId) {

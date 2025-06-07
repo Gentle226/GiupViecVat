@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.memoryStore = exports.seedDemoData = exports.updatePayment = exports.getPaymentsByUser = exports.findPaymentById = exports.createPayment = exports.getReviewsByTask = exports.getReviewsByTasker = exports.createReview = exports.updateConversation = exports.getConversationsByUser = exports.findConversationById = exports.createConversation = exports.getMessagesByConversation = exports.createMessage = exports.deleteBid = exports.updateBid = exports.getBidsByTasker = exports.getBidsByTaskRaw = exports.getBidsByTask = exports.findBidById = exports.createBid = exports.deleteTask = exports.updateTask = exports.getAllTasks = exports.findTaskById = exports.createTask = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.findUserById = exports.findUserByEmail = exports.createUser = void 0;
+exports.memoryStore = exports.seedDemoData = exports.updatePayment = exports.getPaymentsByUser = exports.findPaymentById = exports.createPayment = exports.getReviewsByTask = exports.getReviewsByTasker = exports.createReview = exports.updateConversation = exports.findConversationByParticipantsAndTask = exports.getConversationsByUser = exports.findConversationById = exports.createConversation = exports.getMessagesByConversation = exports.createMessage = exports.deleteBid = exports.updateBid = exports.getBidsByTasker = exports.getBidsByTaskRaw = exports.getBidsByTask = exports.findBidById = exports.createBid = exports.deleteTask = exports.updateTask = exports.getAllTasks = exports.findTaskById = exports.createTask = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.findUserById = exports.findUserByEmail = exports.createUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const types_1 = require("../types");
 // In-memory storage
@@ -246,6 +246,19 @@ const getConversationsByUser = async (userId) => {
     return conversations.filter((conv) => conv.participants.includes(userId));
 };
 exports.getConversationsByUser = getConversationsByUser;
+const findConversationByParticipantsAndTask = async (participant1, participant2, taskId) => {
+    return (conversations.find((conv) => {
+        const hasParticipants = conv.participants.includes(participant1) &&
+            conv.participants.includes(participant2);
+        if (taskId) {
+            return hasParticipants && conv.taskId === taskId;
+        }
+        else {
+            return hasParticipants && !conv.taskId;
+        }
+    }) || null);
+};
+exports.findConversationByParticipantsAndTask = findConversationByParticipantsAndTask;
 const updateConversation = async (id, updates) => {
     const convIndex = conversations.findIndex((conv) => conv._id === id);
     if (convIndex === -1)
@@ -402,6 +415,7 @@ exports.memoryStore = {
     createConversation: exports.createConversation,
     findConversationById: exports.findConversationById,
     getConversationsByUser: exports.getConversationsByUser,
+    findConversationByParticipantsAndTask: exports.findConversationByParticipantsAndTask,
     updateConversation: exports.updateConversation,
     // Review operations
     createReview: exports.createReview,

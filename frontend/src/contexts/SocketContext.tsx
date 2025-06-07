@@ -111,14 +111,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
   };
-
   const onNewMessage = (callback: (message: Message) => void) => {
     if (socketRef.current) {
+      // Remove existing listener first to prevent duplicates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("newMessage", callback);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socketRef.current as any).on("newMessage", callback);
     }
   };
-
   const onTyping = (
     callback: (data: {
       conversationId: string;
@@ -127,6 +128,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }) => void
   ) => {
     if (socketRef.current) {
+      // Remove existing listener first to prevent duplicates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("typing", callback);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socketRef.current as any).on("typing", callback);
     }
