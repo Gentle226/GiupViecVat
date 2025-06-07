@@ -26,20 +26,18 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "Can only review completed tasks",
             });
-        }
-        // Check if user is involved in the task
-        const isTaskPoster = task.postedBy.toString() === req.user._id.toString();
-        const isTasker = task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+        } // Check if user is involved in the task
+        const isTaskPoster = task.postedBy.toString() === req.userId.toString();
+        const isTasker = task.assignedTo && task.assignedTo.toString() === req.userId.toString();
         if (!isTaskPoster && !isTasker) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to review this task",
             });
-        }
-        // Check if review already exists
+        } // Check if review already exists
         const existingReview = await index_1.Review.findOne({
             taskId,
-            reviewerId: req.user._id,
+            reviewerId: req.userId,
             revieweeId,
         });
         if (existingReview) {
@@ -50,7 +48,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
         }
         const review = new index_1.Review({
             taskId,
-            reviewerId: req.user._id,
+            reviewerId: req.userId,
             revieweeId,
             rating,
             comment,

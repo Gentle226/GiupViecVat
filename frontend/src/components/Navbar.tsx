@@ -49,21 +49,23 @@ const Navbar: React.FC = () => {
             >
               <Search className="w-4 h-4" />
               <span>Find Tasks</span>
-            </Link>
-
+            </Link>{" "}
             {isAuthenticated && (
               <>
-                <Link
-                  to="/post-task"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive("/post-task")
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Post Task</span>
-                </Link>
+                {/* Show "Post Task" only for clients (non-taskers) */}
+                {!user?.isTasker && (
+                  <Link
+                    to="/post-task"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive("/post-task")
+                        ? "text-blue-600 bg-blue-50"
+                        : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Post Task</span>
+                  </Link>
+                )}
 
                 <Link
                   to="/messages"
@@ -123,8 +125,7 @@ const Navbar: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
-
+      </div>{" "}
       {/* Mobile menu */}
       {isAuthenticated && (
         <div className="md:hidden bg-white border-t">
@@ -140,17 +141,20 @@ const Navbar: React.FC = () => {
               <Search className="w-5 h-5" />
               <span>Find Tasks</span>
             </Link>
-            <Link
-              to="/post-task"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
-                isActive("/post-task")
-                  ? "text-blue-600 bg-blue-50"
-                  : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
-              }`}
-            >
-              <Plus className="w-5 h-5" />
-              <span>Post Task</span>
-            </Link>
+            {/* Show "Post Task" only for clients (non-taskers) */}
+            {!user?.isTasker && (
+              <Link
+                to="/post-task"
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
+                  isActive("/post-task")
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
+                }`}
+              >
+                <Plus className="w-5 h-5" />
+                <span>Post Task</span>
+              </Link>
+            )}
             <Link
               to="/messages"
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${

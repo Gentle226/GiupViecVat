@@ -98,7 +98,6 @@ const TaskDetail: React.FC = () => {
 
     fetchTaskDetails();
   }, [id]);
-
   const handleSubmitBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task || !user || !bidAmount || !bidMessage) return;
@@ -118,14 +117,25 @@ const TaskDetail: React.FC = () => {
       setBidAmount("");
       setBidMessage("");
       alert("Bid submitted successfully!");
-    } catch (err) {
-      alert("Failed to submit bid");
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.message?.includes("Tasker")
+      ) {
+        alert(
+          "Only taskers can place bids on tasks. Please switch to a tasker account to bid."
+        );
+      } else {
+        alert("Failed to submit bid");
+      }
       console.error("Error submitting bid:", err);
     } finally {
       setSubmittingBid(false);
     }
   };
-
   const handleAcceptBid = async (bidId: string) => {
     if (!task) return;
 
@@ -137,8 +147,18 @@ const TaskDetail: React.FC = () => {
         setTask(response.data);
       }
       alert("Bid accepted successfully!");
-    } catch (err) {
-      alert("Failed to accept bid");
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.message?.includes("Client")
+      ) {
+        alert("Only clients can accept bids on their tasks.");
+      } else {
+        alert("Failed to accept bid");
+      }
       console.error("Error accepting bid:", err);
     }
   };
@@ -219,6 +239,7 @@ const TaskDetail: React.FC = () => {
   const hasUserBid = bids.some((bid) => bid.bidderId === user?._id);
   const canBid =
     isAuthenticated &&
+    user?.isTasker && // Only taskers can bid
     !isTaskOwner &&
     !hasUserBid &&
     task.status === TaskStatus.OPEN;
@@ -278,8 +299,7 @@ const TaskDetail: React.FC = () => {
               </span>
             )}
           </div>
-        </div>
-
+        </div>{" "}
         {/* Bid Section */}
         {canBid && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -332,21 +352,46 @@ const TaskDetail: React.FC = () => {
               >
                 {submittingBid ? "Submitting..." : "Submit Bid"}
               </button>
-            </form>
+            </form>{" "}
           </div>
         )}
-
+        {/* Message for clients who can't bid */}
+        {isAuthenticated &&
+          !user?.isTasker &&
+          !isTaskOwner &&
+          task.status === TaskStatus.OPEN && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
+                <div>
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Client Account
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    As a client, you can post tasks but cannot bid on them.
+                    Switch to a tasker account to bid on tasks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         {/* Bids Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             Bids ({bids.length})
-          </h2>
-
+            {isTaskOwner && bids.length > 0 && (
+              <span className="text-sm font-normal text-gray-500 ml-2">
+                - Choose the best bid for your task
+              </span>
+            )}
+          </h2>{" "}
           {bids.length === 0 ? (
             <div className="text-center py-8">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
-                No bids yet. Be the first to bid on this task!
+                {user?.isTasker && !isTaskOwner
+                  ? "No bids yet. Be the first to bid on this task!"
+                  : "No bids yet. Taskers will be able to see and bid on your task."}
               </p>
             </div>
           ) : (

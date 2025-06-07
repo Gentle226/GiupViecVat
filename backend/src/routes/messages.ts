@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { Message, Conversation } from "../models/Message";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 
@@ -11,7 +12,7 @@ router.get(
   async (req: AuthRequest, res) => {
     try {
       const conversations = await Conversation.find({
-        participants: req.user._id,
+        participants: new mongoose.Types.ObjectId(req.userId),
       })
         .populate("participants", "firstName lastName avatar")
         .populate("lastMessage")
@@ -42,7 +43,12 @@ router.get(
 
       // Check if user is participant
       const conversation = await Conversation.findById(req.params.id);
-      if (!conversation || !conversation.participants.includes(req.user._id)) {
+      if (
+        !conversation ||
+        !conversation.participants.includes(
+          new mongoose.Types.ObjectId(req.userId)
+        )
+      ) {
         return res.status(403).json({
           success: false,
           message: "Not authorized to view this conversation",
@@ -59,10 +65,10 @@ router.get(
       await Message.updateMany(
         {
           conversationId: req.params.id,
-          senderId: { $ne: req.user._id },
-          readBy: { $ne: req.user._id },
+          senderId: { $ne: new mongoose.Types.ObjectId(req.userId) },
+          readBy: { $ne: new mongoose.Types.ObjectId(req.userId) },
         },
-        { $push: { readBy: req.user._id } }
+        { $push: { readBy: new mongoose.Types.ObjectId(req.userId) } }
       );
 
       res.json({
@@ -89,13 +95,21 @@ router.post(
 
       // Check if conversation already exists
       let conversation = await Conversation.findOne({
-        participants: { $all: [req.user._id, participantId] },
+        participants: {
+          $all: [
+            new mongoose.Types.ObjectId(req.userId),
+            new mongoose.Types.ObjectId(participantId),
+          ],
+        },
         taskId: taskId || null,
       });
 
       if (!conversation) {
         conversation = new Conversation({
-          participants: [req.user._id, participantId],
+          participants: [
+            new mongoose.Types.ObjectId(req.userId),
+            new mongoose.Types.ObjectId(participantId),
+          ],
           taskId: taskId || null,
         });
         await conversation.save();

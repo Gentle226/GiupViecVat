@@ -58,14 +58,21 @@ class DatabaseAdapter {
             // Seed demo data for memory store
             await memoryStore_1.memoryStore.seedDemoData();
         }
-    }
-    // User operations
+    } // User operations
     async createUser(userData) {
         if (this.useMemoryStore) {
             return await memoryStore_1.memoryStore.createUser(userData);
-        }
-        const user = new Models.User(userData);
-        return await user.save();
+        } // For MongoDB, ensure we have the correct field format
+        const mongoUserData = {
+            ...userData,
+            isTasker: userData.isTasker !== undefined
+                ? userData.isTasker
+                : userData.userType === "tasker",
+        };
+        delete mongoUserData.userType; // Remove userType as MongoDB uses isTasker
+        const user = new Models.User(mongoUserData);
+        const savedUser = await user.save();
+        return savedUser;
     }
     async findUserByEmail(email) {
         if (this.useMemoryStore) {
@@ -147,7 +154,10 @@ class DatabaseAdapter {
         const limit = options.limit || 10;
         const skip = (page - 1) * limit;
         const [tasks, total] = await Promise.all([
-            query.populate("postedBy", "firstName lastName rating reviewCount avatar").skip(skip).limit(limit),
+            query
+                .populate("postedBy", "firstName lastName rating reviewCount avatar")
+                .skip(skip)
+                .limit(limit),
             Models.Task.countDocuments(filter),
         ]);
         return {

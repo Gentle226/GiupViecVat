@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import { TaskCategory, TaskStatus } from "../../../shared/types";
 import {
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 const TaskList: React.FC = () => {
+  const { user } = useAuth();
   const {
     tasks,
     isLoading,
@@ -118,14 +120,18 @@ const TaskList: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {" "}
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Find Tasks</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          {user?.isTasker ? "Find Tasks" : "Browse Tasks"}
+        </h1>
         <p className="text-lg text-gray-600">
-          Discover tasks in your area and start earning money today
+          {user?.isTasker
+            ? "Discover tasks in your area and start earning money today"
+            : "Browse available tasks and see what services are being requested"}
         </p>
       </div>
-
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
         <form onSubmit={handleSearch} className="flex gap-4 mb-4">
@@ -215,7 +221,6 @@ const TaskList: React.FC = () => {
           </div>
         )}
       </div>
-
       {/* Task Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -237,14 +242,18 @@ const TaskList: React.FC = () => {
             No tasks found
           </h3>
           <p className="text-gray-600 mb-4">
-            Try adjusting your search criteria or check back later.
+            {user?.isTasker
+              ? "No tasks match your criteria. Try adjusting your search or check back later for new opportunities."
+              : "Try adjusting your search criteria or check back later."}
           </p>
-          <Link
-            to="/post-task"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Post the First Task
-          </Link>
+          {!user?.isTasker && (
+            <Link
+              to="/post-task"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Post the First Task
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -302,7 +311,7 @@ const TaskList: React.FC = () => {
                       <UserIcon className="h-4 w-4" />
                       <span>
                         Posted by{" "}
-                        {typeof task.postedBy === "string"
+                        {typeof task.postedBy === "string" || !task.postedBy
                           ? "User"
                           : `${task.postedBy.firstName} ${task.postedBy.lastName}`}
                       </span>

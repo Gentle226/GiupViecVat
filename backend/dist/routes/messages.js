@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const Message_1 = require("../models/Message");
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
@@ -11,7 +12,7 @@ const router = express_1.default.Router();
 router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
     try {
         const conversations = await Message_1.Conversation.find({
-            participants: req.user._id,
+            participants: new mongoose_1.default.Types.ObjectId(req.userId),
         })
             .populate("participants", "firstName lastName avatar")
             .populate("lastMessage")
@@ -36,7 +37,8 @@ router.get("/conversations/:id/messages", auth_1.authenticateToken, async (req, 
         const { page = 1, limit = 50 } = req.query;
         // Check if user is participant
         const conversation = await Message_1.Conversation.findById(req.params.id);
-        if (!conversation || !conversation.participants.includes(req.user._id)) {
+        if (!conversation ||
+            !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to view this conversation",
@@ -50,9 +52,9 @@ router.get("/conversations/:id/messages", auth_1.authenticateToken, async (req, 
         // Mark messages as read
         await Message_1.Message.updateMany({
             conversationId: req.params.id,
-            senderId: { $ne: req.user._id },
-            readBy: { $ne: req.user._id },
-        }, { $push: { readBy: req.user._id } });
+            senderId: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+            readBy: { $ne: new mongoose_1.default.Types.ObjectId(req.userId) },
+        }, { $push: { readBy: new mongoose_1.default.Types.ObjectId(req.userId) } });
         res.json({
             success: true,
             data: messages.reverse(), // Return in chronological order
@@ -72,12 +74,20 @@ router.post("/conversations", auth_1.authenticateToken, async (req, res) => {
         const { participantId, taskId } = req.body;
         // Check if conversation already exists
         let conversation = await Message_1.Conversation.findOne({
-            participants: { $all: [req.user._id, participantId] },
+            participants: {
+                $all: [
+                    new mongoose_1.default.Types.ObjectId(req.userId),
+                    new mongoose_1.default.Types.ObjectId(participantId),
+                ],
+            },
             taskId: taskId || null,
         });
         if (!conversation) {
             conversation = new Message_1.Conversation({
-                participants: [req.user._id, participantId],
+                participants: [
+                    new mongoose_1.default.Types.ObjectId(req.userId),
+                    new mongoose_1.default.Types.ObjectId(participantId),
+                ],
                 taskId: taskId || null,
             });
             await conversation.save();

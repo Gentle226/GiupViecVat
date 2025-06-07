@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
+const roleAuth_1 = require("../middleware/roleAuth");
 const adapter_1 = require("../data/adapter");
 const router = express_1.default.Router();
 // Get all tasks with filters
@@ -46,6 +47,28 @@ router.get("/", async (req, res) => {
         });
     }
 });
+// Get user's tasks
+router.get("/my-tasks", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const filter = { postedBy: req.userId };
+        const options = {
+            sort: "createdAt",
+            order: "desc",
+        };
+        const result = await adapter_1.db.findTasks(filter, options);
+        res.json({
+            success: true,
+            data: result.tasks,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch your tasks",
+            error: error.message,
+        });
+    }
+});
 // Get single task
 router.get("/:id", async (req, res) => {
     try {
@@ -70,11 +93,11 @@ router.get("/:id", async (req, res) => {
     }
 });
 // Create new task
-router.post("/", auth_1.authenticateToken, async (req, res) => {
+router.post("/", auth_1.authenticateToken, roleAuth_1.requireClient, async (req, res) => {
     try {
         const taskData = {
             ...req.body,
-            postedBy: req.user._id,
+            postedBy: req.userId, // Use req.userId instead of req.user._id
         };
         const task = await adapter_1.db.createTask(taskData);
         res.status(201).json({
@@ -92,7 +115,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
     }
 });
 // Update task
-router.put("/:id", auth_1.authenticateToken, async (req, res) => {
+router.put("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, async (req, res) => {
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
@@ -100,9 +123,8 @@ router.put("/:id", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "Task not found",
             });
-        }
-        // Only task owner can update
-        if (task.postedBy.toString() !== req.user._id.toString()) {
+        } // Only task owner can update
+        if (task.postedBy.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to update this task",
@@ -124,7 +146,7 @@ router.put("/:id", auth_1.authenticateToken, async (req, res) => {
     }
 });
 // Delete task
-router.delete("/:id", auth_1.authenticateToken, async (req, res) => {
+router.delete("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, async (req, res) => {
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
@@ -132,9 +154,8 @@ router.delete("/:id", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "Task not found",
             });
-        }
-        // Only task owner can delete
-        if (task.postedBy.toString() !== req.user._id.toString()) {
+        } // Only task owner can delete
+        if (task.postedBy.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to delete this task",
@@ -163,9 +184,8 @@ router.get("/:id/bids", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "Task not found",
             });
-        }
-        // Only task owner can view bids
-        if (task.postedBy.toString() !== req.user._id.toString()) {
+        } // Only task owner can view bids
+        if (task.postedBy.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to view bids for this task",

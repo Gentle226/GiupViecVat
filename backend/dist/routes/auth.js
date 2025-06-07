@@ -19,6 +19,36 @@ const generateToken = (userId) => {
         expiresIn: process.env.JWT_EXPIRE || "7d",
     });
 };
+// Transform user data to match frontend expected structure
+const transformUser = (user) => {
+    // Handle both memory store (backend User) and MongoDB (IUser) formats
+    const isMemoryStoreUser = "userType" in user;
+    const isMongoUser = "isTasker" in user;
+    return {
+        _id: user._id,
+        email: user.email,
+        firstName: isMemoryStoreUser
+            ? user.firstName || (user.name ? user.name.split(" ")[0] : "User")
+            : user.firstName,
+        lastName: isMemoryStoreUser
+            ? user.lastName ||
+                (user.name ? user.name.split(" ").slice(1).join(" ") : "")
+            : user.lastName,
+        avatar: user.avatar,
+        isTasker: isMemoryStoreUser ? user.userType === "tasker" : user.isTasker,
+        rating: user.rating || 0,
+        reviewCount: user.reviewCount || 0,
+        bio: user.bio,
+        skills: user.skills || [],
+        hourlyRate: user.hourlyRate,
+        availability: user.availability,
+        location: typeof user.location === "string"
+            ? { address: user.location, coordinates: [0, 0] }
+            : user.location || { address: "Not specified", coordinates: [0, 0] },
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt || user.createdAt,
+    };
+};
 // Register
 router.post("/register", async (req, res) => {
     try {
@@ -30,25 +60,27 @@ router.post("/register", async (req, res) => {
                 success: false,
                 message: "User already exists with this email",
             });
-        }
-        // Create new user
-        const user = await adapter_1.db.createUser({
+        } // Create new user
+        const userCreateData = {
             email,
             password,
             firstName,
             lastName,
+            isTasker,
             userType: isTasker ? "tasker" : "client",
             location: location || {
                 address: "Not specified",
                 coordinates: [0, 0],
             },
-        });
-        // Generate token
+        };
+        const user = await adapter_1.db.createUser(userCreateData); // Generate token
         const token = generateToken(user._id);
+        // Transform user to match frontend expected structure
+        const transformedUser = transformUser(user);
         res.status(201).json({
             success: true,
             data: {
-                user: { ...user, password: undefined }, // Don't send password
+                user: transformedUser,
                 token,
             },
             message: "User registered successfully",
@@ -81,13 +113,14 @@ router.post("/login", async (req, res) => {
                 success: false,
                 message: "Invalid email or password",
             });
-        }
-        // Generate token
+        } // Generate token
         const token = generateToken(user._id);
+        // Transform user to match frontend expected structure
+        const transformedUser = transformUser(user);
         res.json({
             success: true,
             data: {
-                user: { ...user, password: undefined }, // Don't send password
+                user: transformedUser,
                 token,
             },
             message: "Login successful",
@@ -110,10 +143,11 @@ router.get("/me", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "User not found",
             });
-        }
+        } // Transform user to match frontend expected structure
+        const transformedUser = transformUser(user);
         res.json({
             success: true,
-            data: { ...user, password: undefined },
+            data: transformedUser,
         });
     }
     catch (error) {
@@ -138,10 +172,11 @@ router.put("/profile", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "User not found",
             });
-        }
+        } // Transform user to match frontend expected structure
+        const transformedUser = transformUser(user);
         res.json({
             success: true,
-            data: { ...user, password: undefined },
+            data: transformedUser,
             message: "Profile updated successfully",
         });
     }

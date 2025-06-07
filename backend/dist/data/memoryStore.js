@@ -82,12 +82,12 @@ const findTaskById = async (id) => {
             ...task,
             postedBy: {
                 _id: postedByUser._id,
-                firstName: postedByUser.name.split(' ')[0] || 'User',
-                lastName: postedByUser.name.split(' ')[1] || '',
+                firstName: postedByUser.name.split(" ")[0] || "User",
+                lastName: postedByUser.name.split(" ")[1] || "",
                 rating: postedByUser.rating,
                 reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
                 avatar: postedByUser.avatar,
-            }
+            },
         };
     }
     return task;
@@ -115,12 +115,12 @@ const getAllTasks = async (filters) => {
                 ...task,
                 postedBy: {
                     _id: postedByUser._id,
-                    firstName: postedByUser.name.split(' ')[0] || 'User',
-                    lastName: postedByUser.name.split(' ')[1] || '',
+                    firstName: postedByUser.name.split(" ")[0] || "User",
+                    lastName: postedByUser.name.split(" ")[1] || "",
                     rating: postedByUser.rating,
                     reviewCount: postedByUser.completedTasks, // Using completedTasks as reviewCount approximation
                     avatar: postedByUser.avatar,
-                }
+                },
             };
         }
         return task;

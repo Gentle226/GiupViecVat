@@ -33,6 +33,30 @@ const CreateTask: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Redirect taskers away from task creation (after hooks)
+  if (user?.isTasker) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            Access Restricted
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Taskers cannot post tasks. You can browse and bid on existing tasks
+            instead.
+          </p>
+          <button
+            onClick={() => navigate("/tasks")}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Browse Tasks
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const categories = Object.values(TaskCategory);
 
   const handleInputChange = (

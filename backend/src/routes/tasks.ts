@@ -2,6 +2,7 @@ import express from "express";
 import { Task } from "../models/Task";
 import { Bid } from "../models/Bid";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
+import { requireClient } from "../middleware/roleAuth";
 import { db } from "../data/adapter";
 
 const router = express.Router();
@@ -56,13 +57,14 @@ router.get("/", async (req, res) => {
       success: false,
       message: "Failed to fetch tasks",
       error: error.message,
-    });  }
+    });
+  }
 });
 
 // Get user's tasks
 router.get("/my-tasks", authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const filter = { postedBy: req.user._id };
+    const filter = { postedBy: req.userId };
     const options = {
       sort: "createdAt",
       order: "desc",
@@ -109,99 +111,110 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create new task
-router.post("/", authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const taskData = {
-      ...req.body,
-      postedBy: req.user._id,
-    };
+router.post(
+  "/",
+  authenticateToken,
+  requireClient,
+  async (req: AuthRequest, res) => {
+    try {
+      const taskData = {
+        ...req.body,
+        postedBy: req.userId, // Use req.userId instead of req.user._id
+      };
 
-    const task = await db.createTask(taskData);
+      const task = await db.createTask(taskData);
 
-    res.status(201).json({
-      success: true,
-      data: task,
-      message: "Task created successfully",
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to create task",
-      error: error.message,
-    });
+      res.status(201).json({
+        success: true,
+        data: task,
+        message: "Task created successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to create task",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // Update task
-router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const task = await db.findTaskById(req.params.id);
+router.put(
+  "/:id",
+  authenticateToken,
+  requireClient,
+  async (req: AuthRequest, res) => {
+    try {
+      const task = await db.findTaskById(req.params.id);
 
-    if (!task) {
-      return res.status(404).json({
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      } // Only task owner can update
+      if (task.postedBy.toString() !== req.userId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this task",
+        });
+      }
+
+      const updatedTask = await db.updateTask(req.params.id, req.body);
+
+      res.json({
+        success: true,
+        data: updatedTask,
+        message: "Task updated successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
         success: false,
-        message: "Task not found",
+        message: "Failed to update task",
+        error: error.message,
       });
     }
-
-    // Only task owner can update
-    if (task.postedBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to update this task",
-      });
-    }
-
-    const updatedTask = await db.updateTask(req.params.id, req.body);
-
-    res.json({
-      success: true,
-      data: updatedTask,
-      message: "Task updated successfully",
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update task",
-      error: error.message,
-    });
   }
-});
+);
 
 // Delete task
-router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const task = await db.findTaskById(req.params.id);
+router.delete(
+  "/:id",
+  authenticateToken,
+  requireClient,
+  async (req: AuthRequest, res) => {
+    try {
+      const task = await db.findTaskById(req.params.id);
 
-    if (!task) {
-      return res.status(404).json({
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      } // Only task owner can delete
+      if (task.postedBy.toString() !== req.userId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to delete this task",
+        });
+      }
+
+      await db.deleteTask(req.params.id);
+
+      res.json({
+        success: true,
+        message: "Task deleted successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
         success: false,
-        message: "Task not found",
+        message: "Failed to delete task",
+        error: error.message,
       });
     }
-
-    // Only task owner can delete
-    if (task.postedBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to delete this task",
-      });
-    }
-
-    await db.deleteTask(req.params.id);
-
-    res.json({
-      success: true,
-      message: "Task deleted successfully",
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete task",
-      error: error.message,
-    });
   }
-});
+);
 
 // Get task bids
 router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
@@ -213,10 +226,8 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
         success: false,
         message: "Task not found",
       });
-    }
-
-    // Only task owner can view bids
-    if (task.postedBy.toString() !== req.user._id.toString()) {
+    } // Only task owner can view bids
+    if (task.postedBy.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view bids for this task",
@@ -234,7 +245,8 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
       success: false,
       message: "Failed to fetch bids",
       error: error.message,
-    });  }
+    });
+  }
 });
 
 export default router;

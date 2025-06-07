@@ -18,9 +18,8 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
                 success: false,
                 message: "Task not found",
             });
-        }
-        // Only task poster can create payment
-        if (task.postedBy.toString() !== req.user._id.toString()) {
+        } // Only task poster can create payment
+        if (task.postedBy.toString() !== req.userId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to create payment for this task",
@@ -38,7 +37,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
             .substr(2, 9)}`;
         const payment = new index_1.Payment({
             taskId,
-            payerId: req.user._id,
+            payerId: req.userId,
             payeeId: task.assignedTo,
             amount,
             status: "completed", // Simulating successful payment
@@ -70,13 +69,13 @@ router.get("/history", auth_1.authenticateToken, async (req, res) => {
         const { type = "all", page = 1, limit = 20 } = req.query;
         let query = {};
         if (type === "sent") {
-            query.payerId = req.user._id;
+            query.payerId = req.userId;
         }
         else if (type === "received") {
-            query.payeeId = req.user._id;
+            query.payeeId = req.userId;
         }
         else {
-            query.$or = [{ payerId: req.user._id }, { payeeId: req.user._id }];
+            query.$or = [{ payerId: req.userId }, { payeeId: req.userId }];
         }
         const payments = await index_1.Payment.find(query)
             .populate("taskId", "title description")

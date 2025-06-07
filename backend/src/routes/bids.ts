@@ -2,79 +2,80 @@ import express from "express";
 import { Bid } from "../models/Bid";
 import { Task } from "../models/Task";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
+import { requireTasker } from "../middleware/roleAuth";
 
 const router = express.Router();
 
 // Create a bid
-router.post("/", authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const { taskId, amount, message, estimatedDuration } = req.body;
+router.post(
+  "/",
+  authenticateToken,
+  requireTasker,
+  async (req: AuthRequest, res) => {
+    try {
+      const { taskId, amount, message, estimatedDuration } = req.body;
 
-    // Check if task exists and is open
-    const task = await Task.findById(taskId);
-    if (!task) {
-      return res.status(404).json({
+      // Check if task exists and is open
+      const task = await Task.findById(taskId);
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      }
+
+      if (task.status !== "open") {
+        return res.status(400).json({
+          success: false,
+          message: "Task is no longer accepting bids",
+        });
+      } // Can't bid on own task
+      if (task.postedBy.toString() === req.userId.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot bid on your own task",
+        });
+      } // Check if user already has a pending bid
+      const existingBid = await Bid.findOne({
+        taskId,
+        bidderId: req.userId,
+        status: "pending",
+      });
+
+      if (existingBid) {
+        return res.status(400).json({
+          success: false,
+          message: "You already have a pending bid for this task",
+        });
+      }
+      const bid = new Bid({
+        taskId,
+        bidderId: req.userId,
+        amount,
+        message,
+        estimatedDuration,
+      });
+
+      await bid.save();
+      await bid.populate(
+        "bidderId",
+        "firstName lastName rating reviewCount avatar bio skills"
+      );
+
+      res.status(201).json({
+        success: true,
+        data: bid,
+        message: "Bid submitted successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
         success: false,
-        message: "Task not found",
+        message: "Failed to create bid",
+        error: error.message,
       });
     }
-
-    if (task.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        message: "Task is no longer accepting bids",
-      });
-    }
-
-    // Can't bid on own task
-    if (task.postedBy.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot bid on your own task",
-      });
-    }
-
-    // Check if user already has a pending bid
-    const existingBid = await Bid.findOne({
-      taskId,
-      bidderId: req.user._id,
-      status: "pending",
-    });
-
-    if (existingBid) {
-      return res.status(400).json({
-        success: false,
-        message: "You already have a pending bid for this task",
-      });
-    }
-
-    const bid = new Bid({
-      taskId,
-      bidderId: req.user._id,
-      amount,
-      message,
-      estimatedDuration,
-    });
-
-    await bid.save();
-    await bid.populate(
-      "bidderId",
-      "firstName lastName rating reviewCount avatar bio skills"
-    );
-
-    res.status(201).json({
-      success: true,
-      data: bid,
-      message: "Bid submitted successfully",
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to create bid",
-      error: error.message,
-    });
   }
-});
+);
 
 // Accept a bid
 router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
@@ -88,10 +89,8 @@ router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
       });
     }
 
-    const task = bid.taskId as any;
-
-    // Only task owner can accept bids
-    if (task.postedBy.toString() !== req.user._id.toString()) {
+    const task = bid.taskId as any; // Only task owner can accept bids
+    if (task.postedBy.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to accept this bid",
@@ -143,7 +142,7 @@ router.get("/my-bids", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
 
-    const query: any = { bidderId: req.user._id };
+    const query: any = { bidderId: req.userId };
     if (status) {
       query.status = status;
     }

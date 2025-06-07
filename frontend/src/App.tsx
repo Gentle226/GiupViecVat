@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import DevTools from "./pages/DevTools";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
 function App() {
   console.log("App component is rendering");
@@ -32,13 +33,13 @@ function App() {
                   <Route path="/register" element={<Register />} />
                   <Route path="/tasks" element={<TaskList />} />
                   <Route path="/tasks/:id" element={<TaskDetail />} />
-                  <Route path="/dev-tools" element={<DevTools />} />
+                  <Route path="/dev-tools" element={<DevTools />} />{" "}
                   <Route
                     path="/post-task"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={["client"]}>
                         <CreateTask />
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route

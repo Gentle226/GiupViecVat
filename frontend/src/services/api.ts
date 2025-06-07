@@ -48,6 +48,19 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
+
+    // Handle role-based access errors (403)
+    if (error.response?.status === 403) {
+      const errorMessage = error.response?.data?.message;
+      if (
+        errorMessage?.includes("Client") ||
+        errorMessage?.includes("Tasker")
+      ) {
+        // Let the calling component handle role-based errors
+        error.isRoleError = true;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
