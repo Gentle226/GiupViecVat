@@ -153,14 +153,19 @@ router.put(
           success: false,
           message: "Task not found",
         });
-      } // Only task owner can update
-      if (task.postedBy.toString() !== req.userId.toString()) {
+      }
+
+      // Only task owner can update
+      // Handle both populated and non-populated postedBy field
+      const postedById = (task.postedBy as any)?._id || task.postedBy;
+      const isTaskOwner = postedById.toString() === req.userId.toString();
+
+      if (!isTaskOwner) {
         return res.status(403).json({
           success: false,
           message: "Not authorized to update this task",
         });
       }
-
       const updatedTask = await db.updateTask(req.params.id, req.body);
 
       res.json({
@@ -169,6 +174,7 @@ router.put(
         message: "Task updated successfully",
       });
     } catch (error: any) {
+      console.error("Update task error:", error);
       res.status(500).json({
         success: false,
         message: "Failed to update task",
@@ -192,8 +198,12 @@ router.delete(
           success: false,
           message: "Task not found",
         });
-      } // Only task owner can delete
-      if (task.postedBy.toString() !== req.userId.toString()) {
+      }
+
+      // Only task owner can delete
+      // Handle both populated and non-populated postedBy field
+      const postedById = (task.postedBy as any)?._id || task.postedBy;
+      if (postedById.toString() !== req.userId.toString()) {
         return res.status(403).json({
           success: false,
           message: "Not authorized to delete this task",
@@ -226,8 +236,12 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
         success: false,
         message: "Task not found",
       });
-    } // Only task owner can view bids
-    if (task.postedBy.toString() !== req.userId.toString()) {
+    }
+
+    // Only task owner can view bids
+    // Handle both populated and non-populated postedBy field
+    const postedById = (task.postedBy as any)?._id || task.postedBy;
+    if (postedById.toString() !== req.userId.toString()) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view bids for this task",
@@ -256,38 +270,20 @@ router.patch(
   requireClient,
   async (req: AuthRequest, res) => {
     try {
-      console.log("=== COMPLETE TASK DEBUG ===");
-      console.log("User ID:", req.userId);
-      console.log("Task ID:", req.params.id);
-
       const task = await db.findTaskById(req.params.id);
 
       if (!task) {
-        console.log("Task not found");
         return res.status(404).json({
           success: false,
           message: "Task not found",
         });
       }
-      console.log("Task found:", {
-        taskId: task._id,
-        postedBy: task.postedBy,
-        postedByType: typeof task.postedBy,
-        postedById: (task.postedBy as any)?._id || task.postedBy,
-        assignedTo: task.assignedTo,
-        status: task.status,
-      }); // Only task owner (client) can complete tasks
+
+      // Only task owner (client) can complete tasks
       const postedById = (task.postedBy as any)?._id || task.postedBy;
       const isTaskOwner = postedById.toString() === req.userId.toString();
 
-      console.log("Authorization check:", {
-        isTaskOwner,
-        postedById: postedById.toString(),
-        currentUserId: req.userId.toString(),
-      });
-
       if (!isTaskOwner) {
-        console.log("Authorization failed");
         return res.status(403).json({
           success: false,
           message: "Only the task owner can complete this task",

@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import { tasksAPI, bidsAPI, messagesAPI } from "../services/api";
 import type { Task, TaskBid } from "../../../shared/types";
-import { TaskStatus } from "../../../shared/types";
+import { TaskStatus, TaskCategory } from "../../../shared/types";
 import {
   MapPin,
   Calendar,
@@ -15,6 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  Edit,
+  Trash2,
 } from "lucide-react";
 
 const formatDate = (date: Date | undefined): string => {
@@ -26,7 +28,7 @@ const TaskDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-  const { cancelTask } = useTask();
+  const { cancelTask, updateTask, deleteTask } = useTask();
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<TaskBid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,18 @@ const TaskDetail: React.FC = () => {
   const [showCompleteConfirmation, setShowCompleteConfirmation] =
     useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    suggestedPrice: "",
+    location: "",
+    dueDate: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [availableTasks, setAvailableTasks] = useState<
     Array<{ _id: string; title: string }>
   >([]);
@@ -259,6 +273,112 @@ const TaskDetail: React.FC = () => {
       setCancellingTask(false);
     }
   };
+  const handleEditTask = () => {
+    if (!task) return;
+
+    // Populate edit form with current task data
+    setEditFormData({
+      title: task.title,
+      description: task.description,
+      category: task.category,
+      suggestedPrice: task.suggestedPrice.toString(),
+      location:
+        typeof task.location === "string"
+          ? task.location
+          : task.location.address,
+      dueDate: task.dueDate
+        ? new Date(task.dueDate).toISOString().split("T")[0]
+        : "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditFormChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!task) return;
+
+    try {
+      setEditLoading(true);
+      const updatedTaskData = {
+        title: editFormData.title.trim(),
+        description: editFormData.description.trim(),
+        category: editFormData.category as TaskCategory,
+        suggestedPrice: parseFloat(editFormData.suggestedPrice),
+        location: {
+          address: editFormData.location.trim(),
+          coordinates: [0, 0] as [number, number],
+        },
+        dueDate: editFormData.dueDate
+          ? new Date(editFormData.dueDate)
+          : undefined,
+      };
+
+      // Call the API directly to ensure we get the updated task data
+      const response = await tasksAPI.updateTask(task._id, updatedTaskData);
+
+      if (response.success && response.data) {
+        // Update local state with the returned data
+        setTask(response.data);
+
+        // Also update TaskContext for consistency
+        updateTask(task._id, updatedTaskData);
+
+        setShowEditModal(false);
+        alert("Task updated successfully!");
+      } else {
+        throw new Error(response.message || "Failed to update task");
+      }
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Error updating task:", err);
+
+      if (error.response?.status === 403) {
+        alert("Only task owners can edit their tasks.");
+      } else {
+        alert("Failed to update task. Please try again.");
+      }
+    } finally {
+      setEditLoading(false);
+    }
+  };
+  const handleDeleteTask = async () => {
+    if (!task) return;
+
+    try {
+      setDeleteLoading(true);
+      await deleteTask(task._id);
+      alert("Task deleted successfully!");
+      navigate("/tasks");
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Error deleting task:", err);
+
+      if (error.response?.status === 403) {
+        alert("Only task owners can delete their tasks.");
+      } else {
+        alert("Failed to delete task. Please try again.");
+      }
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirmation(false);
+    }
+  };
+
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.OPEN:
@@ -388,6 +508,33 @@ const TaskDetail: React.FC = () => {
               </span>
             </div>{" "}
             <div className="flex items-center gap-3">
+              {/* Edit Task Button - for task owners on editable tasks */}
+              {isTaskOwner &&
+                (task.status === TaskStatus.OPEN ||
+                  task.status === TaskStatus.ASSIGNED) && (
+                  <button
+                    onClick={handleEditTask}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Task
+                  </button>
+                )}
+
+              {/* Delete Task Button - for task owners on deletable tasks */}
+              {isTaskOwner &&
+                (task.status === TaskStatus.COMPLETED ||
+                  task.status === TaskStatus.CANCELLED) && (
+                  <button
+                    onClick={() => setShowDeleteConfirmation(true)}
+                    disabled={deleteLoading}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {deleteLoading ? "Deleting..." : "Delete Task"}
+                  </button>
+                )}
+
               {/* Complete Task Button - for assigned/in_progress tasks (clients only) */}
               {isTaskOwner &&
                 (task.status === TaskStatus.ASSIGNED ||
@@ -632,8 +779,210 @@ const TaskDetail: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
+        </div>{" "}
       </div>
+
+      {/* Edit Task Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {/* Title */}
+              <div>
+                <label
+                  htmlFor="edit-title"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  id="edit-title"
+                  name="title"
+                  value={editFormData.title}
+                  onChange={handleEditFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label
+                  htmlFor="edit-description"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Description *
+                </label>
+                <textarea
+                  id="edit-description"
+                  name="description"
+                  value={editFormData.description}
+                  onChange={handleEditFormChange}
+                  rows={4}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Category and Price */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="edit-category"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Category *
+                  </label>
+                  <select
+                    id="edit-category"
+                    name="category"
+                    value={editFormData.category}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {Object.values(TaskCategory).map((category) => (
+                      <option key={category} value={category}>
+                        {category.charAt(0).toUpperCase() +
+                          category.slice(1).replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-price"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Budget ($) *
+                  </label>
+                  <input
+                    type="number"
+                    id="edit-price"
+                    name="suggestedPrice"
+                    value={editFormData.suggestedPrice}
+                    onChange={handleEditFormChange}
+                    min="1"
+                    step="0.01"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Location and Due Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="edit-location"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-location"
+                    name="location"
+                    value={editFormData.location}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Downtown Seattle, WA"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="edit-dueDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    id="edit-dueDate"
+                    name="dueDate"
+                    value={editFormData.dueDate}
+                    onChange={handleEditFormChange}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 justify-end pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={editLoading}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+                >
+                  {editLoading ? "Updating..." : "Update Task"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Task Confirmation Dialog */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <Trash2 className="h-8 w-8 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Delete Task
+              </h3>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to permanently delete this task? This action
+              cannot be undone. All associated bids and messages will also be
+              removed.
+            </p>
+
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTask}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleteLoading ? "Deleting..." : "Delete Task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Complete Task Confirmation Dialog */}
       {showCompleteConfirmation && (
@@ -705,6 +1054,186 @@ const TaskDetail: React.FC = () => {
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 {cancellingTask ? "Cancelling..." : "Yes, cancel task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
+            </div>
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="grid grid-cols-1 gap-4 mb-4">
+                <div>
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={editFormData.title}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter task title"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={editFormData.description}
+                    onChange={handleEditFormChange}
+                    rows={3}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter task description"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    id="category"
+                    name="category"
+                    value={editFormData.category}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter task category"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="suggestedPrice"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Suggested Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    id="suggestedPrice"
+                    name="suggestedPrice"
+                    value={editFormData.suggestedPrice}
+                    onChange={handleEditFormChange}
+                    min="0"
+                    step="0.01"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter suggested price"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="location"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={editFormData.location}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter task location"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="dueDate"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    id="dueDate"
+                    name="dueDate"
+                    value={editFormData.dueDate}
+                    onChange={handleEditFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200 flex items-center"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Task Confirmation Dialog */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <Trash2 className="h-8 w-8 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Delete Task
+              </h3>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this task? This action cannot be
+              undone.
+            </p>
+
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirmation(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <X className="h-4 w-4 mr-2" />
+                No, keep it
+              </button>
+              <button
+                onClick={handleDeleteTask}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {deleteLoading ? "Deleting..." : "Yes, delete task"}
               </button>
             </div>
           </div>

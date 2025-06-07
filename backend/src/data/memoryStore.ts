@@ -163,9 +163,12 @@ export const updateTask = async (
   updates: Partial<Task>
 ): Promise<Task | null> => {
   const taskIndex = tasks.findIndex((task) => task._id === id);
-  if (taskIndex === -1) return null;
+  if (taskIndex === -1) {
+    return null;
+  }
 
   tasks[taskIndex] = { ...tasks[taskIndex], ...updates };
+
   return tasks[taskIndex];
 };
 
