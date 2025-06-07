@@ -10,12 +10,25 @@ interface MessageNotification {
   senderName?: string;
 }
 
+interface BidNotificationData {
+  taskId: string;
+  bidId: string;
+  taskTitle: string;
+  bidderName: string;
+  amount: number;
+  message: string;
+}
+
 interface NotificationContextType {
   unreadCount: number;
   newMessageNotifications: { [conversationId: string]: number };
+  bidNotifications: BidNotificationData[];
   markConversationAsRead: (conversationId: string) => void;
   markAllAsRead: () => void;
   incrementUnreadCount: () => void;
+  addBidNotification: (notification: BidNotificationData) => void;
+  removeBidNotification: (bidId: string) => void;
+  clearAllBidNotifications: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -41,16 +54,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [newMessageNotifications, setNewMessageNotifications] = useState<{
     [conversationId: string]: number;
   }>({});
+  const [bidNotifications, setBidNotifications] = useState<
+    BidNotificationData[]
+  >([]);
 
   // Fetch initial unread count
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchUnreadCount();
     }
-  }, [isAuthenticated, user]);
-  // Listen for new messages via socket
+  }, [isAuthenticated, user]); // Listen for new messages via socket
   useEffect(() => {
     if (socket) {
+      console.log("=== SOCKET SETUP DEBUG ===");
+      console.log("Socket instance available:", !!socket);
+      console.log("User authenticated:", !!user);
+      console.log("User ID:", user?._id);
+
       const handleNewMessage = (message: Message) => {
         // Don't increment counts here - let message_notification handle that
         // This event is just for real-time message display in conversations
@@ -68,17 +88,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           }));
         }
       };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handleBidNotification = (notification: BidNotificationData) => {
+        console.log("=== FRONTEND BID NOTIFICATION DEBUG ===");
+        console.log("New bid notification received:", notification);
+        console.log("Current user ID:", user?._id);
+        setBidNotifications((prev) => [notification, ...prev]);
+      }; // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("newMessage", handleNewMessage);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("message_notification", handleMessageNotification);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socket as any).on("new_bid_notification", handleBidNotification);
 
       return () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (socket as any).off("newMessage", handleNewMessage);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (socket as any).off("message_notification", handleMessageNotification);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (socket as any).off("new_bid_notification", handleBidNotification);
       };
     }
   }, [socket, user?._id]);
@@ -109,19 +137,35 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setUnreadCount(0);
     setNewMessageNotifications({});
   };
-
   const incrementUnreadCount = () => {
     setUnreadCount((prev) => prev + 1);
   };
 
+  const addBidNotification = (notification: BidNotificationData) => {
+    setBidNotifications((prev) => [notification, ...prev]);
+  };
+
+  const removeBidNotification = (bidId: string) => {
+    setBidNotifications((prev) =>
+      prev.filter((notif) => notif.bidId !== bidId)
+    );
+  };
+
+  const clearAllBidNotifications = () => {
+    setBidNotifications([]);
+  };
   return (
     <NotificationContext.Provider
       value={{
         unreadCount,
         newMessageNotifications,
+        bidNotifications,
         markConversationAsRead,
         markAllAsRead,
         incrementUnreadCount,
+        addBidNotification,
+        removeBidNotification,
+        clearAllBidNotifications,
       }}
     >
       {children}

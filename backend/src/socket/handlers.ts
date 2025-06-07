@@ -5,14 +5,21 @@ import { authenticateSocket } from "../middleware/auth";
 export const setupSocketHandlers = (io: Server) => {
   // Authentication middleware for socket connections
   io.use(authenticateSocket);
-
   io.on("connection", (socket: Socket) => {
-    console.log(`User connected: ${(socket as any).user?.userId}`);
+    const userId = (socket as any).user?.userId;
+    console.log(`=== SOCKET CONNECTION DEBUG ===`);
+    console.log(`User connected: ${userId}`);
 
     // Join user to their own room for private messages
-    const userId = (socket as any).user?.userId;
     if (userId) {
-      socket.join(`user_${userId}`);
+      const room = `user_${userId}`;
+      socket.join(room);
+      console.log(`User ${userId} joined room: ${room}`);
+
+      // Log all rooms this socket is in
+      console.log(`Socket rooms for user ${userId}:`, Array.from(socket.rooms));
+    } else {
+      console.error("No userId found in socket connection!");
     }
 
     // Handle joining conversation rooms

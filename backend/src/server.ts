@@ -14,6 +14,7 @@ import paymentRoutes from "./routes/payments";
 import reviewRoutes from "./routes/reviews";
 import { authenticateSocket } from "./middleware/auth";
 import { setupSocketHandlers } from "./socket/handlers";
+import { setSocketInstance } from "./services/socketService";
 import { db } from "./data/adapter";
 
 dotenv.config();
@@ -68,6 +69,9 @@ app.get("/api/health", (req, res) => {
 
 // Socket.io middleware
 io.use(authenticateSocket);
+
+// Set socket instance for use in other parts of the app
+setSocketInstance(io);
 
 // Socket.io handlers
 setupSocketHandlers(io);

@@ -1,9 +1,11 @@
 import express from "express";
 import { Bid } from "../models/Bid";
 import { Task } from "../models/Task";
+import { User } from "../models/User";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { requireTasker } from "../middleware/roleAuth";
 import { db } from "../data/adapter";
+import { emitToUser } from "../services/socketService";
 
 const router = express.Router();
 
@@ -58,8 +60,39 @@ router.post(
         message,
         estimatedDuration,
       };
-
       const bid = await db.createBid(bidData);
+
+      // Get bidder information for notification
+      const bidder = await db.findUserById(req.userId);
+      const bidderName = bidder
+        ? `${bidder.firstName} ${bidder.lastName}`
+        : "Unknown User";
+      console.log("=== BID NOTIFICATION DEBUG ===");
+      console.log("Task owner ID:", task.postedBy);
+      console.log("Bidder ID:", req.userId);
+      console.log("Bidder name:", bidderName);
+      console.log("Task title:", task.title);
+      console.log("Bid amount:", amount);
+
+      // Extract the task owner ID properly
+      const taskOwnerId =
+        typeof task.postedBy === "string"
+          ? task.postedBy
+          : task.postedBy._id?.toString() || task.postedBy.toString();
+
+      console.log("Extracted task owner ID:", taskOwnerId);
+
+      // Emit socket notification to task owner
+      emitToUser(taskOwnerId, "new_bid_notification", {
+        taskId,
+        bidId: bid._id,
+        taskTitle: task.title,
+        bidderName,
+        amount,
+        message,
+      });
+
+      console.log("📤 Socket notification emitted to user:", taskOwnerId);
 
       res.status(201).json({
         success: true,

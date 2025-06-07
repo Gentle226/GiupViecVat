@@ -65,6 +65,18 @@ export interface Message {
   readBy: string[]; // User IDs who have read the message
 }
 
+export interface BidNotification {
+  _id: string;
+  taskId: string;
+  bidId: string;
+  taskTitle: string;
+  bidderName: string;
+  amount: number;
+  message: string;
+  createdAt: Date;
+  isRead: boolean;
+}
+
 export interface Conversation {
   _id: string;
   participants: string[]; // User IDs

@@ -2,15 +2,8 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
-import {
-  Home,
-  Search,
-  Plus,
-  MessageCircle,
-  User,
-  LogOut,
-  Bell,
-} from "lucide-react";
+import NotificationDropdown from "./NotificationDropdown";
+import { Home, Search, Plus, MessageCircle, User, LogOut } from "lucide-react";
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -84,9 +77,7 @@ const Navbar: React.FC = () => {
                     </span>
                   )}
                 </Link>
-                <button className="p-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors">
-                  <Bell className="w-5 h-5" />
-                </button>
+                <NotificationDropdown />
               </>
             )}
           </div>
