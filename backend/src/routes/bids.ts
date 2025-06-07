@@ -77,6 +77,41 @@ router.post(
   }
 );
 
+// Get bids for a specific task
+router.get("/task/:taskId", async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    // Check if task exists
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
+    }
+
+    // Get all bids for this task
+    const bids = await Bid.find({ taskId })
+      .populate(
+        "bidderId",
+        "firstName lastName rating reviewCount avatar bio skills"
+      )
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: bids,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch task bids",
+      error: error.message,
+    });
+  }
+});
+
 // Accept a bid
 router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
   try {

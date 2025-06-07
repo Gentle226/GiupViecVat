@@ -34,10 +34,9 @@ const TaskDetail: React.FC = () => {
   const [availableTasks, setAvailableTasks] = useState<
     Array<{ _id: string; title: string }>
   >([]);
-
-  // Basic task ID format validation (should be alphanumeric string)
+  // MongoDB ObjectId format validation (24 character hex string)
   const isValidTaskIdFormat = (taskId: string): boolean => {
-    return /^[a-zA-Z0-9]+$/.test(taskId) && taskId.length >= 5;
+    return /^[a-f\d]{24}$/i.test(taskId);
   };
 
   useEffect(() => {
