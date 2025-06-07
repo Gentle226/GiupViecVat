@@ -166,9 +166,7 @@ router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
     // Update task
     task.status = "assigned";
     task.assignedTo = bid.bidderId;
-    await task.save();
-
-    // Reject all other pending bids for this task
+    await task.save(); // Reject all other pending bids for this task
     await Bid.updateMany(
       {
         taskId: task._id,
@@ -177,6 +175,30 @@ router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
       },
       { status: "rejected" }
     );
+
+    // Send notification to the tasker whose bid was accepted
+    try {
+      // Get the client/task owner information
+      const client = await db.findUserById(task.postedBy.toString());
+      const clientName = client
+        ? `${client.firstName} ${client.lastName}`
+        : "Client";
+
+      // Emit socket notification to the tasker
+      emitToUser(bid.bidderId.toString(), "bid_accepted_notification", {
+        taskId: task._id,
+        bidId: bid._id,
+        taskTitle: task.title,
+        amount: bid.amount,
+        clientName,
+      });
+    } catch (notificationError) {
+      console.error(
+        "Error sending bid accepted notification:",
+        notificationError
+      );
+      // Don't fail the bid acceptance if notification fails
+    }
 
     res.json({
       success: true,

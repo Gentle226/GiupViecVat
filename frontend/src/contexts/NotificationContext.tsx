@@ -31,13 +31,25 @@ interface TaskCancellationNotificationData {
   timestamp?: string;
 }
 
+interface BidAcceptedNotificationData {
+  taskId: string;
+  bidId: string;
+  taskTitle: string;
+  amount: number;
+  clientName: string;
+  read?: boolean;
+  timestamp?: string;
+}
+
 interface NotificationContextType {
   unreadCount: number;
   newMessageNotifications: { [conversationId: string]: number };
   bidNotifications: BidNotificationData[];
   taskCancellationNotifications: TaskCancellationNotificationData[];
+  bidAcceptedNotifications: BidAcceptedNotificationData[];
   unreadBidCount: number; // Add unread bid count
   unreadTaskCancellationCount: number;
+  unreadBidAcceptedCount: number;
   markConversationAsRead: (conversationId: string) => void;
   markAllAsRead: () => void;
   incrementUnreadCount: () => void;
@@ -53,6 +65,13 @@ interface NotificationContextType {
   clearAllTaskCancellationNotifications: () => void;
   markTaskCancellationAsRead: (taskId: string) => void;
   markAllTaskCancellationsAsRead: () => void;
+  addBidAcceptedNotification: (
+    notification: BidAcceptedNotificationData
+  ) => void;
+  removeBidAcceptedNotification: (bidId: string) => void;
+  clearAllBidAcceptedNotifications: () => void;
+  markBidAcceptedAsRead: (bidId: string) => void;
+  markAllBidAcceptedAsRead: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -83,6 +102,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   >([]);
   const [taskCancellationNotifications, setTaskCancellationNotifications] =
     useState<TaskCancellationNotificationData[]>([]);
+  const [bidAcceptedNotifications, setBidAcceptedNotifications] = useState<
+    BidAcceptedNotificationData[]
+  >([]);
 
   // Calculate unread bid count
   const unreadBidCount = bidNotifications.filter((notif) => !notif.read).length;
@@ -92,6 +114,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     (notif) => !notif.read
   ).length;
 
+  // Calculate unread bid accepted count
+  const unreadBidAcceptedCount = bidAcceptedNotifications.filter(
+    (notif) => !notif.read
+  ).length;
   // Load persisted notifications on component mount
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -107,9 +133,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem(`bid_notifications_${user._id}`);
         }
       }
+
+      // Load bid accepted notifications
+      const savedBidAcceptedNotifications = localStorage.getItem(
+        `bid_accepted_notifications_${user._id}`
+      );
+      if (savedBidAcceptedNotifications) {
+        try {
+          const parsed = JSON.parse(savedBidAcceptedNotifications);
+          setBidAcceptedNotifications(parsed);
+        } catch (error) {
+          console.error(
+            "Error parsing saved bid accepted notifications:",
+            error
+          );
+          localStorage.removeItem(`bid_accepted_notifications_${user._id}`);
+        }
+      }
     }
-  }, [isAuthenticated, user]);
-  // Save notifications to localStorage whenever they change
+  }, [isAuthenticated, user]); // Save notifications to localStorage whenever they change
   useEffect(() => {
     if (isAuthenticated && user && bidNotifications.length >= 0) {
       localStorage.setItem(
@@ -118,6 +160,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
   }, [bidNotifications, isAuthenticated, user]);
+
+  // Save bid accepted notifications to localStorage whenever they change
+  useEffect(() => {
+    if (isAuthenticated && user && bidAcceptedNotifications.length >= 0) {
+      localStorage.setItem(
+        `bid_accepted_notifications_${user._id}`,
+        JSON.stringify(bidAcceptedNotifications)
+      );
+    }
+  }, [bidAcceptedNotifications, isAuthenticated, user]);
 
   // Fetch initial unread count
   useEffect(() => {
@@ -154,11 +206,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           return updated;
         });
       };
-
       const handleTaskCancellationNotification = (
         notification: TaskCancellationNotificationData
       ) => {
         setTaskCancellationNotifications((prev) => {
+          const enrichedNotification = {
+            ...notification,
+            read: false,
+            timestamp: new Date().toISOString(),
+          };
+          const updated = [enrichedNotification, ...prev];
+          return updated;
+        });
+      };
+
+      const handleBidAcceptedNotification = (
+        notification: BidAcceptedNotificationData
+      ) => {
+        setBidAcceptedNotifications((prev) => {
           const enrichedNotification = {
             ...notification,
             read: false,
@@ -178,7 +243,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         "task_cancelled_notification",
         handleTaskCancellationNotification
       );
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socket as any).on(
+        "bid_accepted_notification",
+        handleBidAcceptedNotification
+      );
       return () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (socket as any).off("newMessage", handleNewMessage);
@@ -190,6 +259,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         (socket as any).off(
           "task_cancelled_notification",
           handleTaskCancellationNotification
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (socket as any).off(
+          "bid_accepted_notification",
+          handleBidAcceptedNotification
         );
       };
     }
@@ -275,9 +349,39 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       )
     );
   };
-
   const markAllTaskCancellationsAsRead = () => {
     setTaskCancellationNotifications((prev) =>
+      prev.map((notif) => ({ ...notif, read: true }))
+    );
+  };
+
+  // Bid accepted notification methods
+  const addBidAcceptedNotification = (
+    notification: BidAcceptedNotificationData
+  ) => {
+    setBidAcceptedNotifications((prev) => [notification, ...prev]);
+  };
+
+  const removeBidAcceptedNotification = (bidId: string) => {
+    setBidAcceptedNotifications((prev) =>
+      prev.filter((notif) => notif.bidId !== bidId)
+    );
+  };
+
+  const clearAllBidAcceptedNotifications = () => {
+    setBidAcceptedNotifications([]);
+  };
+
+  const markBidAcceptedAsRead = (bidId: string) => {
+    setBidAcceptedNotifications((prev) =>
+      prev.map((notif) =>
+        notif.bidId === bidId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const markAllBidAcceptedAsRead = () => {
+    setBidAcceptedNotifications((prev) =>
       prev.map((notif) => ({ ...notif, read: true }))
     );
   };
@@ -288,8 +392,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         newMessageNotifications,
         bidNotifications,
         taskCancellationNotifications,
+        bidAcceptedNotifications,
         unreadBidCount,
         unreadTaskCancellationCount,
+        unreadBidAcceptedCount,
         markConversationAsRead,
         markAllAsRead,
         incrementUnreadCount,
@@ -303,6 +409,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         clearAllTaskCancellationNotifications,
         markTaskCancellationAsRead,
         markAllTaskCancellationsAsRead,
+        addBidAcceptedNotification,
+        removeBidAcceptedNotification,
+        clearAllBidAcceptedNotifications,
+        markBidAcceptedAsRead,
+        markAllBidAcceptedAsRead,
       }}
     >
       {children}

@@ -9,8 +9,10 @@ const NotificationDropdown: React.FC = () => {
   const {
     bidNotifications,
     taskCancellationNotifications,
+    bidAcceptedNotifications,
     unreadBidCount,
     unreadTaskCancellationCount,
+    unreadBidAcceptedCount,
     removeBidNotification,
     clearAllBidNotifications,
     markBidAsRead,
@@ -19,6 +21,10 @@ const NotificationDropdown: React.FC = () => {
     clearAllTaskCancellationNotifications,
     markTaskCancellationAsRead,
     markAllTaskCancellationsAsRead,
+    removeBidAcceptedNotification,
+    clearAllBidAcceptedNotifications,
+    markBidAcceptedAsRead,
+    markAllBidAcceptedAsRead,
   } = useNotifications();
   const navigate = useNavigate();
 
@@ -51,12 +57,15 @@ const NotificationDropdown: React.FC = () => {
   const handleClearAll = () => {
     clearAllBidNotifications();
     clearAllTaskCancellationNotifications();
+    clearAllBidAcceptedNotifications();
   };
 
   const totalNotifications =
-    bidNotifications.length + taskCancellationNotifications.length;
-  const totalUnreadCount = unreadBidCount + unreadTaskCancellationCount;
-
+    bidNotifications.length +
+    taskCancellationNotifications.length +
+    bidAcceptedNotifications.length;
+  const totalUnreadCount =
+    unreadBidCount + unreadTaskCancellationCount + unreadBidAcceptedCount;
   const handleTaskCancellationClick = (taskId: string) => {
     navigate(`/tasks/${taskId}`);
     markTaskCancellationAsRead(taskId);
@@ -69,6 +78,20 @@ const NotificationDropdown: React.FC = () => {
   ) => {
     e.stopPropagation();
     removeTaskCancellationNotification(taskId);
+  };
+
+  const handleBidAcceptedClick = (taskId: string, bidId: string) => {
+    navigate(`/tasks/${taskId}`);
+    markBidAcceptedAsRead(bidId);
+    setIsOpen(false);
+  };
+
+  const handleRemoveBidAcceptedNotification = (
+    e: React.MouseEvent,
+    bidId: string
+  ) => {
+    e.stopPropagation();
+    removeBidAcceptedNotification(bidId);
   };
 
   return (
@@ -95,11 +118,13 @@ const NotificationDropdown: React.FC = () => {
                 {totalUnreadCount > 0 && `(${totalUnreadCount} unread)`}
               </h3>
               <div className="flex gap-2">
+                {" "}
                 {totalUnreadCount > 0 && (
                   <button
                     onClick={() => {
                       markAllBidsAsRead();
                       markAllTaskCancellationsAsRead();
+                      markAllBidAcceptedAsRead();
                     }}
                     className="text-sm text-green-600 hover:text-green-700"
                   >
@@ -223,10 +248,75 @@ const NotificationDropdown: React.FC = () => {
                             "{notification.message}"
                           </p>
                         )}
-                      </div>
+                      </div>{" "}
                       <button
                         onClick={(e) =>
                           handleRemoveNotification(e, notification.bidId)
+                        }
+                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Bid Accepted Notifications */}
+                {bidAcceptedNotifications.map((notification) => (
+                  <div
+                    key={`accepted-${notification.bidId}`}
+                    onClick={() =>
+                      handleBidAcceptedClick(
+                        notification.taskId,
+                        notification.bidId
+                      )
+                    }
+                    className={`p-4 border-b hover:bg-gray-50 cursor-pointer relative group ${
+                      notification.read ? "bg-gray-50 opacity-75" : "bg-white"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p
+                            className={`text-sm font-medium ${
+                              notification.read
+                                ? "text-gray-600"
+                                : "text-green-900"
+                            }`}
+                          >
+                            🎉 Your bid was accepted!
+                          </p>
+                          {!notification.read && (
+                            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          )}
+                        </div>
+                        <p
+                          className={`text-sm mt-1 ${
+                            notification.read
+                              ? "text-gray-500"
+                              : "text-green-700"
+                          }`}
+                        >
+                          Task: "{notification.taskTitle}"
+                        </p>
+                        <p
+                          className={`text-sm mt-1 ${
+                            notification.read
+                              ? "text-gray-500"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {notification.clientName} accepted your $
+                          {notification.amount} bid
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) =>
+                          handleRemoveBidAcceptedNotification(
+                            e,
+                            notification.bidId
+                          )
                         }
                         className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 transition-opacity"
                       >
