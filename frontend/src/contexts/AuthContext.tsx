@@ -117,9 +117,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error: unknown) {
       console.log("Login error:", error);
+      // Extract error message from axios error response
+      let errorMessage = "Login failed";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       dispatch({
         type: "AUTH_FAILURE",
-        payload: error instanceof Error ? error.message : "Login failed",
+        payload: errorMessage,
       });
     }
   }, []);
@@ -171,7 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         clearError,
       }}
     >
-      {children}{" "}
+      {children}
     </AuthContext.Provider>
   );
 };
