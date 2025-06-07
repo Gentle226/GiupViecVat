@@ -151,7 +151,7 @@ export const bidsAPI = {
   },
 
   acceptBid: async (bidId: string): Promise<ApiResponse<TaskBid>> => {
-    const response = await api.patch(`/api/bids/${bidId}/accept`);
+    const response = await api.put(`/api/bids/${bidId}/accept`);
     return response.data;
   },
 

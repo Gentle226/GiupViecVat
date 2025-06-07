@@ -249,4 +249,80 @@ router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+// Complete task
+router.patch(
+  "/:id/complete",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      console.log("=== COMPLETE TASK DEBUG ===");
+      console.log("User ID:", req.userId);
+      console.log("Task ID:", req.params.id);
+
+      const task = await db.findTaskById(req.params.id);
+
+      if (!task) {
+        console.log("Task not found");
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      }
+      console.log("Task found:", {
+        taskId: task._id,
+        postedBy: task.postedBy,
+        postedByType: typeof task.postedBy,
+        postedById: (task.postedBy as any)?._id || task.postedBy,
+        assignedTo: task.assignedTo,
+        status: task.status,
+      }); // Only task owner (client) or assigned tasker can complete
+      const postedById = (task.postedBy as any)?._id || task.postedBy;
+      const isTaskOwner = postedById.toString() === req.userId.toString();
+      const isAssignedTasker =
+        task.assignedTo && task.assignedTo.toString() === req.userId.toString();
+
+      console.log("Authorization check:", {
+        isTaskOwner,
+        isAssignedTasker,
+        postedById: postedById.toString(),
+        assignedTo: task.assignedTo?.toString(),
+        currentUserId: req.userId.toString(),
+      });
+
+      if (!isTaskOwner && !isAssignedTasker) {
+        console.log("Authorization failed");
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to complete this task",
+        });
+      }
+
+      // Task must be assigned or in progress to be completed
+      if (task.status !== "assigned" && task.status !== "in_progress") {
+        return res.status(400).json({
+          success: false,
+          message: "Task must be assigned or in progress to be completed",
+        });
+      }
+
+      const updatedTask = await db.updateTask(req.params.id, {
+        status: "completed",
+        completedAt: new Date(),
+      });
+
+      res.json({
+        success: true,
+        data: updatedTask,
+        message: "Task completed successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to complete task",
+        error: error.message,
+      });
+    }
+  }
+);
+
 export default router;

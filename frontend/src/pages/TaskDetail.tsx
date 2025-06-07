@@ -13,6 +13,7 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  X,
 } from "lucide-react";
 
 const formatDate = (date: Date | undefined): string => {
@@ -31,6 +32,9 @@ const TaskDetail: React.FC = () => {
   const [bidAmount, setBidAmount] = useState("");
   const [bidMessage, setBidMessage] = useState("");
   const [submittingBid, setSubmittingBid] = useState(false);
+  const [completingTask, setCompletingTask] = useState(false);
+  const [showCompleteConfirmation, setShowCompleteConfirmation] =
+    useState(false);
   const [availableTasks, setAvailableTasks] = useState<
     Array<{ _id: string; title: string }>
   >([]);
@@ -190,11 +194,42 @@ const TaskDetail: React.FC = () => {
       alert("Failed to start conversation. Please try again.");
     }
   };
+  const handleCompleteTask = async () => {
+    if (!task) return;
 
+    try {
+      setCompletingTask(true);
+      const response = await tasksAPI.completeTask(task._id);
+
+      if (response.data) {
+        setTask(response.data);
+        setShowCompleteConfirmation(false);
+        alert("Task completed successfully!");
+      }
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Error completing task:", err);
+
+      if (error.response?.status === 403) {
+        alert("Only task owners can complete their tasks.");
+      } else if (error.response?.status === 400) {
+        const message = error.response?.data?.message || "Invalid task status";
+        alert(`Failed to complete task: ${message}`);
+      } else {
+        alert("Failed to complete task. Please try again.");
+      }
+    } finally {
+      setCompletingTask(false);
+    }
+  };
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.OPEN:
         return "bg-green-100 text-green-800";
+      case TaskStatus.ASSIGNED:
+        return "bg-yellow-100 text-yellow-800";
       case TaskStatus.IN_PROGRESS:
         return "bg-blue-100 text-blue-800";
       case TaskStatus.COMPLETED:
@@ -263,7 +298,29 @@ const TaskDetail: React.FC = () => {
       </div>
     );
   }
-  const isTaskOwner = user?._id === task.postedBy;
+  const isTaskOwner =
+    user?._id ===
+    (typeof task.postedBy === "string" ? task.postedBy : task.postedBy._id);
+
+  const isAssignedTasker = user?._id === task.assignedTo;
+
+  console.log("=== TASK DETAIL DEBUG ===");
+  console.log("Current user ID:", user?._id);
+  console.log(
+    "Task posted by:",
+    typeof task.postedBy === "string" ? task.postedBy : task.postedBy._id
+  );
+  console.log("Task assigned to:", task.assignedTo);
+  console.log("Task status:", task.status);
+  console.log("Is task owner:", isTaskOwner);
+  console.log("Is assigned tasker:", isAssignedTasker);
+  console.log(
+    "Should show close button:",
+    (isTaskOwner || isAssignedTasker) &&
+      (task.status === TaskStatus.ASSIGNED ||
+        task.status === TaskStatus.IN_PROGRESS)
+  );
+
   const hasUserBid = bids.some((bid) => {
     const bidderIdString =
       typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
@@ -300,7 +357,27 @@ const TaskDetail: React.FC = () => {
               </div>
               <div className="text-sm text-gray-500">Budget</div>
             </div>
-          </div>
+          </div>{" "}
+          {/* Task Actions */}
+          {(isTaskOwner || isAssignedTasker) &&
+            (task.status === TaskStatus.ASSIGNED ||
+              task.status === TaskStatus.IN_PROGRESS) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowCompleteConfirmation(true)}
+                  disabled={completingTask}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+                >
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  {completingTask ? "Closing Task..." : "Close Task"}
+                </button>
+                <p className="text-sm text-gray-500 mt-2">
+                  {isTaskOwner
+                    ? "Mark this task as completed when the work is finished to your satisfaction."
+                    : "Mark this task as completed when you have finished the work."}
+                </p>{" "}
+              </div>
+            )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {" "}
             <div className="flex items-center text-gray-600">
@@ -509,6 +586,44 @@ const TaskDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Complete Task Confirmation Dialog */}
+      {showCompleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Close Task
+              </h3>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to close this task? This action will mark
+              the task as completed and cannot be undone.
+            </p>
+
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setShowCompleteConfirmation(false)}
+                disabled={completingTask}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </button>
+              <button
+                onClick={handleCompleteTask}
+                disabled={completingTask}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {completingTask ? "Closing..." : "Close Task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

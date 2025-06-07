@@ -22,6 +22,7 @@ export const authenticateToken = async (
         message: "Access token required",
       });
     }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
     // Store the decoded user info instead of looking up from database
