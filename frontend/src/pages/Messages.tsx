@@ -118,7 +118,6 @@ const Messages: React.FC = () => {
     setActiveConversation(conversation);
     await fetchMessages(conversation._id);
   };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeConversation || !user) return;
@@ -126,7 +125,19 @@ const Messages: React.FC = () => {
     try {
       setSendingMessage(true);
 
+      // Send message via HTTP API
+      const response = await messagesAPI.sendMessage(
+        activeConversation._id,
+        newMessage.trim()
+      );
+
+      // Also send via socket for real-time delivery
       sendMessage(activeConversation._id, newMessage.trim());
+      // Add message to local state immediately for better UX
+      if (response.success && response.data) {
+        setMessages((prev) => [...prev, response.data!]);
+      }
+
       setNewMessage("");
     } catch (err) {
       console.error("Error sending message:", err);

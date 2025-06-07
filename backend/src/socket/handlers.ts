@@ -19,9 +19,7 @@ export const setupSocketHandlers = (io: Server) => {
     socket.on("join_conversation", (conversationId: string) => {
       socket.join(`conversation_${conversationId}`);
       console.log(`User ${userId} joined conversation ${conversationId}`);
-    });
-
-    // Handle leaving conversation rooms
+    }); // Handle leaving conversation rooms
     socket.on("leave_conversation", (conversationId: string) => {
       socket.leave(`conversation_${conversationId}`);
       console.log(`User ${userId} left conversation ${conversationId}`);
@@ -29,7 +27,7 @@ export const setupSocketHandlers = (io: Server) => {
 
     // Handle sending messages
     socket.on(
-      "send_message",
+      "sendMessage",
       async (data: {
         conversationId: string;
         content: string;
@@ -65,7 +63,7 @@ export const setupSocketHandlers = (io: Server) => {
           });
 
           // Emit message to all participants in the conversation
-          io.to(`conversation_${conversationId}`).emit("new_message", message);
+          io.to(`conversation_${conversationId}`).emit("newMessage", message);
 
           // Also emit to individual user rooms for notifications
           conversation.participants.forEach((participantId) => {

@@ -132,4 +132,65 @@ router.post(
   }
 );
 
+// Send message to a conversation
+router.post(
+  "/conversations/:id/messages",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { content } = req.body;
+      const conversationId = req.params.id;
+
+      // Validate input
+      if (!content || !content.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Message content is required",
+        });
+      }
+
+      // Check if user is participant in the conversation
+      const conversation = await Conversation.findById(conversationId);
+      if (
+        !conversation ||
+        !conversation.participants.includes(
+          new mongoose.Types.ObjectId(req.userId)
+        )
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to send message to this conversation",
+        });
+      }
+
+      // Create the message
+      const message = new Message({
+        conversationId: new mongoose.Types.ObjectId(conversationId),
+        senderId: new mongoose.Types.ObjectId(req.userId),
+        content: content.trim(),
+      });
+
+      await message.save();
+      await message.populate("senderId", "firstName lastName avatar");
+
+      // Update conversation's last message
+      await Conversation.findByIdAndUpdate(conversationId, {
+        lastMessage: message._id,
+        updatedAt: new Date(),
+      });
+
+      res.json({
+        success: true,
+        data: message,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to send message",
+        error: error.message,
+      });
+    }
+  }
+);
+
 export default router;

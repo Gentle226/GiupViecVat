@@ -72,13 +72,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const joinConversation = (conversationId: string) => {
     if (socketRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (socketRef.current as any).emit("joinConversation", conversationId);
+      (socketRef.current as any).emit("join_conversation", conversationId);
     }
   };
   const leaveConversation = (conversationId: string) => {
     if (socketRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (socketRef.current as any).emit("leaveConversation", conversationId);
+      (socketRef.current as any).emit("leave_conversation", conversationId);
     }
   };
 
