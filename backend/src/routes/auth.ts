@@ -17,6 +17,39 @@ const generateToken = (userId: string): string => {
   } as jwt.SignOptions);
 };
 
+// Transform user data to match frontend expected structure
+const transformUser = (user: any) => {
+  // Handle both memory store (backend User) and MongoDB (IUser) formats
+  const isMemoryStoreUser = "userType" in user;
+  const isMongoUser = "isTasker" in user;
+
+  return {
+    _id: user._id,
+    email: user.email,
+    firstName: isMemoryStoreUser
+      ? user.firstName || (user.name ? user.name.split(" ")[0] : "User")
+      : user.firstName,
+    lastName: isMemoryStoreUser
+      ? user.lastName ||
+        (user.name ? user.name.split(" ").slice(1).join(" ") : "")
+      : user.lastName,
+    avatar: user.avatar,
+    isTasker: isMemoryStoreUser ? user.userType === "tasker" : user.isTasker,
+    rating: user.rating || 0,
+    reviewCount: user.reviewCount || 0,
+    bio: user.bio,
+    skills: user.skills || [],
+    hourlyRate: user.hourlyRate,
+    availability: user.availability,
+    location:
+      typeof user.location === "string"
+        ? { address: user.location, coordinates: [0, 0] }
+        : user.location || { address: "Not specified", coordinates: [0, 0] },
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt || user.createdAt,
+  };
+};
+
 // Register
 router.post("/register", async (req, res) => {
   try {
@@ -43,15 +76,16 @@ router.post("/register", async (req, res) => {
         address: "Not specified",
         coordinates: [0, 0] as [number, number],
       },
-    });
-
-    // Generate token
+    }); // Generate token
     const token = generateToken(user._id as string);
+
+    // Transform user to match frontend expected structure
+    const transformedUser = transformUser(user);
 
     res.status(201).json({
       success: true,
       data: {
-        user: { ...user, password: undefined }, // Don't send password
+        user: transformedUser,
         token,
       },
       message: "User registered successfully",
@@ -86,15 +120,16 @@ router.post("/login", async (req, res) => {
         success: false,
         message: "Invalid email or password",
       });
-    }
-
-    // Generate token
+    } // Generate token
     const token = generateToken(user._id as string);
+
+    // Transform user to match frontend expected structure
+    const transformedUser = transformUser(user);
 
     res.json({
       success: true,
       data: {
-        user: { ...user, password: undefined }, // Don't send password
+        user: transformedUser,
         token,
       },
       message: "Login successful",
@@ -117,11 +152,12 @@ router.get("/me", authenticateToken, async (req: any, res) => {
         success: false,
         message: "User not found",
       });
-    }
+    } // Transform user to match frontend expected structure
+    const transformedUser = transformUser(user);
 
     res.json({
       success: true,
-      data: { ...user, password: undefined },
+      data: transformedUser,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -141,18 +177,18 @@ router.put("/profile", authenticateToken, async (req: any, res) => {
     delete updates.password;
     delete updates._id;
     delete updates.email;
-
     const user = await db.updateUser(req.userId, updates);
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
-    }
+    } // Transform user to match frontend expected structure
+    const transformedUser = transformUser(user);
 
     res.json({
       success: true,
-      data: { ...user, password: undefined },
+      data: transformedUser,
       message: "Profile updated successfully",
     });
   } catch (error: any) {

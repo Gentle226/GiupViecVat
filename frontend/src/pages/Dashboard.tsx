@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {user?.firstName}!
+          Welcome back, {user?.firstName} {user?.lastName}!
         </h1>
         <p className="text-lg text-gray-600 mt-2">
           Here's what's happening with your tasks
@@ -174,10 +174,10 @@ const Dashboard: React.FC = () => {
                             >
                               {task.status.replace(/_/g, " ")}
                             </span>
-                          </div>
+                          </div>{" "}
                           <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                             {task.description}
-                          </p>{" "}
+                          </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <DollarSign className="h-3 w-3" />$
@@ -213,30 +213,20 @@ const Dashboard: React.FC = () => {
           {/* Profile Card */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="text-center">
+              {" "}
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="h-10 w-10 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
                 {user?.firstName} {user?.lastName}
               </h3>
-              <p className="text-sm text-gray-600 mb-2">{user?.email}</p>{" "}
+              <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
               <p className="text-sm text-gray-600 mb-4">
                 {user?.isTasker ? "Tasker" : "Client"} • Member since{" "}
                 {formatDate(user?.createdAt?.toString() || "")}
               </p>
-              {user?.rating && (
-                <div className="flex items-center justify-center gap-1 mb-4">
-                  <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                  <span className="text-sm font-medium">
-                    {user.rating.toFixed(1)}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    ({user.reviewCount || 0} reviews)
-                  </span>
-                </div>
-              )}
               <Link
-                to="/profile"
+                to={`/profile/${user?._id}`}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 Edit Profile
@@ -314,7 +304,7 @@ const Dashboard: React.FC = () => {
                     }).length
                   }
                 </span>
-              </div>{" "}
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Completed</span>
                 <span className="font-medium">
