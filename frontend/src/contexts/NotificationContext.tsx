@@ -52,14 +52,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (socket) {
       const handleNewMessage = (message: Message) => {
-        // Only count as unread if message is not from current user
-        if (message.senderId !== user?._id) {
-          setUnreadCount((prev) => prev + 1);
-          setNewMessageNotifications((prev) => ({
-            ...prev,
-            [message.conversationId]: (prev[message.conversationId] || 0) + 1,
-          }));
-        }
+        // Don't increment counts here - let message_notification handle that
+        // This event is just for real-time message display in conversations
+        console.log("New message received:", message);
       };
 
       const handleMessageNotification = (notification: MessageNotification) => {
