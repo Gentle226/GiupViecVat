@@ -199,8 +199,8 @@ export const getBidsByTask = async (taskId: string): Promise<Bid[]> => {
   return bids.filter((bid) => bid.taskId === taskId);
 };
 
-export const getBidsByTasker = async (taskerId: string): Promise<Bid[]> => {
-  return bids.filter((bid) => bid.taskerId === taskerId);
+export const getBidsByTasker = async (bidderId: string): Promise<Bid[]> => {
+  return bids.filter((bid) => bid.bidderId === bidderId);
 };
 
 export const updateBid = async (
@@ -402,11 +402,10 @@ export const seedDemoData = async () => {
       "References preferred",
     ],
   });
-
   // Create demo bid
   await createBid({
     taskId: cleaningTask._id,
-    taskerId: taskerUser._id,
+    bidderId: taskerUser._id,
     amount: 140,
     estimatedDuration: 4,
     message:

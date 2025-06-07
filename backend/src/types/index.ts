@@ -42,7 +42,7 @@ export interface Task {
 export interface Bid {
   _id: string;
   taskId: string;
-  taskerId: string; // User ID (changed from bidderId)
+  bidderId: string; // User ID
   amount: number;
   message: string;
   estimatedDuration: number; // in hours
