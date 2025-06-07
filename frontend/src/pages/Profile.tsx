@@ -39,38 +39,48 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
       const targetUserId = userId || currentUser?._id;
+      if (!targetUserId) {
+        setLoading(false);
+        return;
+      }
 
-      if (!targetUserId) return; // Fetch user profile
+      // Fetch user profile
       const userResponse = await usersAPI.getUser(targetUserId);
-      if (userResponse.data) {
-        setUser(userResponse.data);
-      }
 
-      // Fetch user's tasks
-      if (userResponse.data?.isTasker) {
+      if (userResponse.data && userResponse.data.user) {
+        setUser(userResponse.data.user);
+      } // Fetch user's tasks
+      try {
         const tasksResponse = await tasksAPI.getMyTasks();
-        if (tasksResponse.data) {
+        if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
           setUserTasks(tasksResponse.data);
+        } else {
+          console.warn("Tasks data is not an array:", tasksResponse.data);
+          setUserTasks([]);
         }
-      } else {
-        const tasksResponse = await tasksAPI.getMyTasks();
-        if (tasksResponse.data) {
-          setUserTasks(tasksResponse.data);
+      } catch (tasksError) {
+        console.error("Error fetching tasks:", tasksError);
+        setUserTasks([]);
+      } // Fetch user's reviews
+      try {
+        const reviewsResponse = await reviewsAPI.getUserReviews(targetUserId);
+        if (reviewsResponse.data && Array.isArray(reviewsResponse.data)) {
+          setUserReviews(reviewsResponse.data);
+        } else {
+          console.warn("Reviews data is not an array:", reviewsResponse.data);
+          setUserReviews([]);
         }
-      }
-
-      // Fetch user's reviews
-      const reviewsResponse = await reviewsAPI.getUserReviews(targetUserId);
-      if (reviewsResponse.data) {
-        setUserReviews(reviewsResponse.data);
+      } catch (reviewsError) {
+        console.error("Error fetching reviews:", reviewsError);
+        setUserReviews([]);
       } // Set edit form data
-      if (isOwnProfile && userResponse.data) {
+      if (isOwnProfile && userResponse.data?.user) {
         setEditForm({
-          firstName: userResponse.data.firstName,
-          lastName: userResponse.data.lastName,
-          bio: userResponse.data.bio || "",
-          skills: userResponse.data.skills || [],
-          location: userResponse.data.location.address || "",
+          firstName: userResponse.data.user.firstName,
+          lastName: userResponse.data.user.lastName,
+          bio: userResponse.data.user.bio || "",
+          skills: userResponse.data.user.skills || [],
+          location: userResponse.data.user.location.address || "",
         });
       }
     } catch (err) {
@@ -98,15 +108,14 @@ const Profile: React.FC = () => {
       console.error("Error updating profile:", err);
     }
   };
-
   const calculateAverageRating = () => {
-    if (userReviews.length === 0) return 0;
+    if (!Array.isArray(userReviews) || userReviews.length === 0) return 0;
     const total = userReviews.reduce((sum, review) => sum + review.rating, 0);
     return (total / userReviews.length).toFixed(1);
   };
 
   const calculateCompletionRate = () => {
-    if (userTasks.length === 0) return 0;
+    if (!Array.isArray(userTasks) || userTasks.length === 0) return 0;
     const completed = userTasks.filter(
       (task) => task.status === "completed"
     ).length;
@@ -128,17 +137,37 @@ const Profile: React.FC = () => {
       </div>
     );
   }
-
   if (!user) {
+    // Check if user is not authenticated and no specific userId was provided
+    const isNotAuthenticated = !currentUser && !userId;
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            User Not Found
+            {isNotAuthenticated ? "Please Log In" : "User Not Found"}
           </h2>
-          <p className="text-gray-600">
-            The profile you're looking for doesn't exist.
+          <p className="text-gray-600 mb-4">
+            {isNotAuthenticated
+              ? "You need to log in to view your profile."
+              : "The profile you're looking for doesn't exist."}
           </p>
+          {isNotAuthenticated && (
+            <div className="space-x-4">
+              <a
+                href="/login"
+                className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
+              >
+                Log In
+              </a>
+              <a
+                href="/register"
+                className="inline-block border border-indigo-600 text-indigo-600 px-6 py-2 rounded-lg hover:bg-indigo-50"
+              >
+                Sign Up
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -193,12 +222,11 @@ const Profile: React.FC = () => {
               )}
             </div>
           </div>
-
-          {/* Stats */}
+          {/* Stats */}{" "}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
-                {userTasks.length}
+                {Array.isArray(userTasks) ? userTasks.length : 0}
               </div>{" "}
               <div className="text-sm text-gray-500">
                 {user.isTasker ? "Tasks Completed" : "Tasks Posted"}
@@ -219,7 +247,7 @@ const Profile: React.FC = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
-                {userReviews.length}
+                {Array.isArray(userReviews) ? userReviews.length : 0}
               </div>
               <div className="text-sm text-gray-500">Reviews</div>
             </div>
@@ -284,7 +312,7 @@ const Profile: React.FC = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Tasks ({userTasks.length})
+                Tasks ({Array.isArray(userTasks) ? userTasks.length : 0})
               </button>
               <button
                 onClick={() => setActiveTab("reviews")}
@@ -294,7 +322,7 @@ const Profile: React.FC = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Reviews ({userReviews.length})
+                Reviews ({Array.isArray(userReviews) ? userReviews.length : 0})
               </button>
             </nav>
           </div>
@@ -336,11 +364,10 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}
-
+            )}{" "}
             {activeTab === "tasks" && (
               <div className="space-y-4">
-                {userTasks.length === 0 ? (
+                {!Array.isArray(userTasks) || userTasks.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No tasks found</p>
                   </div>
@@ -383,11 +410,10 @@ const Profile: React.FC = () => {
                   ))
                 )}
               </div>
-            )}
-
+            )}{" "}
             {activeTab === "reviews" && (
               <div className="space-y-4">
-                {userReviews.length === 0 ? (
+                {!Array.isArray(userReviews) || userReviews.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No reviews yet</p>
                   </div>

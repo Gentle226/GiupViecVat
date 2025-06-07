@@ -150,7 +150,9 @@ export const bidsAPI = {
 
 // Users API
 export const usersAPI = {
-  getUser: async (id: string): Promise<ApiResponse<User>> => {
+  getUser: async (
+    id: string
+  ): Promise<ApiResponse<{ user: User; reviews: Review[] }>> => {
     const response = await api.get(`/api/users/${id}`);
     return response.data;
   },
@@ -232,10 +234,13 @@ export const reviewsAPI = {
     const response = await api.post("/api/reviews", reviewData);
     return response.data;
   },
-
   getUserReviews: async (userId: string): Promise<ApiResponse<Review[]>> => {
     const response = await api.get(`/api/reviews/user/${userId}`);
-    return response.data;
+    // Backend returns reviews in data.reviews, but we want to return just the reviews
+    return {
+      ...response.data,
+      data: response.data.data.reviews,
+    };
   },
 };
 
