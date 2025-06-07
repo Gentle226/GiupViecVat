@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { usersAPI, tasksAPI, reviewsAPI } from "../services/api";
+import { usersAPI, tasksAPI, reviewsAPI, messagesAPI } from "../services/api";
 import type { User, Task, Review } from "../../../shared/types";
 import {
   User as UserIcon,
@@ -17,6 +17,7 @@ import {
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
 
   const [user, setUser] = useState<User | null>(null);
   const [userTasks, setUserTasks] = useState<Task[]>([]);
@@ -93,7 +94,6 @@ const Profile: React.FC = () => {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
-
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -106,6 +106,20 @@ const Profile: React.FC = () => {
     } catch (err) {
       alert("Failed to update profile");
       console.error("Error updating profile:", err);
+    }
+  };
+  const handleMessageUser = async () => {
+    if (!user || !currentUser || isOwnProfile) return;
+
+    try {
+      // Create or get conversation with this user
+      await messagesAPI.createConversation(user._id);
+
+      // Navigate to messages page
+      navigate("/messages");
+    } catch (err) {
+      console.error("Error creating conversation:", err);
+      alert("Failed to start conversation");
     }
   };
   const calculateAverageRating = () => {
@@ -210,7 +224,10 @@ const Profile: React.FC = () => {
                 </button>
               ) : (
                 <>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center">
+                  <button
+                    onClick={handleMessageUser}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
+                  >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Message
                   </button>
