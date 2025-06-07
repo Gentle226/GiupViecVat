@@ -19,15 +19,24 @@ export class DatabaseAdapter {
       // Seed demo data for memory store
       await memoryStore.seedDemoData();
     }
-  }
-
-  // User operations
+  } // User operations
   async createUser(userData: any) {
     if (this.useMemoryStore) {
       return await memoryStore.createUser(userData);
-    }
-    const user = new Models.User(userData);
-    return await user.save();
+    } // For MongoDB, ensure we have the correct field format
+    const mongoUserData = {
+      ...userData,
+      isTasker:
+        userData.isTasker !== undefined
+          ? userData.isTasker
+          : userData.userType === "tasker",
+    };
+    delete mongoUserData.userType; // Remove userType as MongoDB uses isTasker
+
+    const user = new Models.User(mongoUserData);
+    const savedUser = await user.save();
+
+    return savedUser;
   }
 
   async findUserByEmail(email: string) {

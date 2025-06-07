@@ -63,20 +63,20 @@ router.post("/register", async (req, res) => {
         success: false,
         message: "User already exists with this email",
       });
-    }
-
-    // Create new user
-    const user = await db.createUser({
+    } // Create new user
+    const userCreateData = {
       email,
       password,
       firstName,
       lastName,
+      isTasker,
       userType: isTasker ? "tasker" : "client",
       location: location || {
         address: "Not specified",
         coordinates: [0, 0] as [number, number],
       },
-    }); // Generate token
+    };
+    const user = await db.createUser(userCreateData); // Generate token
     const token = generateToken(user._id as string);
 
     // Transform user to match frontend expected structure
