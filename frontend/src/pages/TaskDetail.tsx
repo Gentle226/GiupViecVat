@@ -173,14 +173,13 @@ const TaskDetail: React.FC = () => {
       typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
     navigate(`/profile/${userId}`);
   };
-
   const handleMessage = async (bid: TaskBid) => {
     try {
       const userId =
         typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
 
-      // Create or get conversation with the bidder
-      const response = await messagesAPI.createConversation(userId);
+      // Create or get conversation with the bidder, linked to this task
+      const response = await messagesAPI.createConversation(userId, task?._id);
 
       if (response.data) {
         // Navigate to messages page

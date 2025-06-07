@@ -101,7 +101,7 @@ router.post(
             new mongoose.Types.ObjectId(participantId),
           ],
         },
-        taskId: taskId || null,
+        taskId: taskId ? new mongoose.Types.ObjectId(taskId) : null,
       });
 
       if (!conversation) {
@@ -110,7 +110,7 @@ router.post(
             new mongoose.Types.ObjectId(req.userId),
             new mongoose.Types.ObjectId(participantId),
           ],
-          taskId: taskId || null,
+          taskId: taskId ? new mongoose.Types.ObjectId(taskId) : null,
         });
         await conversation.save();
       }

@@ -254,6 +254,32 @@ export class DatabaseAdapter {
     return await Models.Conversation.findById(id);
   }
 
+  async findConversationByParticipantsAndTask(
+    participant1: string,
+    participant2: string,
+    taskId?: string
+  ) {
+    if (this.useMemoryStore) {
+      return await memoryStore.findConversationByParticipantsAndTask(
+        participant1,
+        participant2,
+        taskId
+      );
+    }
+
+    if (taskId) {
+      return await Models.Conversation.findOne({
+        participants: { $all: [participant1, participant2] },
+        taskId: taskId,
+      });
+    } else {
+      return await Models.Conversation.findOne({
+        participants: { $all: [participant1, participant2] },
+        taskId: null,
+      });
+    }
+  }
+
   async updateConversation(id: string, updates: any) {
     if (this.useMemoryStore) {
       return await memoryStore.updateConversation(id, updates);

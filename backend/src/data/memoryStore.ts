@@ -296,6 +296,26 @@ export const getConversationsByUser = async (
   return conversations.filter((conv) => conv.participants.includes(userId));
 };
 
+export const findConversationByParticipantsAndTask = async (
+  participant1: string,
+  participant2: string,
+  taskId?: string
+): Promise<Conversation | null> => {
+  return (
+    conversations.find((conv) => {
+      const hasParticipants =
+        conv.participants.includes(participant1) &&
+        conv.participants.includes(participant2);
+
+      if (taskId) {
+        return hasParticipants && conv.taskId === taskId;
+      } else {
+        return hasParticipants && !conv.taskId;
+      }
+    }) || null
+  );
+};
+
 export const updateConversation = async (
   id: string,
   updates: Partial<Conversation>
@@ -473,11 +493,11 @@ export const memoryStore = {
   // Message operations
   createMessage,
   getMessagesByConversation,
-
   // Conversation operations
   createConversation,
   findConversationById,
   getConversationsByUser,
+  findConversationByParticipantsAndTask,
   updateConversation,
 
   // Review operations

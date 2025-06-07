@@ -9,7 +9,7 @@ import type {
   TaskBid,
   CreateBidRequest,
   Message,
-  Conversation,
+  PopulatedConversation,
   Payment,
   Review,
   TaskStatus,
@@ -188,7 +188,7 @@ export const usersAPI = {
 
 // Messages API
 export const messagesAPI = {
-  getConversations: async (): Promise<ApiResponse<Conversation[]>> => {
+  getConversations: async (): Promise<ApiResponse<PopulatedConversation[]>> => {
     const response = await api.get("/api/messages/conversations");
     return response.data;
   },
@@ -196,7 +196,9 @@ export const messagesAPI = {
   getMessages: async (
     conversationId: string
   ): Promise<ApiResponse<Message[]>> => {
-    const response = await api.get(`/api/messages/${conversationId}`);
+    const response = await api.get(
+      `/api/messages/conversations/${conversationId}/messages`
+    );
     return response.data;
   },
 
@@ -204,17 +206,21 @@ export const messagesAPI = {
     conversationId: string,
     content: string
   ): Promise<ApiResponse<Message>> => {
-    const response = await api.post(`/api/messages/${conversationId}`, {
-      content,
-    });
+    const response = await api.post(
+      `/api/messages/conversations/${conversationId}/messages`,
+      {
+        content,
+      }
+    );
     return response.data;
   },
-
   createConversation: async (
-    participantId: string
-  ): Promise<ApiResponse<Conversation>> => {
+    participantId: string,
+    taskId?: string
+  ): Promise<ApiResponse<PopulatedConversation>> => {
     const response = await api.post("/api/messages/conversations", {
       participantId,
+      taskId,
     });
     return response.data;
   },

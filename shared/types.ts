@@ -74,6 +74,23 @@ export interface Conversation {
   updatedAt: Date;
 }
 
+// Populated conversation type for frontend use
+export interface PopulatedConversation {
+  _id: string;
+  participants: PopulatedUser[]; // Populated user objects
+  taskId?: PopulatedTask; // Populated task object
+  lastMessage?: Message;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Simplified task type for conversation display
+export interface PopulatedTask {
+  _id: string;
+  title: string;
+  status: TaskStatus;
+}
+
 export interface Review {
   _id: string;
   taskId: string;

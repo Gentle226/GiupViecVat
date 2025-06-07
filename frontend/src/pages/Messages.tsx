@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { messagesAPI } from "../services/api";
-import type { Conversation, Message } from "../../../shared/types";
+import type { PopulatedConversation, Message } from "../../../shared/types";
 import {
   Search,
   Send,
@@ -17,10 +17,11 @@ import {
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { socket, sendMessage, joinConversation } = useSocket();
-
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<PopulatedConversation[]>(
+    []
+  );
   const [activeConversation, setActiveConversation] =
-    useState<Conversation | null>(null);
+    useState<PopulatedConversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -111,8 +112,9 @@ const Messages: React.FC = () => {
       console.error("Error fetching messages:", err);
     }
   };
-
-  const handleConversationSelect = async (conversation: Conversation) => {
+  const handleConversationSelect = async (
+    conversation: PopulatedConversation
+  ) => {
     setActiveConversation(conversation);
     await fetchMessages(conversation._id);
   };
@@ -238,16 +240,27 @@ const Messages: React.FC = () => {
                       <User className="h-6 w-6 text-white" />
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
+                      {" "}
                       <div className="flex items-center justify-between">
+                        {" "}
                         <p className="text-sm font-medium text-gray-900 truncate">
-                          Other User
+                          {conversation.participants
+                            .filter((p) => p._id !== user?._id)
+                            .map((p) => `${p.firstName} ${p.lastName}`)
+                            .join(", ") || "Other User"}
                         </p>{" "}
                         {conversation.lastMessage && (
                           <p className="text-xs text-gray-500">
                             {formatTime(conversation.lastMessage.timestamp)}
                           </p>
                         )}
-                      </div>
+                      </div>{" "}
+                      {/* Show task context if available */}
+                      {conversation.taskId && (
+                        <p className="text-xs text-indigo-600 truncate">
+                          Task: {conversation.taskId.title}
+                        </p>
+                      )}
                       {conversation.lastMessage && (
                         <p className="text-sm text-gray-500 truncate">
                           {conversation.lastMessage.content}
@@ -271,11 +284,19 @@ const Messages: React.FC = () => {
               <div className="flex items-center">
                 <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
                   <User className="h-6 w-6 text-white" />
-                </div>
+                </div>{" "}
                 <div className="ml-3">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Other User
+                    {activeConversation.participants
+                      .filter((p) => p._id !== user?._id)
+                      .map((p) => `${p.firstName} ${p.lastName}`)
+                      .join(", ") || "Other User"}
                   </h2>
+                  {activeConversation.taskId && (
+                    <p className="text-sm text-indigo-600">
+                      Task: {activeConversation.taskId.title}
+                    </p>
+                  )}
                   <p className="text-sm text-green-600">Online</p>
                 </div>
               </div>
