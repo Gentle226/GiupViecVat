@@ -17,18 +17,23 @@ interface BidNotificationData {
   bidderName: string;
   amount: number;
   message: string;
+  read?: boolean; // Add read status
+  timestamp?: string; // Add timestamp for ordering
 }
 
 interface NotificationContextType {
   unreadCount: number;
   newMessageNotifications: { [conversationId: string]: number };
   bidNotifications: BidNotificationData[];
+  unreadBidCount: number; // Add unread bid count
   markConversationAsRead: (conversationId: string) => void;
   markAllAsRead: () => void;
   incrementUnreadCount: () => void;
   addBidNotification: (notification: BidNotificationData) => void;
   removeBidNotification: (bidId: string) => void;
   clearAllBidNotifications: () => void;
+  markBidAsRead: (bidId: string) => void; // Add mark bid as read
+  markAllBidsAsRead: () => void; // Add mark all bids as read
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -58,6 +63,36 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     BidNotificationData[]
   >([]);
 
+  // Calculate unread bid count
+  const unreadBidCount = bidNotifications.filter((notif) => !notif.read).length;
+
+  // Load persisted notifications on component mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const savedNotifications = localStorage.getItem(
+        `bid_notifications_${user._id}`
+      );
+      if (savedNotifications) {
+        try {
+          const parsed = JSON.parse(savedNotifications);
+          setBidNotifications(parsed);
+        } catch (error) {
+          console.error("Error parsing saved notifications:", error);
+          localStorage.removeItem(`bid_notifications_${user._id}`);
+        }
+      }
+    }
+  }, [isAuthenticated, user]);
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    if (isAuthenticated && user && bidNotifications.length >= 0) {
+      localStorage.setItem(
+        `bid_notifications_${user._id}`,
+        JSON.stringify(bidNotifications)
+      );
+    }
+  }, [bidNotifications, isAuthenticated, user]);
+
   // Fetch initial unread count
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -66,15 +101,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [isAuthenticated, user]); // Listen for new messages via socket
   useEffect(() => {
     if (socket) {
-      console.log("=== SOCKET SETUP DEBUG ===");
-      console.log("Socket instance available:", !!socket);
-      console.log("User authenticated:", !!user);
-      console.log("User ID:", user?._id);
-
-      const handleNewMessage = (message: Message) => {
+      const handleNewMessage = () => {
         // Don't increment counts here - let message_notification handle that
         // This event is just for real-time message display in conversations
-        console.log("New message received:", message);
       };
 
       const handleMessageNotification = (notification: MessageNotification) => {
@@ -89,10 +118,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       };
       const handleBidNotification = (notification: BidNotificationData) => {
-        console.log("=== FRONTEND BID NOTIFICATION DEBUG ===");
-        console.log("New bid notification received:", notification);
-        console.log("Current user ID:", user?._id);
-        setBidNotifications((prev) => [notification, ...prev]);
+        setBidNotifications((prev) => {
+          const enrichedNotification = {
+            ...notification,
+            read: false,
+            timestamp: new Date().toISOString(),
+          };
+          const updated = [enrichedNotification, ...prev];
+          return updated;
+        });
       }; // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("newMessage", handleNewMessage);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,7 +143,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         (socket as any).off("new_bid_notification", handleBidNotification);
       };
     }
-  }, [socket, user?._id]);
+  }, [socket, user]);
   const fetchUnreadCount = async () => {
     try {
       const response = await messagesAPI.getUnreadCount();
@@ -150,9 +184,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       prev.filter((notif) => notif.bidId !== bidId)
     );
   };
-
   const clearAllBidNotifications = () => {
     setBidNotifications([]);
+  };
+
+  const markBidAsRead = (bidId: string) => {
+    setBidNotifications((prev) =>
+      prev.map((notif) =>
+        notif.bidId === bidId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const markAllBidsAsRead = () => {
+    setBidNotifications((prev) =>
+      prev.map((notif) => ({ ...notif, read: true }))
+    );
   };
   return (
     <NotificationContext.Provider
@@ -160,12 +207,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         unreadCount,
         newMessageNotifications,
         bidNotifications,
+        unreadBidCount,
         markConversationAsRead,
         markAllAsRead,
         incrementUnreadCount,
         addBidNotification,
         removeBidNotification,
         clearAllBidNotifications,
+        markBidAsRead,
+        markAllBidsAsRead,
       }}
     >
       {children}

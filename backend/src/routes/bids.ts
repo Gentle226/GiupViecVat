@@ -66,21 +66,11 @@ router.post(
       const bidder = await db.findUserById(req.userId);
       const bidderName = bidder
         ? `${bidder.firstName} ${bidder.lastName}`
-        : "Unknown User";
-      console.log("=== BID NOTIFICATION DEBUG ===");
-      console.log("Task owner ID:", task.postedBy);
-      console.log("Bidder ID:", req.userId);
-      console.log("Bidder name:", bidderName);
-      console.log("Task title:", task.title);
-      console.log("Bid amount:", amount);
-
-      // Extract the task owner ID properly
+        : "Unknown User"; // Extract the task owner ID properly
       const taskOwnerId =
         typeof task.postedBy === "string"
           ? task.postedBy
           : task.postedBy._id?.toString() || task.postedBy.toString();
-
-      console.log("Extracted task owner ID:", taskOwnerId);
 
       // Emit socket notification to task owner
       emitToUser(taskOwnerId, "new_bid_notification", {
@@ -91,8 +81,6 @@ router.post(
         amount,
         message,
       });
-
-      console.log("📤 Socket notification emitted to user:", taskOwnerId);
 
       res.status(201).json({
         success: true,
