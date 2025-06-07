@@ -14,15 +14,22 @@ import {
   CheckCheck,
 } from "lucide-react";
 
+// Extended message type that handles populated senderId
+interface PopulatedMessage extends Omit<Message, "senderId"> {
+  senderId:
+    | string
+    | { _id: string; firstName: string; lastName: string; avatar?: string };
+}
+
 const Messages: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { socket, sendMessage, joinConversation } = useSocket();
   const [conversations, setConversations] = useState<PopulatedConversation[]>(
     []
   );
   const [activeConversation, setActiveConversation] =
     useState<PopulatedConversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<PopulatedMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,6 +39,12 @@ const Messages: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<number | null>(null);
 
+  // Utility function to extract sender ID from message
+  const getSenderId = (message: PopulatedMessage): string => {
+    return typeof message.senderId === "string"
+      ? message.senderId
+      : message.senderId._id;
+  };
   useEffect(() => {
     if (user) {
       fetchConversations();
@@ -45,7 +58,7 @@ const Messages: React.FC = () => {
   useEffect(() => {
     if (socket && activeConversation) {
       joinConversation(activeConversation._id);
-      const handleNewMessage = (message: Message) => {
+      const handleNewMessage = (message: PopulatedMessage) => {
         if (message.conversationId === activeConversation._id) {
           setMessages((prev) => [...prev, message]);
         }
@@ -53,7 +66,7 @@ const Messages: React.FC = () => {
         setConversations((prev) =>
           prev.map((conv) =>
             conv._id === message.conversationId
-              ? { ...conv, lastMessage: message }
+              ? { ...conv, lastMessage: message as Message }
               : conv
           )
         );
@@ -186,8 +199,7 @@ const Messages: React.FC = () => {
         .includes(searchTerm.toLowerCase()) ||
       conv._id.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  if (loading) {
+  if (loading || authLoading || !user) {
     return (
       <div className="h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
@@ -313,12 +325,13 @@ const Messages: React.FC = () => {
                 </button>
               </div>
             </div>
-          </div>
-
+          </div>{" "}
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => {
-              const isOwnMessage = message.senderId === user?._id;
+              const senderId = getSenderId(message);
+              const isOwnMessage = senderId === user?._id && user?._id != null;
+
               return (
                 <div
                   key={message._id}
@@ -384,7 +397,6 @@ const Messages: React.FC = () => {
 
             <div ref={messagesEndRef} />
           </div>
-
           {/* Message Input */}
           <div className="bg-white border-t border-gray-200 p-4">
             <form
