@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { tasksAPI, bidsAPI } from "../services/api";
+import { tasksAPI, bidsAPI, messagesAPI } from "../services/api";
 import type { Task, TaskBid } from "../../../shared/types";
 import { TaskStatus } from "../../../shared/types";
 import {
@@ -165,6 +165,30 @@ const TaskDetail: React.FC = () => {
         alert("Failed to accept bid");
       }
       console.error("Error accepting bid:", err);
+    }
+  };
+
+  const handleViewProfile = (bid: TaskBid) => {
+    const userId =
+      typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
+    navigate(`/profile/${userId}`);
+  };
+
+  const handleMessage = async (bid: TaskBid) => {
+    try {
+      const userId =
+        typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
+
+      // Create or get conversation with the bidder
+      const response = await messagesAPI.createConversation(userId);
+
+      if (response.data) {
+        // Navigate to messages page
+        navigate("/messages");
+      }
+    } catch (err) {
+      console.error("Error creating conversation:", err);
+      alert("Failed to start conversation. Please try again.");
     }
   };
 
@@ -416,11 +440,14 @@ const TaskDetail: React.FC = () => {
                         <User className="h-6 w-6 text-white" />
                       </div>{" "}
                       <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
+                        <button
+                          onClick={() => handleViewProfile(bid)}
+                          className="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer"
+                        >
                           {typeof bid.bidderId === "string"
                             ? "Tasker"
                             : `${bid.bidderId.firstName} ${bid.bidderId.lastName}`}
-                        </div>
+                        </button>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Star className="h-4 w-4 text-yellow-400 mr-1" />
                           {typeof bid.bidderId === "string"
@@ -440,34 +467,43 @@ const TaskDetail: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  <p className="text-gray-700 mb-3">{bid.message}</p>
-
+                  <p className="text-gray-700 mb-3">{bid.message}</p>{" "}
                   {bid.status === "accepted" && (
                     <div className="flex items-center text-green-600 mb-3">
                       <CheckCircle className="h-5 w-5 mr-2" />
                       <span className="font-medium">Accepted Bid</span>
                     </div>
                   )}
+                  {/* Action buttons - Always show View Profile and Message for authenticated users */}
+                  {isAuthenticated && (
+                    <div className="flex space-x-3">
+                      {/* Accept Bid button - Only for task owners */}
+                      {isTaskOwner &&
+                        task.status === TaskStatus.OPEN &&
+                        bid.status === "pending" && (
+                          <button
+                            onClick={() => handleAcceptBid(bid._id)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                          >
+                            Accept Bid
+                          </button>
+                        )}
 
-                  {isTaskOwner &&
-                    task.status === TaskStatus.OPEN &&
-                    bid.status === "pending" && (
-                      <div className="flex space-x-3">
-                        <button
-                          onClick={() => handleAcceptBid(bid._id)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
-                        >
-                          Accept Bid
-                        </button>
-                        <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm">
-                          View Profile
-                        </button>
-                        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">
-                          Message
-                        </button>
-                      </div>
-                    )}
+                      {/* View Profile and Message buttons - Available to all authenticated users */}
+                      <button
+                        onClick={() => handleViewProfile(bid)}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm"
+                      >
+                        View Profile
+                      </button>
+                      <button
+                        onClick={() => handleMessage(bid)}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+                      >
+                        Message
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
