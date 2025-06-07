@@ -21,11 +21,23 @@ interface BidNotificationData {
   timestamp?: string; // Add timestamp for ordering
 }
 
+interface TaskCancellationNotificationData {
+  taskId: string;
+  taskTitle: string;
+  message: string;
+  type: "assigned_task_cancelled" | "bid_rejected_due_to_cancellation";
+  bidAmount?: number;
+  read?: boolean;
+  timestamp?: string;
+}
+
 interface NotificationContextType {
   unreadCount: number;
   newMessageNotifications: { [conversationId: string]: number };
   bidNotifications: BidNotificationData[];
+  taskCancellationNotifications: TaskCancellationNotificationData[];
   unreadBidCount: number; // Add unread bid count
+  unreadTaskCancellationCount: number;
   markConversationAsRead: (conversationId: string) => void;
   markAllAsRead: () => void;
   incrementUnreadCount: () => void;
@@ -34,6 +46,13 @@ interface NotificationContextType {
   clearAllBidNotifications: () => void;
   markBidAsRead: (bidId: string) => void; // Add mark bid as read
   markAllBidsAsRead: () => void; // Add mark all bids as read
+  addTaskCancellationNotification: (
+    notification: TaskCancellationNotificationData
+  ) => void;
+  removeTaskCancellationNotification: (taskId: string) => void;
+  clearAllTaskCancellationNotifications: () => void;
+  markTaskCancellationAsRead: (taskId: string) => void;
+  markAllTaskCancellationsAsRead: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -62,9 +81,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [bidNotifications, setBidNotifications] = useState<
     BidNotificationData[]
   >([]);
+  const [taskCancellationNotifications, setTaskCancellationNotifications] =
+    useState<TaskCancellationNotificationData[]>([]);
 
   // Calculate unread bid count
   const unreadBidCount = bidNotifications.filter((notif) => !notif.read).length;
+
+  // Calculate unread task cancellation count
+  const unreadTaskCancellationCount = taskCancellationNotifications.filter(
+    (notif) => !notif.read
+  ).length;
 
   // Load persisted notifications on component mount
   useEffect(() => {
@@ -127,12 +153,31 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           const updated = [enrichedNotification, ...prev];
           return updated;
         });
+      };
+
+      const handleTaskCancellationNotification = (
+        notification: TaskCancellationNotificationData
+      ) => {
+        setTaskCancellationNotifications((prev) => {
+          const enrichedNotification = {
+            ...notification,
+            read: false,
+            timestamp: new Date().toISOString(),
+          };
+          const updated = [enrichedNotification, ...prev];
+          return updated;
+        });
       }; // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("newMessage", handleNewMessage);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("message_notification", handleMessageNotification);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socket as any).on("new_bid_notification", handleBidNotification);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socket as any).on(
+        "task_cancelled_notification",
+        handleTaskCancellationNotification
+      );
 
       return () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,6 +186,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         (socket as any).off("message_notification", handleMessageNotification);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (socket as any).off("new_bid_notification", handleBidNotification);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (socket as any).off(
+          "task_cancelled_notification",
+          handleTaskCancellationNotification
+        );
       };
     }
   }, [socket, user]);
@@ -195,9 +245,39 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       )
     );
   };
-
   const markAllBidsAsRead = () => {
     setBidNotifications((prev) =>
+      prev.map((notif) => ({ ...notif, read: true }))
+    );
+  };
+
+  // Task cancellation notification methods
+  const addTaskCancellationNotification = (
+    notification: TaskCancellationNotificationData
+  ) => {
+    setTaskCancellationNotifications((prev) => [notification, ...prev]);
+  };
+
+  const removeTaskCancellationNotification = (taskId: string) => {
+    setTaskCancellationNotifications((prev) =>
+      prev.filter((notif) => notif.taskId !== taskId)
+    );
+  };
+
+  const clearAllTaskCancellationNotifications = () => {
+    setTaskCancellationNotifications([]);
+  };
+
+  const markTaskCancellationAsRead = (taskId: string) => {
+    setTaskCancellationNotifications((prev) =>
+      prev.map((notif) =>
+        notif.taskId === taskId ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
+  const markAllTaskCancellationsAsRead = () => {
+    setTaskCancellationNotifications((prev) =>
       prev.map((notif) => ({ ...notif, read: true }))
     );
   };
@@ -207,7 +287,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         unreadCount,
         newMessageNotifications,
         bidNotifications,
+        taskCancellationNotifications,
         unreadBidCount,
+        unreadTaskCancellationCount,
         markConversationAsRead,
         markAllAsRead,
         incrementUnreadCount,
@@ -216,6 +298,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         clearAllBidNotifications,
         markBidAsRead,
         markAllBidsAsRead,
+        addTaskCancellationNotification,
+        removeTaskCancellationNotification,
+        clearAllTaskCancellationNotifications,
+        markTaskCancellationAsRead,
+        markAllTaskCancellationsAsRead,
       }}
     >
       {children}

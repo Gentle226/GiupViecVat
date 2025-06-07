@@ -139,6 +139,11 @@ export const tasksAPI = {
     const response = await api.patch(`/api/tasks/${id}/complete`);
     return response.data;
   },
+
+  cancelTask: async (id: string): Promise<ApiResponse<Task>> => {
+    const response = await api.patch(`/api/tasks/${id}/cancel`);
+    return response.data;
+  },
 };
 
 // Bids API

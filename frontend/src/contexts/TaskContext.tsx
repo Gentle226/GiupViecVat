@@ -37,6 +37,7 @@ interface TaskContextType extends TaskState {
   deleteTask: (id: string) => Promise<void>;
   loadMyTasks: () => Promise<void>;
   completeTask: (id: string) => Promise<void>;
+  cancelTask: (id: string) => Promise<void>;
   setFilters: (filters: Partial<TaskState["filters"]>) => void;
   clearError: () => void;
   clearCurrentTask: () => void;
@@ -195,10 +196,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
             type: "LOAD_TASKS_FAILURE",
             payload: response.message || "Failed to load tasks",
           });
-        }      } catch (error: unknown) {
+        }
+      } catch (error: unknown) {
         dispatch({
           type: "LOAD_TASKS_FAILURE",
-          payload: error instanceof Error ? error.message : "Failed to load tasks",
+          payload:
+            error instanceof Error ? error.message : "Failed to load tasks",
         });
       }
     },
@@ -220,7 +223,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
           type: "LOAD_TASKS_FAILURE",
           payload: response.message || "Failed to load task",
         });
-      }    } catch (error: unknown) {
+      }
+    } catch (error: unknown) {
       dispatch({
         type: "LOAD_TASKS_FAILURE",
         payload: error instanceof Error ? error.message : "Failed to load task",
@@ -243,10 +247,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
           type: "LOAD_TASKS_FAILURE",
           payload: response.message || "Failed to create task",
         });
-      }    } catch (error: unknown) {
+      }
+    } catch (error: unknown) {
       dispatch({
         type: "LOAD_TASKS_FAILURE",
-        payload: error instanceof Error ? error.message : "Failed to create task",
+        payload:
+          error instanceof Error ? error.message : "Failed to create task",
       });
     }
   }, []);
@@ -267,10 +273,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
             type: "LOAD_TASKS_FAILURE",
             payload: response.message || "Failed to update task",
           });
-        }      } catch (error: unknown) {
+        }
+      } catch (error: unknown) {
         dispatch({
           type: "LOAD_TASKS_FAILURE",
-          payload: error instanceof Error ? error.message : "Failed to update task",
+          payload:
+            error instanceof Error ? error.message : "Failed to update task",
         });
       }
     },
@@ -292,10 +300,12 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
           type: "LOAD_TASKS_FAILURE",
           payload: response.message || "Failed to delete task",
         });
-      }    } catch (error: unknown) {
+      }
+    } catch (error: unknown) {
       dispatch({
         type: "LOAD_TASKS_FAILURE",
-        payload: error instanceof Error ? error.message : "Failed to delete task",
+        payload:
+          error instanceof Error ? error.message : "Failed to delete task",
       });
     }
   }, []);
@@ -315,14 +325,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
           type: "LOAD_TASKS_FAILURE",
           payload: response.message || "Failed to load your tasks",
         });
-      }    } catch (error: unknown) {
+      }
+    } catch (error: unknown) {
       dispatch({
         type: "LOAD_TASKS_FAILURE",
-        payload: error instanceof Error ? error.message : "Failed to load your tasks",
+        payload:
+          error instanceof Error ? error.message : "Failed to load your tasks",
       });
     }
   }, []);
-
   const completeTask = useCallback(async (id: string) => {
     try {
       dispatch({ type: "LOAD_TASKS_START" });
@@ -338,10 +349,37 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
           type: "LOAD_TASKS_FAILURE",
           payload: response.message || "Failed to complete task",
         });
-      }    } catch (error: unknown) {
+      }
+    } catch (error: unknown) {
       dispatch({
         type: "LOAD_TASKS_FAILURE",
-        payload: error instanceof Error ? error.message : "Failed to complete task",
+        payload:
+          error instanceof Error ? error.message : "Failed to complete task",
+      });
+    }
+  }, []);
+
+  const cancelTask = useCallback(async (id: string) => {
+    try {
+      dispatch({ type: "LOAD_TASKS_START" });
+      const response = await tasksAPI.cancelTask(id);
+
+      if (response.success && response.data) {
+        dispatch({
+          type: "UPDATE_TASK_SUCCESS",
+          payload: response.data,
+        });
+      } else {
+        dispatch({
+          type: "LOAD_TASKS_FAILURE",
+          payload: response.message || "Failed to cancel task",
+        });
+      }
+    } catch (error: unknown) {
+      dispatch({
+        type: "LOAD_TASKS_FAILURE",
+        payload:
+          error instanceof Error ? error.message : "Failed to cancel task",
       });
     }
   }, []);
@@ -369,6 +407,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
         deleteTask,
         loadMyTasks,
         completeTask,
+        cancelTask,
         setFilters,
         clearError,
         clearCurrentTask,

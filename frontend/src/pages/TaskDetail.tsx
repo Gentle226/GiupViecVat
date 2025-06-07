@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTask } from "../contexts/TaskContext";
 import { tasksAPI, bidsAPI, messagesAPI } from "../services/api";
 import type { Task, TaskBid } from "../../../shared/types";
 import { TaskStatus } from "../../../shared/types";
@@ -25,6 +26,7 @@ const TaskDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { cancelTask } = useTask();
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<TaskBid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,8 +35,10 @@ const TaskDetail: React.FC = () => {
   const [bidMessage, setBidMessage] = useState("");
   const [submittingBid, setSubmittingBid] = useState(false);
   const [completingTask, setCompletingTask] = useState(false);
+  const [cancellingTask, setCancellingTask] = useState(false);
   const [showCompleteConfirmation, setShowCompleteConfirmation] =
     useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [availableTasks, setAvailableTasks] = useState<
     Array<{ _id: string; title: string }>
   >([]);
@@ -224,6 +228,37 @@ const TaskDetail: React.FC = () => {
       setCompletingTask(false);
     }
   };
+  const handleCancelTask = async () => {
+    if (!task) return;
+
+    try {
+      setCancellingTask(true);
+      await cancelTask(task._id);
+      setShowCancelConfirmation(false);
+      alert("Task cancelled successfully!");
+      // Refresh task data to show updated status
+      const response = await tasksAPI.getTask(task._id);
+      if (response.data) {
+        setTask(response.data);
+      }
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error("Error cancelling task:", err);
+
+      if (error.response?.status === 403) {
+        alert("Only task owners can cancel their tasks.");
+      } else if (error.response?.status === 400) {
+        const message = error.response?.data?.message || "Invalid task status";
+        alert(`Failed to cancel task: ${message}`);
+      } else {
+        alert("Failed to cancel task. Please try again.");
+      }
+    } finally {
+      setCancellingTask(false);
+    }
+  };
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.OPEN:
@@ -336,10 +371,11 @@ const TaskDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {" "}
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
                 {task.title}
               </h1>
@@ -350,15 +386,34 @@ const TaskDetail: React.FC = () => {
               >
                 {task.status.replace("_", " ")}
               </span>
-            </div>{" "}
-            <div className="text-right">
-              <div className="text-2xl font-bold text-indigo-600">
-                ${task.suggestedPrice}
-              </div>
-              <div className="text-sm text-gray-500">Budget</div>
             </div>
-          </div>{" "}
+
+            <div className="flex items-center gap-4">
+              {/* Cancel Task Button - for task owners on cancellable tasks */}
+              {isTaskOwner &&
+                (task.status === TaskStatus.OPEN ||
+                  task.status === TaskStatus.ASSIGNED ||
+                  task.status === TaskStatus.IN_PROGRESS) && (
+                  <button
+                    onClick={() => setShowCancelConfirmation(true)}
+                    disabled={cancellingTask}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    {cancellingTask ? "Cancelling..." : "Cancel Task"}
+                  </button>
+                )}
+
+              <div className="text-right">
+                <div className="text-2xl font-bold text-indigo-600">
+                  ${task.suggestedPrice}
+                </div>
+                <div className="text-sm text-gray-500">Budget</div>
+              </div>
+            </div>
+          </div>
           {/* Task Actions */}
+          {/* Complete Task Action - for assigned/in_progress tasks */}
           {(isTaskOwner || isAssignedTasker) &&
             (task.status === TaskStatus.ASSIGNED ||
               task.status === TaskStatus.IN_PROGRESS) && (
@@ -375,7 +430,7 @@ const TaskDetail: React.FC = () => {
                   {isTaskOwner
                     ? "Mark this task as completed when the work is finished to your satisfaction."
                     : "Mark this task as completed when you have finished the work."}
-                </p>{" "}
+                </p>
               </div>
             )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -619,6 +674,44 @@ const TaskDetail: React.FC = () => {
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 {completingTask ? "Closing..." : "Close Task"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Task Confirmation Dialog */}
+      {showCancelConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center mb-4">
+              <X className="h-8 w-8 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Cancel Task
+              </h3>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to cancel this task? This action cannot be
+              undone.
+            </p>
+
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setShowCancelConfirmation(false)}
+                disabled={cancellingTask}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <X className="h-4 w-4 mr-2" />
+                No, keep it
+              </button>
+              <button
+                onClick={handleCancelTask}
+                disabled={cancellingTask}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {cancellingTask ? "Cancelling..." : "Yes, cancel task"}
               </button>
             </div>
           </div>

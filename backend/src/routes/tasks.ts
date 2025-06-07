@@ -325,4 +325,116 @@ router.patch(
   }
 );
 
+// Cancel task
+router.patch(
+  "/:id/cancel",
+  authenticateToken,
+  requireClient,
+  async (req: AuthRequest, res) => {
+    try {
+      const task = await db.findTaskById(req.params.id);
+
+      if (!task) {
+        return res.status(404).json({
+          success: false,
+          message: "Task not found",
+        });
+      }
+
+      // Only task owner can cancel
+      const postedById = (task.postedBy as any)?._id || task.postedBy;
+      const isTaskOwner = postedById.toString() === req.userId.toString();
+
+      if (!isTaskOwner) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to cancel this task",
+        });
+      }
+
+      // Can only cancel open or assigned tasks (not completed or already cancelled)
+      if (task.status === "completed" || task.status === "cancelled") {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot cancel a task that is already ${task.status}`,
+        });
+      } // Update task status to cancelled
+      const updatedTask = await db.updateTask(req.params.id, {
+        status: "cancelled",
+      });
+
+      // Handle cancellation business logic:
+      // 1. Reject all pending bids
+      await Bid.updateMany(
+        {
+          taskId: req.params.id,
+          status: "pending",
+        },
+        { status: "rejected" }
+      );
+
+      // 2. Get all bidders to notify them
+      const affectedBids = await Bid.find({
+        taskId: req.params.id,
+        status: "rejected",
+      }).populate("bidderId", "firstName lastName");
+
+      // 3. Notify assigned tasker (if any) and all bidders
+      try {
+        // Import emitToUser dynamically to avoid circular dependency issues
+        const { emitToUser } = await import("../services/socketService");
+
+        // Notify assigned tasker if there was one
+        if (task.assignedTo) {
+          emitToUser(
+            task.assignedTo.toString(),
+            "task_cancelled_notification",
+            {
+              taskId: req.params.id,
+              taskTitle: task.title,
+              message:
+                "A task you were assigned to has been cancelled by the client.",
+              type: "assigned_task_cancelled",
+            }
+          );
+        }
+
+        // Notify all bidders whose bids were rejected due to cancellation
+        for (const bid of affectedBids) {
+          const bidder = bid.bidderId as any;
+          const bidderName = bidder
+            ? `${bidder.firstName} ${bidder.lastName}`
+            : "Unknown";
+
+          emitToUser(bid.bidderId.toString(), "task_cancelled_notification", {
+            taskId: req.params.id,
+            taskTitle: task.title,
+            message: `The task "${task.title}" has been cancelled by the client. Your bid has been automatically rejected.`,
+            type: "bid_rejected_due_to_cancellation",
+            bidAmount: bid.amount,
+          });
+        }
+      } catch (notificationError) {
+        console.error(
+          "Error sending cancellation notifications:",
+          notificationError
+        );
+        // Don't fail the cancellation if notifications fail
+      }
+
+      res.json({
+        success: true,
+        data: updatedTask,
+        message: "Task cancelled successfully",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to cancel task",
+        error: error.message,
+      });
+    }
+  }
+);
+
 export default router;
