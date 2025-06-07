@@ -180,7 +180,7 @@ export const deleteTask = async (id: string): Promise<boolean> => {
 // Bid operations
 export const createBid = async (
   bidData: Omit<Bid, "_id" | "createdAt" | "status">
-): Promise<Bid> => {
+): Promise<any> => {
   const bid: Bid = {
     _id: generateId(),
     ...bidData,
@@ -188,14 +188,41 @@ export const createBid = async (
     status: BidStatus.PENDING,
   };
   bids.push(bid);
-  return bid;
+  // Return populated bid
+  return populateBidWithUser(bid);
 };
 
 export const findBidById = async (id: string): Promise<Bid | null> => {
   return bids.find((bid) => bid._id === id) || null;
 };
 
-export const getBidsByTask = async (taskId: string): Promise<Bid[]> => {
+// Helper function to populate bid with user data
+const populateBidWithUser = async (bid: Bid): Promise<any> => {
+  const user = users.find((u) => u._id === bid.bidderId);
+  if (!user) return bid;
+
+  return {
+    ...bid,
+    bidderId: {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      rating: user.rating || 0,
+      reviewCount: user.reviewCount || 0,
+      avatar: user.avatar,
+      bio: user.bio,
+      skills: user.skills,
+    },
+  };
+};
+
+export const getBidsByTask = async (taskId: string): Promise<any[]> => {
+  const taskBids = bids.filter((bid) => bid.taskId === taskId);
+  // Populate each bid with user data
+  return Promise.all(taskBids.map(populateBidWithUser));
+};
+
+export const getBidsByTaskRaw = async (taskId: string): Promise<Bid[]> => {
   return bids.filter((bid) => bid.taskId === taskId);
 };
 
@@ -438,6 +465,7 @@ export const memoryStore = {
   createBid,
   findBidById,
   getBidsByTask,
+  getBidsByTaskRaw,
   getBidsByTasker,
   updateBid,
   deleteBid,

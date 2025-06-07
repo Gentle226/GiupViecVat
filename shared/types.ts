@@ -48,7 +48,7 @@ export interface PopulatedUser {
 export interface TaskBid {
   _id: string;
   taskId: string;
-  bidderId: string; // User ID
+  bidderId: string | PopulatedUser; // User ID or populated user data
   amount: number;
   message: string;
   estimatedDuration: number; // in hours

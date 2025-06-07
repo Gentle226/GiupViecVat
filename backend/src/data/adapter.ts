@@ -170,19 +170,33 @@ export class DatabaseAdapter {
     }
     return await Models.Task.findByIdAndDelete(id);
   }
-
   // Bid operations
   async createBid(bidData: any) {
     if (this.useMemoryStore) {
       return await memoryStore.createBid(bidData);
     }
     const bid = new Models.Bid(bidData);
-    return await bid.save();
+    await bid.save();
+    // Populate the bid with user information
+    await bid.populate(
+      "bidderId",
+      "firstName lastName rating reviewCount avatar bio skills"
+    );
+    return bid;
   }
-
   async findBidsByTask(taskId: string) {
     if (this.useMemoryStore) {
       return await memoryStore.getBidsByTask(taskId);
+    }
+    return await Models.Bid.find({ taskId }).populate(
+      "bidderId",
+      "firstName lastName rating reviewCount avatar bio skills"
+    );
+  }
+
+  async findBidsByTaskRaw(taskId: string) {
+    if (this.useMemoryStore) {
+      return await memoryStore.getBidsByTaskRaw(taskId);
     }
     return await Models.Bid.find({ taskId });
   }

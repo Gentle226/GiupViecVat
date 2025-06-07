@@ -120,6 +120,9 @@ const TaskDetail: React.FC = () => {
       const error = err as {
         response?: { status?: number; data?: { message?: string } };
       };
+      console.error("Error submitting bid:", err);
+      console.error("Error details:", error.response?.data);
+
       if (
         error.response?.status === 403 &&
         error.response?.data?.message?.includes("Tasker")
@@ -127,10 +130,13 @@ const TaskDetail: React.FC = () => {
         alert(
           "Only taskers can place bids on tasks. Please switch to a tasker account to bid."
         );
+      } else if (error.response?.status === 400) {
+        // Show the specific 400 error message from the server
+        const message = error.response?.data?.message || "Bad request";
+        alert(`Failed to submit bid: ${message}`);
       } else {
         alert("Failed to submit bid");
       }
-      console.error("Error submitting bid:", err);
     } finally {
       setSubmittingBid(false);
     }
@@ -235,7 +241,11 @@ const TaskDetail: React.FC = () => {
     );
   }
   const isTaskOwner = user?._id === task.postedBy;
-  const hasUserBid = bids.some((bid) => bid.bidderId === user?._id);
+  const hasUserBid = bids.some((bid) => {
+    const bidderIdString =
+      typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
+    return bidderIdString === user?._id;
+  });
   const canBid =
     isAuthenticated &&
     user?.isTasker && // Only taskers can bid
@@ -404,14 +414,20 @@ const TaskDetail: React.FC = () => {
                     <div className="flex items-center">
                       <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
                         <User className="h-6 w-6 text-white" />
-                      </div>
+                      </div>{" "}
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">
-                          Tasker
+                          {typeof bid.bidderId === "string"
+                            ? "Tasker"
+                            : `${bid.bidderId.firstName} ${bid.bidderId.lastName}`}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                          4.8 (12 reviews)
+                          {typeof bid.bidderId === "string"
+                            ? "4.8 (12 reviews)"
+                            : `${bid.bidderId.rating || 0} (${
+                                bid.bidderId.reviewCount || 0
+                              } reviews)`}
                         </div>
                       </div>
                     </div>

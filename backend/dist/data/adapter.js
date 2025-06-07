@@ -191,11 +191,20 @@ class DatabaseAdapter {
             return await memoryStore_1.memoryStore.createBid(bidData);
         }
         const bid = new Models.Bid(bidData);
-        return await bid.save();
+        await bid.save();
+        // Populate the bid with user information
+        await bid.populate("bidderId", "firstName lastName rating reviewCount avatar bio skills");
+        return bid;
     }
     async findBidsByTask(taskId) {
         if (this.useMemoryStore) {
             return await memoryStore_1.memoryStore.getBidsByTask(taskId);
+        }
+        return await Models.Bid.find({ taskId }).populate("bidderId", "firstName lastName rating reviewCount avatar bio skills");
+    }
+    async findBidsByTaskRaw(taskId) {
+        if (this.useMemoryStore) {
+            return await memoryStore_1.memoryStore.getBidsByTaskRaw(taskId);
         }
         return await Models.Bid.find({ taskId });
     }

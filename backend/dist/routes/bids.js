@@ -8,13 +8,14 @@ const Bid_1 = require("../models/Bid");
 const Task_1 = require("../models/Task");
 const auth_1 = require("../middleware/auth");
 const roleAuth_1 = require("../middleware/roleAuth");
+const adapter_1 = require("../data/adapter");
 const router = express_1.default.Router();
 // Create a bid
 router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req, res) => {
     try {
         const { taskId, amount, message, estimatedDuration } = req.body;
         // Check if task exists and is open
-        const task = await Task_1.Task.findById(taskId);
+        const task = await adapter_1.db.findTaskById(taskId);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -33,26 +34,22 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req,
                 message: "Cannot bid on your own task",
             });
         } // Check if user already has a pending bid
-        const existingBid = await Bid_1.Bid.findOne({
-            taskId,
-            bidderId: req.userId,
-            status: "pending",
-        });
+        const existingBids = await adapter_1.db.findBidsByTaskRaw(taskId);
+        const existingBid = existingBids.find((bid) => bid.bidderId.toString() === req.userId.toString() && bid.status === "pending");
         if (existingBid) {
             return res.status(400).json({
                 success: false,
                 message: "You already have a pending bid for this task",
             });
         }
-        const bid = new Bid_1.Bid({
+        const bidData = {
             taskId,
             bidderId: req.userId,
             amount,
             message,
             estimatedDuration,
-        });
-        await bid.save();
-        await bid.populate("bidderId", "firstName lastName rating reviewCount avatar bio skills");
+        };
+        const bid = await adapter_1.db.createBid(bidData);
         res.status(201).json({
             success: true,
             data: bid,
@@ -63,6 +60,35 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req,
         res.status(500).json({
             success: false,
             message: "Failed to create bid",
+            error: error.message,
+        });
+    }
+});
+// Get bids for a specific task
+router.get("/task/:taskId", async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        // Check if task exists
+        const task = await Task_1.Task.findById(taskId);
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "Task not found",
+            });
+        }
+        // Get all bids for this task
+        const bids = await Bid_1.Bid.find({ taskId })
+            .populate("bidderId", "firstName lastName rating reviewCount avatar bio skills")
+            .sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            data: bids,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch task bids",
             error: error.message,
         });
     }

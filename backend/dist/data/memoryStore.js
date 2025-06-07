@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.memoryStore = exports.seedDemoData = exports.updatePayment = exports.getPaymentsByUser = exports.findPaymentById = exports.createPayment = exports.getReviewsByTask = exports.getReviewsByTasker = exports.createReview = exports.updateConversation = exports.getConversationsByUser = exports.findConversationById = exports.createConversation = exports.getMessagesByConversation = exports.createMessage = exports.deleteBid = exports.updateBid = exports.getBidsByTasker = exports.getBidsByTask = exports.findBidById = exports.createBid = exports.deleteTask = exports.updateTask = exports.getAllTasks = exports.findTaskById = exports.createTask = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.findUserById = exports.findUserByEmail = exports.createUser = void 0;
+exports.memoryStore = exports.seedDemoData = exports.updatePayment = exports.getPaymentsByUser = exports.findPaymentById = exports.createPayment = exports.getReviewsByTask = exports.getReviewsByTasker = exports.createReview = exports.updateConversation = exports.getConversationsByUser = exports.findConversationById = exports.createConversation = exports.getMessagesByConversation = exports.createMessage = exports.deleteBid = exports.updateBid = exports.getBidsByTasker = exports.getBidsByTaskRaw = exports.getBidsByTask = exports.findBidById = exports.createBid = exports.deleteTask = exports.updateTask = exports.getAllTasks = exports.findTaskById = exports.createTask = exports.deleteUser = exports.updateUser = exports.getAllUsers = exports.findUserById = exports.findUserByEmail = exports.createUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const types_1 = require("../types");
 // In-memory storage
@@ -152,19 +152,45 @@ const createBid = async (bidData) => {
         status: types_1.BidStatus.PENDING,
     };
     bids.push(bid);
-    return bid;
+    // Return populated bid
+    return populateBidWithUser(bid);
 };
 exports.createBid = createBid;
 const findBidById = async (id) => {
     return bids.find((bid) => bid._id === id) || null;
 };
 exports.findBidById = findBidById;
+// Helper function to populate bid with user data
+const populateBidWithUser = async (bid) => {
+    const user = users.find((u) => u._id === bid.bidderId);
+    if (!user)
+        return bid;
+    return {
+        ...bid,
+        bidderId: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            rating: user.rating || 0,
+            reviewCount: user.reviewCount || 0,
+            avatar: user.avatar,
+            bio: user.bio,
+            skills: user.skills,
+        },
+    };
+};
 const getBidsByTask = async (taskId) => {
-    return bids.filter((bid) => bid.taskId === taskId);
+    const taskBids = bids.filter((bid) => bid.taskId === taskId);
+    // Populate each bid with user data
+    return Promise.all(taskBids.map(populateBidWithUser));
 };
 exports.getBidsByTask = getBidsByTask;
-const getBidsByTasker = async (taskerId) => {
-    return bids.filter((bid) => bid.taskerId === taskerId);
+const getBidsByTaskRaw = async (taskId) => {
+    return bids.filter((bid) => bid.taskId === taskId);
+};
+exports.getBidsByTaskRaw = getBidsByTaskRaw;
+const getBidsByTasker = async (bidderId) => {
+    return bids.filter((bid) => bid.bidderId === bidderId);
 };
 exports.getBidsByTasker = getBidsByTasker;
 const updateBid = async (id, updates) => {
@@ -336,7 +362,7 @@ const seedDemoData = async () => {
     // Create demo bid
     await (0, exports.createBid)({
         taskId: cleaningTask._id,
-        taskerId: taskerUser._id,
+        bidderId: taskerUser._id,
         amount: 140,
         estimatedDuration: 4,
         message: "Hi! I have 5 years of professional cleaning experience and can complete this job with high quality. I bring all eco-friendly supplies.",
@@ -365,6 +391,7 @@ exports.memoryStore = {
     createBid: exports.createBid,
     findBidById: exports.findBidById,
     getBidsByTask: exports.getBidsByTask,
+    getBidsByTaskRaw: exports.getBidsByTaskRaw,
     getBidsByTasker: exports.getBidsByTasker,
     updateBid: exports.updateBid,
     deleteBid: exports.deleteBid,

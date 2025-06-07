@@ -3,6 +3,7 @@ import { Bid } from "../models/Bid";
 import { Task } from "../models/Task";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { requireTasker } from "../middleware/roleAuth";
+import { db } from "../data/adapter";
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router.post(
       const { taskId, amount, message, estimatedDuration } = req.body;
 
       // Check if task exists and is open
-      const task = await Task.findById(taskId);
+      const task = await db.findTaskById(taskId);
       if (!task) {
         return res.status(404).json({
           success: false,
@@ -36,11 +37,12 @@ router.post(
           message: "Cannot bid on your own task",
         });
       } // Check if user already has a pending bid
-      const existingBid = await Bid.findOne({
-        taskId,
-        bidderId: req.userId,
-        status: "pending",
-      });
+      const existingBids = await db.findBidsByTaskRaw(taskId);
+      const existingBid = existingBids.find(
+        (bid: any) =>
+          bid.bidderId.toString() === req.userId.toString() &&
+          bid.status === "pending"
+      );
 
       if (existingBid) {
         return res.status(400).json({
@@ -48,19 +50,16 @@ router.post(
           message: "You already have a pending bid for this task",
         });
       }
-      const bid = new Bid({
+
+      const bidData = {
         taskId,
         bidderId: req.userId,
         amount,
         message,
         estimatedDuration,
-      });
+      };
 
-      await bid.save();
-      await bid.populate(
-        "bidderId",
-        "firstName lastName rating reviewCount avatar bio skills"
-      );
+      const bid = await db.createBid(bidData);
 
       res.status(201).json({
         success: true,
