@@ -4,6 +4,7 @@ import { Bid } from "../models/Bid";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { requireClient } from "../middleware/roleAuth";
 import { db } from "../data/adapter";
+import ResponseHelper from "../utils/ResponseHelper";
 
 const router = express.Router();
 
@@ -86,11 +87,7 @@ router.get("/", async (req, res) => {
       },
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch tasks",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -110,11 +107,7 @@ router.get("/my-tasks", authenticateToken, async (req: AuthRequest, res) => {
       data: result.tasks,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch your tasks",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -122,24 +115,13 @@ router.get("/my-tasks", authenticateToken, async (req: AuthRequest, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const task = await db.findTaskById(req.params.id);
-
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
+      return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
     }
 
-    res.json({
-      success: true,
-      data: task,
-    });
+    return ResponseHelper.success(res, req, "", task);
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch task",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -156,18 +138,15 @@ router.post(
       };
 
       const task = await db.createTask(taskData);
-
-      res.status(201).json({
-        success: true,
-        data: task,
-        message: "Task created successfully",
-      });
+      return ResponseHelper.success(res, req, "tasks.taskCreated", task, 201);
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to create task",
-        error: error.message,
-      });
+      return ResponseHelper.error(
+        res,
+        req,
+        "tasks.taskCreationFailed",
+        500,
+        error.message
+      );
     }
   }
 );
@@ -182,10 +161,7 @@ router.put(
       const task = await db.findTaskById(req.params.id);
 
       if (!task) {
-        return res.status(404).json({
-          success: false,
-          message: "Task not found",
-        });
+        return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
       }
 
       // Only task owner can update
@@ -194,25 +170,14 @@ router.put(
       const isTaskOwner = postedById.toString() === req.userId.toString();
 
       if (!isTaskOwner) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to update this task",
-        });
+        return ResponseHelper.forbidden(res, req, "tasks.unauthorizedAccess");
       }
       const updatedTask = await db.updateTask(req.params.id, req.body);
 
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: "Task updated successfully",
-      });
+      return ResponseHelper.success(res, req, "tasks.taskUpdated", updatedTask);
     } catch (error: any) {
       console.error("Update task error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to update task",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -225,36 +190,21 @@ router.delete(
   async (req: AuthRequest, res) => {
     try {
       const task = await db.findTaskById(req.params.id);
-
       if (!task) {
-        return res.status(404).json({
-          success: false,
-          message: "Task not found",
-        });
+        return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
       }
 
       // Only task owner can delete
       // Handle both populated and non-populated postedBy field
       const postedById = (task.postedBy as any)?._id || task.postedBy;
       if (postedById.toString() !== req.userId.toString()) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to delete this task",
-        });
+        return ResponseHelper.forbidden(res, req, "tasks.unauthorizedAccess");
       }
-
       await db.deleteTask(req.params.id);
 
-      res.json({
-        success: true,
-        message: "Task deleted successfully",
-      });
+      return ResponseHelper.success(res, req, "tasks.taskDeleted");
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete task",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -263,36 +213,21 @@ router.delete(
 router.get("/:id/bids", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const task = await db.findTaskById(req.params.id);
-
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
+      return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
     }
 
     // Only task owner can view bids
     // Handle both populated and non-populated postedBy field
     const postedById = (task.postedBy as any)?._id || task.postedBy;
     if (postedById.toString() !== req.userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to view bids for this task",
-      });
+      return ResponseHelper.forbidden(res, req, "bids.unauthorizedViewBids");
     }
-
     const bids = await db.findBidsByTask(req.params.id);
 
-    res.json({
-      success: true,
-      data: bids,
-    });
+    return ResponseHelper.success(res, req, "", bids);
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch bids",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -304,12 +239,8 @@ router.patch(
   async (req: AuthRequest, res) => {
     try {
       const task = await db.findTaskById(req.params.id);
-
       if (!task) {
-        return res.status(404).json({
-          success: false,
-          message: "Task not found",
-        });
+        return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
       }
 
       // Only task owner (client) can complete tasks
@@ -317,36 +248,31 @@ router.patch(
       const isTaskOwner = postedById.toString() === req.userId.toString();
 
       if (!isTaskOwner) {
-        return res.status(403).json({
-          success: false,
-          message: "Only the task owner can complete this task",
-        });
+        return ResponseHelper.forbidden(res, req, "tasks.onlyOwnerCanComplete");
       }
 
       // Task must be assigned or in progress to be completed
       if (task.status !== "assigned" && task.status !== "in_progress") {
-        return res.status(400).json({
-          success: false,
-          message: "Task must be assigned or in progress to be completed",
-        });
+        return ResponseHelper.error(
+          res,
+          req,
+          "tasks.invalidStatusForCompletion",
+          400
+        );
       }
-
       const updatedTask = await db.updateTask(req.params.id, {
         status: "completed",
         completedAt: new Date(),
       });
 
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: "Task completed successfully",
-      });
+      return ResponseHelper.success(
+        res,
+        req,
+        "tasks.taskCompleted",
+        updatedTask
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to complete task",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -359,12 +285,8 @@ router.patch(
   async (req: AuthRequest, res) => {
     try {
       const task = await db.findTaskById(req.params.id);
-
       if (!task) {
-        return res.status(404).json({
-          success: false,
-          message: "Task not found",
-        });
+        return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
       }
 
       // Only task owner can cancel
@@ -372,18 +294,18 @@ router.patch(
       const isTaskOwner = postedById.toString() === req.userId.toString();
 
       if (!isTaskOwner) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to cancel this task",
-        });
+        return ResponseHelper.forbidden(res, req, "tasks.unauthorizedAccess");
       }
 
       // Can only cancel open or assigned tasks (not completed or already cancelled)
       if (task.status === "completed" || task.status === "cancelled") {
-        return res.status(400).json({
-          success: false,
-          message: `Cannot cancel a task that is already ${task.status}`,
-        });
+        return ResponseHelper.error(
+          res,
+          req,
+          "tasks.cannotCancelTask",
+          400,
+          `Cannot cancel a task that is already ${task.status}`
+        );
       } // Update task status to cancelled
       const updatedTask = await db.updateTask(req.params.id, {
         status: "cancelled",
@@ -447,18 +369,14 @@ router.patch(
         );
         // Don't fail the cancellation if notifications fail
       }
-
-      res.json({
-        success: true,
-        data: updatedTask,
-        message: "Task cancelled successfully",
-      });
+      return ResponseHelper.success(
+        res,
+        req,
+        "tasks.taskCancelled",
+        updatedTask
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to cancel task",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );

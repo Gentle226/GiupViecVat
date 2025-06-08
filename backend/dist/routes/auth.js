@@ -8,6 +8,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const adapter_1 = require("../data/adapter");
 const auth_1 = require("../middleware/auth");
+const ResponseHelper_1 = __importDefault(require("../utils/ResponseHelper"));
 const router = (0, express_1.Router)();
 // Generate JWT token
 const generateToken = (userId) => {
@@ -52,14 +53,10 @@ const transformUser = (user) => {
 // Register
 router.post("/register", async (req, res) => {
     try {
-        const { email, password, firstName, lastName, isTasker, location } = req.body;
-        // Check if user already exists
+        const { email, password, firstName, lastName, isTasker, location } = req.body; // Check if user already exists
         const existingUser = await adapter_1.db.findUserByEmail(email);
         if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: "User already exists with this email",
-            });
+            return ResponseHelper_1.default.error(res, req, 'auth.userExists', 400);
         } // Create new user
         const userCreateData = {
             email,
@@ -74,64 +71,41 @@ router.post("/register", async (req, res) => {
             },
         };
         const user = await adapter_1.db.createUser(userCreateData); // Generate token
-        const token = generateToken(user._id);
-        // Transform user to match frontend expected structure
+        const token = generateToken(user._id); // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
-        res.status(201).json({
-            success: true,
-            data: {
-                user: transformedUser,
-                token,
-            },
-            message: "User registered successfully",
-        });
+        return ResponseHelper_1.default.success(res, req, 'auth.registrationSuccess', {
+            user: transformedUser,
+            token,
+        }, 201);
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Registration failed",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.error(res, req, 'auth.registrationFailed', 500, error.message);
     }
 });
 // Login
 router.post("/login", async (req, res) => {
     try {
-        const { email, password } = req.body;
-        // Find user by email
+        const { email, password } = req.body; // Find user by email
         const user = await adapter_1.db.findUserByEmail(email);
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
+            return ResponseHelper_1.default.error(res, req, 'auth.invalidCredentials', 401);
         }
         // Check password
         const isMatch = await bcryptjs_1.default.compare(password, user.password);
         if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-            });
-        } // Generate token
+            return ResponseHelper_1.default.error(res, req, 'auth.invalidCredentials', 401);
+        }
+        // Generate token
         const token = generateToken(user._id);
         // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
-        res.json({
-            success: true,
-            data: {
-                user: transformedUser,
-                token,
-            },
-            message: "Login successful",
+        return ResponseHelper_1.default.success(res, req, 'auth.loginSuccess', {
+            user: transformedUser,
+            token,
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Login failed",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Get current user profile
@@ -139,23 +113,14 @@ router.get("/me", auth_1.authenticateToken, async (req, res) => {
     try {
         const user = await adapter_1.db.findUserById(req.userId);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        } // Transform user to match frontend expected structure
+            return ResponseHelper_1.default.notFound(res, req, 'auth.userNotFound');
+        }
+        // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
-        res.json({
-            success: true,
-            data: transformedUser,
-        });
+        return ResponseHelper_1.default.success(res, req, 'users.profileRetrieved', transformedUser);
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch user profile",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.error(res, req, 'users.profileRetrievalFailed', 500, error.message);
     }
 });
 // Update user profile
@@ -168,24 +133,44 @@ router.put("/profile", auth_1.authenticateToken, async (req, res) => {
         delete updates.email;
         const user = await adapter_1.db.updateUser(req.userId, updates);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        } // Transform user to match frontend expected structure
+            return ResponseHelper_1.default.notFound(res, req, 'auth.userNotFound');
+        }
+        // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
-        res.json({
-            success: true,
-            data: transformedUser,
-            message: "Profile updated successfully",
-        });
+        return ResponseHelper_1.default.success(res, req, 'auth.profileUpdateSuccess', transformedUser);
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to update profile",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.error(res, req, 'auth.profileUpdateFailed', 500, error.message);
+    }
+});
+// Change password
+router.put("/change-password", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return ResponseHelper_1.default.error(res, req, 'auth.passwordRequired', 400);
+        }
+        if (newPassword.length < 6) {
+            return ResponseHelper_1.default.error(res, req, 'validation.passwordTooShort', 400);
+        }
+        // Find the user
+        const user = await adapter_1.db.findUserById(req.userId);
+        if (!user) {
+            return ResponseHelper_1.default.notFound(res, req, 'auth.userNotFound');
+        }
+        // Verify current password
+        const isCurrentPasswordValid = await bcryptjs_1.default.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            return ResponseHelper_1.default.error(res, req, 'auth.invalidCredentials', 400);
+        }
+        // Hash new password
+        const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 10);
+        // Update password
+        await adapter_1.db.updateUser(req.userId, { password: hashedNewPassword });
+        return ResponseHelper_1.default.success(res, req, 'auth.profileUpdateSuccess');
+    }
+    catch (error) {
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 exports.default = router;

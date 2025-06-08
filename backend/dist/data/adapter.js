@@ -40,6 +40,19 @@ exports.db = exports.DatabaseAdapter = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const memoryStore_1 = require("./memoryStore");
 const Models = __importStar(require("../models"));
+// Helper function to calculate distance between two points using Haversine formula
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLng / 2) *
+            Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 class DatabaseAdapter {
     constructor() {
         this.useMemoryStore = false;
@@ -47,7 +60,7 @@ class DatabaseAdapter {
     async initialize() {
         try {
             // Try to connect to MongoDB
-            await mongoose_1.default.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/homeeasy");
+            await mongoose_1.default.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/giupviecvat");
             console.log("Connected to MongoDB");
             this.useMemoryStore = false;
         }
@@ -109,7 +122,19 @@ class DatabaseAdapter {
                     task.description
                         .toLowerCase()
                         .includes(options.search.toLowerCase()));
-            } // Apply sorting
+            }
+            // Apply location filtering
+            if (filter.location) {
+                const { lat, lng, radius } = filter.location;
+                tasks = tasks.filter((task) => {
+                    if (!task.location?.coordinates)
+                        return false;
+                    const [taskLng, taskLat] = task.location.coordinates;
+                    const distance = calculateDistance(lat, lng, taskLat, taskLng);
+                    return distance <= radius;
+                });
+            }
+            // Apply sorting
             if (options.sort) {
                 tasks.sort((a, b) => {
                     if (options.sort === "createdAt") {
@@ -134,7 +159,11 @@ class DatabaseAdapter {
                 totalPages: Math.ceil(tasks.length / (options.limit || 10)),
             };
         }
-        let query = Models.Task.find(filter);
+        // MongoDB queries - create base filter excluding location for now
+        const mongoFilter = { ...filter };
+        const locationFilter = mongoFilter.location;
+        delete mongoFilter.location;
+        let query = Models.Task.find(mongoFilter);
         // Apply search
         if (options.search) {
             query = query.find({
@@ -142,6 +171,17 @@ class DatabaseAdapter {
                     { title: { $regex: options.search, $options: "i" } },
                     { description: { $regex: options.search, $options: "i" } },
                 ],
+            });
+        }
+        // Apply location filtering using MongoDB's geospatial queries
+        if (locationFilter) {
+            const { lat, lng, radius } = locationFilter;
+            query = query.find({
+                "location.coordinates": {
+                    $geoWithin: {
+                        $centerSphere: [[lng, lat], radius / 6371], // radius in radians (Earth radius = 6371 km)
+                    },
+                },
             });
         }
         // Apply sorting
@@ -153,12 +193,31 @@ class DatabaseAdapter {
         const page = options.page || 1;
         const limit = options.limit || 10;
         const skip = (page - 1) * limit;
+        let countQuery = Models.Task.find(mongoFilter);
+        if (options.search) {
+            countQuery = countQuery.find({
+                $or: [
+                    { title: { $regex: options.search, $options: "i" } },
+                    { description: { $regex: options.search, $options: "i" } },
+                ],
+            });
+        }
+        if (locationFilter) {
+            const { lat, lng, radius } = locationFilter;
+            countQuery = countQuery.find({
+                "location.coordinates": {
+                    $geoWithin: {
+                        $centerSphere: [[lng, lat], radius / 6371],
+                    },
+                },
+            });
+        }
         const [tasks, total] = await Promise.all([
             query
                 .populate("postedBy", "firstName lastName rating reviewCount avatar")
                 .skip(skip)
                 .limit(limit),
-            Models.Task.countDocuments(filter),
+            countQuery.countDocuments(),
         ]);
         return {
             tasks,

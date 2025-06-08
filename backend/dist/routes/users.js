@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const Task_1 = require("../models/Task");
 const adapter_1 = require("../data/adapter");
+const ResponseHelper_1 = __importDefault(require("../utils/ResponseHelper"));
 const router = express_1.default.Router();
 // Transform user data to match frontend expected structure
 const transformUser = (user) => {
@@ -42,30 +43,20 @@ router.get("/:id", async (req, res) => {
     try {
         const user = await adapter_1.db.findUserById(req.params.id);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
+            return ResponseHelper_1.default.notFound(res, req, 'users.userNotFound');
         }
         // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
         // For now, skip reviews since they might not work with memory store
         // TODO: Implement reviews in memory store if needed
         const reviews = [];
-        res.json({
-            success: true,
-            data: {
-                user: transformedUser,
-                reviews,
-            },
+        return ResponseHelper_1.default.success(res, req, 'users.profileRetrieved', {
+            user: transformedUser,
+            reviews,
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch user profile",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Get user's tasks
@@ -86,25 +77,18 @@ router.get("/:id/tasks", async (req, res) => {
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit));
         const total = await Task_1.Task.countDocuments(query);
-        res.json({
-            success: true,
-            data: {
-                tasks,
-                pagination: {
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total,
-                    pages: Math.ceil(total / parseInt(limit)),
-                },
+        return ResponseHelper_1.default.success(res, req, '', {
+            tasks,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit)),
             },
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch user tasks",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 exports.default = router;

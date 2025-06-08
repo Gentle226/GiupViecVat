@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const Message_1 = require("../models/Message");
 const auth_1 = require("../middleware/auth");
+const ResponseHelper_1 = __importDefault(require("../utils/ResponseHelper"));
 const router = express_1.default.Router();
 // Get user's conversations
 router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
@@ -24,11 +25,7 @@ router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch conversations",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Get messages for a conversation
@@ -61,11 +58,7 @@ router.get("/conversations/:id/messages", auth_1.authenticateToken, async (req, 
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch messages",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Create or get conversation
@@ -94,39 +87,25 @@ router.post("/conversations", auth_1.authenticateToken, async (req, res) => {
         }
         await conversation.populate("participants", "firstName lastName avatar");
         await conversation.populate("taskId", "title status");
-        res.json({
-            success: true,
-            data: conversation,
-        });
+        return ResponseHelper_1.default.success(res, req, 'messages.conversationCreated', conversation);
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to create conversation",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Send message to a conversation
 router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req, res) => {
     try {
         const { content } = req.body;
-        const conversationId = req.params.id;
-        // Validate input
+        const conversationId = req.params.id; // Validate input
         if (!content || !content.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Message content is required",
-            });
+            return ResponseHelper_1.default.error(res, req, 'messages.messageContentRequired', 400);
         }
         // Check if user is participant in the conversation
         const conversation = await Message_1.Conversation.findById(conversationId);
         if (!conversation ||
             !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
-            return res.status(403).json({
-                success: false,
-                message: "Not authorized to send message to this conversation",
-            });
+            return ResponseHelper_1.default.forbidden(res, req, 'messages.unauthorizedAccess');
         }
         // Create the message
         const message = new Message_1.Message({
@@ -135,23 +114,15 @@ router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req,
             content: content.trim(),
         });
         await message.save();
-        await message.populate("senderId", "firstName lastName avatar");
-        // Update conversation's last message
+        await message.populate("senderId", "firstName lastName avatar"); // Update conversation's last message
         await Message_1.Conversation.findByIdAndUpdate(conversationId, {
             lastMessage: message._id,
             updatedAt: new Date(),
         });
-        res.json({
-            success: true,
-            data: message,
-        });
+        return ResponseHelper_1.default.success(res, req, 'messages.messageSent', message);
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to send message",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Get unread message count for user
@@ -184,11 +155,7 @@ router.get("/unread-count", auth_1.authenticateToken, async (req, res) => {
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch unread count",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 // Mark conversation messages as read
@@ -199,10 +166,7 @@ router.post("/conversations/:id/mark-read", auth_1.authenticateToken, async (req
         const conversation = await Message_1.Conversation.findById(conversationId);
         if (!conversation ||
             !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
-            return res.status(403).json({
-                success: false,
-                message: "Not authorized to access this conversation",
-            });
+            return ResponseHelper_1.default.forbidden(res, req, 'messages.unauthorizedAccess');
         }
         // Mark all messages in the conversation as read by this user
         await Message_1.Message.updateMany({
@@ -216,11 +180,7 @@ router.post("/conversations/:id/mark-read", auth_1.authenticateToken, async (req
         });
     }
     catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to mark messages as read",
-            error: error.message,
-        });
+        return ResponseHelper_1.default.serverError(res, req, error.message);
     }
 });
 exports.default = router;

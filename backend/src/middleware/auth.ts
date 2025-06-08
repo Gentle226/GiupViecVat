@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { Socket } from "socket.io";
+import { ResponseHelper } from "../utils/ResponseHelper";
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -17,10 +18,7 @@ export const authenticateToken = async (
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Access token required",
-      });
+      return ResponseHelper.unauthorized(res, req, "auth.tokenMissing");
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
@@ -31,10 +29,7 @@ export const authenticateToken = async (
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    return res.status(403).json({
-      success: false,
-      message: "Invalid token",
-    });
+    return ResponseHelper.forbidden(res, req, "auth.tokenInvalid");
   }
 };
 

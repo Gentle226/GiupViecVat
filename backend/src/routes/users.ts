@@ -4,6 +4,7 @@ import { Task } from "../models/Task";
 import { Review } from "../models/index";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { db } from "../data/adapter";
+import ResponseHelper from "../utils/ResponseHelper";
 
 const router = express.Router();
 
@@ -44,12 +45,8 @@ const transformUser = (user: any) => {
 router.get("/:id", async (req, res) => {
   try {
     const user = await db.findUserById(req.params.id);
-
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return ResponseHelper.notFound(res, req, "users.userNotFound");
     }
 
     // Transform user to match frontend expected structure
@@ -58,20 +55,12 @@ router.get("/:id", async (req, res) => {
     // For now, skip reviews since they might not work with memory store
     // TODO: Implement reviews in memory store if needed
     const reviews: any[] = [];
-
-    res.json({
-      success: true,
-      data: {
-        user: transformedUser,
-        reviews,
-      },
+    return ResponseHelper.success(res, req, "users.profileRetrieved", {
+      user: transformedUser,
+      reviews,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch user profile",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -95,25 +84,17 @@ router.get("/:id/tasks", async (req, res) => {
       .skip((parseInt(page as string) - 1) * parseInt(limit as string));
 
     const total = await Task.countDocuments(query);
-
-    res.json({
-      success: true,
-      data: {
-        tasks,
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          pages: Math.ceil(total / parseInt(limit as string)),
-        },
+    return ResponseHelper.success(res, req, "", {
+      tasks,
+      pagination: {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        total,
+        pages: Math.ceil(total / parseInt(limit as string)),
       },
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch user tasks",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 

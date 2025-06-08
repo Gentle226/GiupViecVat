@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { Message, Conversation } from "../models/Message";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
+import ResponseHelper from "../utils/ResponseHelper";
 
 const router = express.Router();
 
@@ -18,17 +19,12 @@ router.get(
         .populate("lastMessage")
         .populate("taskId", "title status")
         .sort({ updatedAt: -1 });
-
       res.json({
         success: true,
         data: conversations,
       });
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch conversations",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -70,17 +66,12 @@ router.get(
         },
         { $push: { readBy: new mongoose.Types.ObjectId(req.userId) } }
       );
-
       res.json({
         success: true,
         data: messages.reverse(), // Return in chronological order
       });
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch messages",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -114,20 +105,17 @@ router.post(
         });
         await conversation.save();
       }
-
       await conversation.populate("participants", "firstName lastName avatar");
       await conversation.populate("taskId", "title status");
 
-      res.json({
-        success: true,
-        data: conversation,
-      });
+      return ResponseHelper.success(
+        res,
+        req,
+        "messages.conversationCreated",
+        conversation
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to create conversation",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -139,14 +127,14 @@ router.post(
   async (req: AuthRequest, res) => {
     try {
       const { content } = req.body;
-      const conversationId = req.params.id;
-
-      // Validate input
+      const conversationId = req.params.id; // Validate input
       if (!content || !content.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Message content is required",
-        });
+        return ResponseHelper.error(
+          res,
+          req,
+          "messages.messageContentRequired",
+          400
+        );
       }
 
       // Check if user is participant in the conversation
@@ -157,10 +145,11 @@ router.post(
           new mongoose.Types.ObjectId(req.userId)
         )
       ) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to send message to this conversation",
-        });
+        return ResponseHelper.forbidden(
+          res,
+          req,
+          "messages.unauthorizedAccess"
+        );
       }
 
       // Create the message
@@ -171,24 +160,14 @@ router.post(
       });
 
       await message.save();
-      await message.populate("senderId", "firstName lastName avatar");
-
-      // Update conversation's last message
+      await message.populate("senderId", "firstName lastName avatar"); // Update conversation's last message
       await Conversation.findByIdAndUpdate(conversationId, {
         lastMessage: message._id,
         updatedAt: new Date(),
       });
-
-      res.json({
-        success: true,
-        data: message,
-      });
+      return ResponseHelper.success(res, req, "messages.messageSent", message);
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to send message",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -220,7 +199,6 @@ router.get(
           conversationCounts[conversation._id.toString()] = unreadCount;
         }
       }
-
       res.json({
         success: true,
         data: {
@@ -229,11 +207,7 @@ router.get(
         },
       });
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch unread count",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -254,10 +228,11 @@ router.post(
           new mongoose.Types.ObjectId(req.userId)
         )
       ) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to access this conversation",
-        });
+        return ResponseHelper.forbidden(
+          res,
+          req,
+          "messages.unauthorizedAccess"
+        );
       }
 
       // Mark all messages in the conversation as read by this user
@@ -269,17 +244,12 @@ router.post(
         },
         { $push: { readBy: new mongoose.Types.ObjectId(req.userId) } }
       );
-
       res.json({
         success: true,
         data: { success: true },
       });
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to mark messages as read",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );

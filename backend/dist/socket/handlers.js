@@ -7,11 +7,19 @@ const setupSocketHandlers = (io) => {
     // Authentication middleware for socket connections
     io.use(auth_1.authenticateSocket);
     io.on("connection", (socket) => {
-        console.log(`User connected: ${socket.user?.userId}`);
-        // Join user to their own room for private messages
         const userId = socket.user?.userId;
+        console.log(`=== SOCKET CONNECTION DEBUG ===`);
+        console.log(`User connected: ${userId}`);
+        // Join user to their own room for private messages
         if (userId) {
-            socket.join(`user_${userId}`);
+            const room = `user_${userId}`;
+            socket.join(room);
+            console.log(`User ${userId} joined room: ${room}`);
+            // Log all rooms this socket is in
+            console.log(`Socket rooms for user ${userId}:`, Array.from(socket.rooms));
+        }
+        else {
+            console.error("No userId found in socket connection!");
         }
         // Handle joining conversation rooms
         socket.on("join_conversation", (conversationId) => {

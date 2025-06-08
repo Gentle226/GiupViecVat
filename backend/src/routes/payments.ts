@@ -2,6 +2,7 @@ import express from "express";
 import { Payment, Review } from "../models/index";
 import { Task } from "../models/Task";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
+import { ResponseHelper } from "../utils/ResponseHelper";
 
 const router = express.Router();
 
@@ -12,29 +13,23 @@ router.post("/", authenticateToken, async (req: AuthRequest, res) => {
 
     const task = await Task.findById(taskId);
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
-    } // Only task poster can create payment
+      return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
+    }
+
+    // Only task poster can create payment
     if (task.postedBy.toString() !== req.userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to create payment for this task",
-      });
+      return ResponseHelper.forbidden(res, req, "payments.unauthorizedAccess");
     }
 
     if (!task.assignedTo) {
-      return res.status(400).json({
-        success: false,
-        message: "Task must be assigned before payment",
-      });
+      return ResponseHelper.error(res, req, "payments.taskNotCompleted", 400);
     }
 
     // Simulate Stripe payment intent
     const mockPaymentIntentId = `pi_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
+
     const payment = new Payment({
       taskId,
       payerId: req.userId,
@@ -52,17 +47,21 @@ router.post("/", authenticateToken, async (req: AuthRequest, res) => {
     task.completedAt = new Date();
     await task.save();
 
-    res.status(201).json({
-      success: true,
-      data: payment,
-      message: "Payment processed successfully",
-    });
+    return ResponseHelper.success(
+      res,
+      req,
+      "payments.paymentProcessed",
+      payment,
+      201
+    );
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Payment processing failed",
-      error: error.message,
-    });
+    return ResponseHelper.error(
+      res,
+      req,
+      "payments.paymentProcessingFailed",
+      500,
+      error
+    );
   }
 });
 
@@ -71,6 +70,7 @@ router.get("/history", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { type = "all", page = 1, limit = 20 } = req.query;
     let query: any = {};
+
     if (type === "sent") {
       query.payerId = req.userId;
     } else if (type === "received") {
@@ -89,24 +89,30 @@ router.get("/history", authenticateToken, async (req: AuthRequest, res) => {
 
     const total = await Payment.countDocuments(query);
 
-    res.json({
-      success: true,
-      data: {
-        payments,
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          pages: Math.ceil(total / parseInt(limit as string)),
-        },
+    const responseData = {
+      payments,
+      pagination: {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        total,
+        pages: Math.ceil(total / parseInt(limit as string)),
       },
-    });
+    };
+
+    return ResponseHelper.success(
+      res,
+      req,
+      "general.operationSuccess",
+      responseData
+    );
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch payment history",
-      error: error.message,
-    });
+    return ResponseHelper.error(
+      res,
+      req,
+      "general.operationFailed",
+      500,
+      error
+    );
   }
 });
 

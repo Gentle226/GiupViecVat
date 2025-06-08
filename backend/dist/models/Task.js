@@ -46,6 +46,7 @@ const taskSchema = new mongoose_1.Schema({
         type: String,
         required: true,
         maxlength: 1000,
+        minlength: 10,
     },
     category: {
         type: String,
@@ -68,6 +69,12 @@ const taskSchema = new mongoose_1.Schema({
             type: [Number],
             required: true,
         },
+    },
+    locationType: {
+        type: String,
+        enum: ["in_person", "online"],
+        required: true,
+        default: "in_person",
     },
     suggestedPrice: {
         type: Number,
@@ -97,6 +104,27 @@ const taskSchema = new mongoose_1.Schema({
         type: Date,
         default: null,
     },
+    // New timing fields
+    timingType: {
+        type: String,
+        enum: ["on_date", "before_date", "flexible"],
+        required: true,
+        default: "flexible",
+    },
+    specificDate: {
+        type: Date,
+        default: null,
+    },
+    timeOfDay: {
+        type: [String],
+        enum: ["morning", "midday", "afternoon", "evening"],
+        default: [],
+    },
+    needsSpecificTime: {
+        type: Boolean,
+        required: true,
+        default: false,
+    },
 }, {
     timestamps: true,
 });
@@ -104,5 +132,6 @@ const taskSchema = new mongoose_1.Schema({
 taskSchema.index({ category: 1, status: 1 });
 taskSchema.index({ postedBy: 1 });
 taskSchema.index({ assignedTo: 1 });
+taskSchema.index({ "location.coordinates": "2dsphere" }); // Geospatial index for location queries
 exports.Task = mongoose_1.default.model("Task", taskSchema);
 //# sourceMappingURL=Task.js.map

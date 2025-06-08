@@ -5,15 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateSocket = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const ResponseHelper_1 = require("../utils/ResponseHelper");
 const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
         const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
         if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: "Access token required",
-            });
+            return ResponseHelper_1.ResponseHelper.unauthorized(res, req, 'auth.tokenMissing');
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         // Store the decoded user info instead of looking up from database
@@ -23,10 +21,7 @@ const authenticateToken = async (req, res, next) => {
         next();
     }
     catch (error) {
-        return res.status(403).json({
-            success: false,
-            message: "Invalid token",
-        });
+        return ResponseHelper_1.ResponseHelper.forbidden(res, req, 'auth.tokenInvalid');
     }
 };
 exports.authenticateToken = authenticateToken;

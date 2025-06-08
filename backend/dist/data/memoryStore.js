@@ -105,7 +105,14 @@ const getAllTasks = async (filters) => {
         filteredTasks = filteredTasks.filter((task) => task.postedBy === filters.postedBy);
     }
     if (filters?.location) {
-        filteredTasks = filteredTasks.filter((task) => task.location.toLowerCase().includes(filters.location.toLowerCase()));
+        filteredTasks = filteredTasks.filter((task) => {
+            const taskLocation = typeof task.location === "string"
+                ? task.location
+                : task.location.address;
+            return taskLocation
+                .toLowerCase()
+                .includes(filters.location.toLowerCase());
+        });
     }
     // Populate user data for each task
     return filteredTasks.map((task) => {
@@ -129,8 +136,9 @@ const getAllTasks = async (filters) => {
 exports.getAllTasks = getAllTasks;
 const updateTask = async (id, updates) => {
     const taskIndex = tasks.findIndex((task) => task._id === id);
-    if (taskIndex === -1)
+    if (taskIndex === -1) {
         return null;
+    }
     tasks[taskIndex] = { ...tasks[taskIndex], ...updates };
     return tasks[taskIndex];
 };
@@ -323,66 +331,6 @@ const seedDemoData = async () => {
     conversations.length = 0;
     reviews.length = 0;
     payments.length = 0;
-    // Create demo users
-    const clientUser = await (0, exports.createUser)({
-        name: "Demo Client",
-        email: "client@demo.com",
-        password: "password123",
-        userType: types_1.UserType.CLIENT,
-        phone: "+1234567890",
-        location: "New York, NY",
-    });
-    const taskerUser = await (0, exports.createUser)({
-        name: "Demo Tasker",
-        email: "tasker@demo.com",
-        password: "password123",
-        userType: types_1.UserType.TASKER,
-        phone: "+1234567891",
-        location: "New York, NY",
-        skills: ["Cleaning", "Handyman", "Moving"],
-        hourlyRate: 25,
-        availability: "Weekdays: 9AM-5PM, Weekends: 10AM-4PM",
-    });
-    // Create demo tasks
-    const cleaningTask = await (0, exports.createTask)({
-        title: "Deep Clean 2-Bedroom Apartment",
-        description: "Need a thorough deep cleaning of my 2-bedroom apartment. Kitchen, bathrooms, living room, and bedrooms need attention. Approximately 3-4 hours of work.",
-        category: types_1.TaskCategory.CLEANING,
-        suggestedPrice: 150,
-        location: "Manhattan, New York, NY",
-        postedBy: clientUser._id,
-        scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
-        requirements: [
-            "Bring own cleaning supplies",
-            "Available on weekends",
-            "Non-smoking",
-        ],
-    });
-    const handymanTask = await (0, exports.createTask)({
-        title: "Mount TV and Install Shelves",
-        description: "Need someone to mount a 55-inch TV on the wall and install 3 floating shelves in the living room. All hardware provided.",
-        category: types_1.TaskCategory.HANDYMAN,
-        suggestedPrice: 100,
-        location: "Brooklyn, New York, NY",
-        postedBy: clientUser._id,
-        scheduledDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-        requirements: [
-            "Own tools required",
-            "Experience with TV mounting",
-            "References preferred",
-        ],
-    });
-    // Create demo bid
-    await (0, exports.createBid)({
-        taskId: cleaningTask._id,
-        bidderId: taskerUser._id,
-        amount: 140,
-        estimatedDuration: 4,
-        message: "Hi! I have 5 years of professional cleaning experience and can complete this job with high quality. I bring all eco-friendly supplies.",
-    });
-    console.log("Demo data seeded successfully!");
-    console.log(`Client User: ${clientUser.email} (password: password123)`);
-    console.log(`Tasker User: ${taskerUser.email} (password: password123)`);
 };
 exports.seedDemoData = seedDemoData;
 // Export the complete memory store

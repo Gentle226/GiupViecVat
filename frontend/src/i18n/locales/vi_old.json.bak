@@ -58,8 +58,7 @@
       "happyCustomers": "Khách Hàng Hài Lòng",
       "skilledTaskers": "Thợ Có Kỹ Năng",
       "averageRating": "Đánh Giá Trung Bình"
-    },
-    "featuresSection": {
+    },    "featuresSection": {
       "title": "Tại Sao Chọn GiúpViệcVặt?",
       "subtitle": "Chúng tôi giúp bạn dễ dàng kết nối với các chuyên gia địa phương và hoàn thành công việc một cách an toàn và hiệu quả."
     },
@@ -133,8 +132,7 @@
       "haveAccount": "Đã có tài khoản?",
       "signInHere": "Đăng nhập tại đây"
     }
-  },
-  "tasks": {
+  },  "tasks": {
     "createTask": "Tạo Công Việc",
     "title": "Tiêu Đề Công Việc",
     "description": "Mô Tả",
@@ -202,8 +200,7 @@
       "taskCreatedSuccess": "Tạo nhiệm vụ thành công!",
       "taskCreationError": "Lỗi tạo nhiệm vụ. Vui lòng thử lại."
     }
-  },
-  "messages": {
+  },"messages": {
     "title": "Tin Nhắn",
     "searchPlaceholder": "Tìm kiếm cuộc trò chuyện...",
     "selectConversation": "Chọn cuộc trò chuyện",
@@ -271,8 +268,7 @@
     "view": "Xem",
     "client": "Khách Hàng",
     "tasker": "Thợ"
-  },
-  "profile": {
+  },  "profile": {
     "client": "Khách Hàng",
     "tasker": "Thợ",
     "completedTasks": "Nhiệm Vụ Đã Hoàn Thành",
@@ -349,8 +345,7 @@
       "cancel": "Hủy",
       "submitting": "Đang gửi...",
       "ratingSubmitted": "Cảm ơn phản hồi của bạn!",
-      "error": "Lỗi gửi đánh giá. Vui lòng thử lại.",
-      "selectRatingFirst": "Vui lòng chọn đánh giá trước"
+      "error": "Lỗi gửi đánh giá. Vui lòng thử lại.",      "selectRatingFirst": "Vui lòng chọn đánh giá trước"
     }
   },
   "common": {

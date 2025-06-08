@@ -6,6 +6,7 @@ import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { requireTasker } from "../middleware/roleAuth";
 import { db } from "../data/adapter";
 import { emitToUser } from "../services/socketService";
+import ResponseHelper from "../utils/ResponseHelper";
 
 const router = express.Router();
 
@@ -16,28 +17,18 @@ router.post(
   requireTasker,
   async (req: AuthRequest, res) => {
     try {
-      const { taskId, amount, message, estimatedDuration } = req.body;
-
-      // Check if task exists and is open
+      const { taskId, amount, message, estimatedDuration } = req.body; // Check if task exists and is open
       const task = await db.findTaskById(taskId);
       if (!task) {
-        return res.status(404).json({
-          success: false,
-          message: "Task not found",
-        });
+        return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
+      }
+      if (task.status !== "open") {
+        return ResponseHelper.error(res, req, "bids.taskNotAcceptingBids", 400);
       }
 
-      if (task.status !== "open") {
-        return res.status(400).json({
-          success: false,
-          message: "Task is no longer accepting bids",
-        });
-      } // Can't bid on own task
+      // Can't bid on own task
       if (task.postedBy.toString() === req.userId.toString()) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot bid on your own task",
-        });
+        return ResponseHelper.error(res, req, "bids.cannotBidOnOwnTask", 400);
       } // Check if user already has a pending bid
       const existingBids = await db.findBidsByTaskRaw(taskId);
       const existingBid = existingBids.find(
@@ -45,12 +36,8 @@ router.post(
           bid.bidderId.toString() === req.userId.toString() &&
           bid.status === "pending"
       );
-
       if (existingBid) {
-        return res.status(400).json({
-          success: false,
-          message: "You already have a pending bid for this task",
-        });
+        return ResponseHelper.error(res, req, "bids.bidAlreadyExists", 400);
       }
 
       const bidData = {
@@ -70,9 +57,7 @@ router.post(
       const taskOwnerId =
         typeof task.postedBy === "string"
           ? task.postedBy
-          : task.postedBy._id?.toString() || task.postedBy.toString();
-
-      // Emit socket notification to task owner
+          : task.postedBy._id?.toString() || task.postedBy.toString(); // Emit socket notification to task owner
       emitToUser(taskOwnerId, "new_bid_notification", {
         taskId,
         bidId: bid._id,
@@ -82,17 +67,9 @@ router.post(
         message,
       });
 
-      res.status(201).json({
-        success: true,
-        data: bid,
-        message: "Bid submitted successfully",
-      });
+      return ResponseHelper.success(res, req, "bids.bidCreated", bid, 201);
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to create bid",
-        error: error.message,
-      });
+      return ResponseHelper.serverError(res, req, error.message);
     }
   }
 );
@@ -100,18 +77,11 @@ router.post(
 // Get bids for a specific task
 router.get("/task/:taskId", async (req, res) => {
   try {
-    const { taskId } = req.params;
-
-    // Check if task exists
+    const { taskId } = req.params; // Check if task exists
     const task = await Task.findById(taskId);
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
-    }
-
-    // Get all bids for this task
+      return ResponseHelper.notFound(res, req, "tasks.taskNotFound");
+    } // Get all bids for this task
     const bids = await Bid.find({ taskId })
       .populate(
         "bidderId",
@@ -119,16 +89,9 @@ router.get("/task/:taskId", async (req, res) => {
       )
       .sort({ createdAt: -1 });
 
-    res.json({
-      success: true,
-      data: bids,
-    });
+    return ResponseHelper.success(res, req, "", bids);
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch task bids",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -136,27 +99,18 @@ router.get("/task/:taskId", async (req, res) => {
 router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const bid = await Bid.findById(req.params.id).populate("taskId");
-
     if (!bid) {
-      return res.status(404).json({
-        success: false,
-        message: "Bid not found",
-      });
+      return ResponseHelper.notFound(res, req, "bids.bidNotFound");
     }
 
-    const task = bid.taskId as any; // Only task owner can accept bids
+    const task = bid.taskId as any;
+    // Only task owner can accept bids
     if (task.postedBy.toString() !== req.userId.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to accept this bid",
-      });
+      return ResponseHelper.forbidden(res, req, "bids.onlyTaskOwnerCanAccept");
     }
 
     if (bid.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "Bid is no longer pending",
-      });
+      return ResponseHelper.error(res, req, "bids.bidNotPending", 400);
     }
 
     // Update bid status
@@ -196,21 +150,12 @@ router.put("/:id/accept", authenticateToken, async (req: AuthRequest, res) => {
       console.error(
         "Error sending bid accepted notification:",
         notificationError
-      );
-      // Don't fail the bid acceptance if notification fails
+      ); // Don't fail the bid acceptance if notification fails
     }
 
-    res.json({
-      success: true,
-      data: bid,
-      message: "Bid accepted successfully",
-    });
+    return ResponseHelper.success(res, req, "bids.bidAccepted", bid);
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to accept bid",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -232,27 +177,19 @@ router.get("/my-bids", authenticateToken, async (req: AuthRequest, res) => {
       .sort({ createdAt: -1 })
       .limit(parseInt(limit as string))
       .skip((parseInt(page as string) - 1) * parseInt(limit as string));
-
     const total = await Bid.countDocuments(query);
 
-    res.json({
-      success: true,
-      data: {
-        bids,
-        pagination: {
-          page: parseInt(page as string),
-          limit: parseInt(limit as string),
-          total,
-          pages: Math.ceil(total / parseInt(limit as string)),
-        },
+    return ResponseHelper.success(res, req, "", {
+      bids,
+      pagination: {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        total,
+        pages: Math.ceil(total / parseInt(limit as string)),
       },
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch bids",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 

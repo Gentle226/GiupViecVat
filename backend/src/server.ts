@@ -4,7 +4,8 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
-
+import middleware from "i18next-http-middleware";
+import i18n from "./config/i18n"; // Initialize i18n
 import authRoutes from "./routes/auth";
 import userRoutes from "./routes/users";
 import taskRoutes from "./routes/tasks";
@@ -52,6 +53,9 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// i18n middleware for language detection and translation
+app.use(middleware.handle(i18n));
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -106,9 +110,10 @@ app.use(
     next: express.NextFunction
   ) => {
     console.error(err.stack);
+    const t = req.t || ((key: string) => key); // Fallback translation function
     res.status(500).json({
       success: false,
-      message: "Something went wrong!",
+      message: t("general.serverError"),
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
@@ -116,9 +121,10 @@ app.use(
 
 // 404 handler
 app.use("*", (req, res) => {
+  const t = req.t || ((key: string) => key); // Fallback translation function
   res.status(404).json({
     success: false,
-    message: "Route not found",
+    message: t("general.notFound"),
   });
 });
 

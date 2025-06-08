@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { db } from "../data/adapter";
 import { authenticateToken } from "../middleware/auth";
+import ResponseHelper from "../utils/ResponseHelper";
 
 const router = Router();
 
@@ -54,15 +55,10 @@ const transformUser = (user: any) => {
 router.post("/register", async (req, res) => {
   try {
     const { email, password, firstName, lastName, isTasker, location } =
-      req.body;
-
-    // Check if user already exists
+      req.body; // Check if user already exists
     const existingUser = await db.findUserByEmail(email);
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists with this email",
-      });
+      return ResponseHelper.error(res, req, "auth.userExists", 400);
     } // Create new user
     const userCreateData = {
       email,
@@ -77,69 +73,57 @@ router.post("/register", async (req, res) => {
       },
     };
     const user = await db.createUser(userCreateData); // Generate token
-    const token = generateToken(user._id as string);
-
-    // Transform user to match frontend expected structure
+    const token = generateToken(user._id as string); // Transform user to match frontend expected structure
     const transformedUser = transformUser(user);
 
-    res.status(201).json({
-      success: true,
-      data: {
+    return ResponseHelper.success(
+      res,
+      req,
+      "auth.registrationSuccess",
+      {
         user: transformedUser,
         token,
       },
-      message: "User registered successfully",
-    });
+      201
+    );
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Registration failed",
-      error: error.message,
-    });
+    return ResponseHelper.error(
+      res,
+      req,
+      "auth.registrationFailed",
+      500,
+      error.message
+    );
   }
 });
 
 // Login
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-    // Find user by email
+    const { email, password } = req.body; // Find user by email
     const user = await db.findUserByEmail(email);
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+      return ResponseHelper.error(res, req, "auth.invalidCredentials", 401);
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    } // Generate token
+      return ResponseHelper.error(res, req, "auth.invalidCredentials", 401);
+    }
+
+    // Generate token
     const token = generateToken(user._id as string);
 
     // Transform user to match frontend expected structure
     const transformedUser = transformUser(user);
 
-    res.json({
-      success: true,
-      data: {
-        user: transformedUser,
-        token,
-      },
-      message: "Login successful",
+    return ResponseHelper.success(res, req, "auth.loginSuccess", {
+      user: transformedUser,
+      token,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Login failed",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
@@ -148,23 +132,26 @@ router.get("/me", authenticateToken, async (req: any, res) => {
   try {
     const user = await db.findUserById(req.userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    } // Transform user to match frontend expected structure
+      return ResponseHelper.notFound(res, req, "auth.userNotFound");
+    }
+
+    // Transform user to match frontend expected structure
     const transformedUser = transformUser(user);
 
-    res.json({
-      success: true,
-      data: transformedUser,
-    });
+    return ResponseHelper.success(
+      res,
+      req,
+      "users.profileRetrieved",
+      transformedUser
+    );
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch user profile",
-      error: error.message,
-    });
+    return ResponseHelper.error(
+      res,
+      req,
+      "users.profileRetrievalFailed",
+      500,
+      error.message
+    );
   }
 });
 
@@ -179,24 +166,26 @@ router.put("/profile", authenticateToken, async (req: any, res) => {
     delete updates.email;
     const user = await db.updateUser(req.userId, updates);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    } // Transform user to match frontend expected structure
+      return ResponseHelper.notFound(res, req, "auth.userNotFound");
+    }
+
+    // Transform user to match frontend expected structure
     const transformedUser = transformUser(user);
 
-    res.json({
-      success: true,
-      data: transformedUser,
-      message: "Profile updated successfully",
-    });
+    return ResponseHelper.success(
+      res,
+      req,
+      "auth.profileUpdateSuccess",
+      transformedUser
+    );
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update profile",
-      error: error.message,
-    });
+    return ResponseHelper.error(
+      res,
+      req,
+      "auth.profileUpdateFailed",
+      500,
+      error.message
+    );
   }
 });
 
@@ -204,28 +193,18 @@ router.put("/profile", authenticateToken, async (req: any, res) => {
 router.put("/change-password", authenticateToken, async (req: any, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password and new password are required",
-      });
+      return ResponseHelper.error(res, req, "auth.passwordRequired", 400);
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be at least 6 characters long",
-      });
+      return ResponseHelper.error(res, req, "validation.passwordTooShort", 400);
     }
 
     // Find the user
     const user = await db.findUserById(req.userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return ResponseHelper.notFound(res, req, "auth.userNotFound");
     }
 
     // Verify current password
@@ -234,10 +213,7 @@ router.put("/change-password", authenticateToken, async (req: any, res) => {
       user.password
     );
     if (!isCurrentPasswordValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password is incorrect",
-      });
+      return ResponseHelper.error(res, req, "auth.invalidCredentials", 400);
     }
 
     // Hash new password
@@ -246,16 +222,9 @@ router.put("/change-password", authenticateToken, async (req: any, res) => {
     // Update password
     await db.updateUser(req.userId, { password: hashedNewPassword });
 
-    res.json({
-      success: true,
-      message: "Password changed successfully",
-    });
+    return ResponseHelper.success(res, req, "auth.profileUpdateSuccess");
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to change password",
-      error: error.message,
-    });
+    return ResponseHelper.serverError(res, req, error.message);
   }
 });
 
