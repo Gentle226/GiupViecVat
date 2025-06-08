@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const passport_1 = __importDefault(require("./config/passport"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const i18next_http_middleware_1 = __importDefault(require("i18next-http-middleware"));
@@ -53,6 +54,8 @@ app.use(express_1.default.json({ limit: "10mb" }));
 app.use(express_1.default.urlencoded({ extended: true }));
 // i18n middleware for language detection and translation
 app.use(i18next_http_middleware_1.default.handle(i18n_1.default));
+// Initialize Passport
+app.use(passport_1.default.initialize());
 // Debug middleware to log all requests
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -96,7 +99,7 @@ app.use((err, req, res, next) => {
     const t = req.t || ((key) => key); // Fallback translation function
     res.status(500).json({
         success: false,
-        message: t('general.serverError'),
+        message: t("general.serverError"),
         error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
 });
@@ -105,7 +108,7 @@ app.use("*", (req, res) => {
     const t = req.t || ((key) => key); // Fallback translation function
     res.status(404).json({
         success: false,
-        message: t('general.notFound'),
+        message: t("general.notFound"),
     });
 });
 const PORT = process.env.PORT || 5000;

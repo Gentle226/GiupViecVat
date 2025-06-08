@@ -8,6 +8,8 @@ export interface User {
   lastName?: string;
   phone?: string;
   avatar?: string;
+  googleId?: string; // Google OAuth ID
+  emailVerified?: boolean; // Email verification status
   userType: UserType;
   rating: number;
   reviewCount?: number;

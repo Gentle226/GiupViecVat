@@ -7,6 +7,8 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   avatar?: string;
+  googleId?: string;
+  emailVerified?: boolean;
   isTasker: boolean;
   rating: number;
   reviewCount: number;
@@ -57,6 +59,15 @@ const userSchema = new Schema(
     avatar: {
       type: String,
       default: null,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allow null values but maintain uniqueness when present
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
     isTasker: {
       type: Boolean,

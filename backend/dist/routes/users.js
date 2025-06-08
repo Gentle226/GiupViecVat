@@ -43,14 +43,14 @@ router.get("/:id", async (req, res) => {
     try {
         const user = await adapter_1.db.findUserById(req.params.id);
         if (!user) {
-            return ResponseHelper_1.default.notFound(res, req, 'users.userNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "users.userNotFound");
         }
         // Transform user to match frontend expected structure
         const transformedUser = transformUser(user);
         // For now, skip reviews since they might not work with memory store
         // TODO: Implement reviews in memory store if needed
         const reviews = [];
-        return ResponseHelper_1.default.success(res, req, 'users.profileRetrieved', {
+        return ResponseHelper_1.default.success(res, req, "users.profileRetrieved", {
             user: transformedUser,
             reviews,
         });
@@ -77,7 +77,7 @@ router.get("/:id/tasks", async (req, res) => {
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit));
         const total = await Task_1.Task.countDocuments(query);
-        return ResponseHelper_1.default.success(res, req, '', {
+        return ResponseHelper_1.default.success(res, req, "", {
             tasks,
             pagination: {
                 page: parseInt(page),

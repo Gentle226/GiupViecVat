@@ -16,16 +16,16 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
         const { taskId, revieweeId, rating, comment } = req.body;
         const task = await Task_1.Task.findById(taskId);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Check if task is completed
         if (task.status !== "completed") {
-            return ResponseHelper_1.default.error(res, req, 'reviews.taskNotCompleted', 400);
+            return ResponseHelper_1.default.error(res, req, "reviews.taskNotCompleted", 400);
         } // Check if user is involved in the task
         const isTaskPoster = task.postedBy.toString() === req.userId.toString();
         const isTasker = task.assignedTo && task.assignedTo.toString() === req.userId.toString();
         if (!isTaskPoster && !isTasker) {
-            return ResponseHelper_1.default.forbidden(res, req, 'reviews.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "reviews.unauthorizedAccess");
         } // Check if review already exists
         const existingReview = await index_1.Review.findOne({
             taskId,
@@ -33,7 +33,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
             revieweeId,
         });
         if (existingReview) {
-            return ResponseHelper_1.default.error(res, req, 'reviews.reviewAlreadyExists', 400);
+            return ResponseHelper_1.default.error(res, req, "reviews.reviewAlreadyExists", 400);
         }
         const review = new index_1.Review({
             taskId,
@@ -53,7 +53,7 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
         });
         await review.populate("reviewerId", "firstName lastName avatar");
         await review.populate("taskId", "title");
-        return ResponseHelper_1.default.success(res, req, 'reviews.reviewCreated', review, 201);
+        return ResponseHelper_1.default.success(res, req, "reviews.reviewCreated", review, 201);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -70,7 +70,7 @@ router.get("/user/:id", async (req, res) => {
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit));
         const total = await index_1.Review.countDocuments({ revieweeId: req.params.id });
-        return ResponseHelper_1.default.success(res, req, '', {
+        return ResponseHelper_1.default.success(res, req, "", {
             reviews,
             pagination: {
                 page: parseInt(page),

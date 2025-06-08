@@ -11,7 +11,7 @@ const authenticateToken = async (req, res, next) => {
         const authHeader = req.headers.authorization;
         const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
         if (!token) {
-            return ResponseHelper_1.ResponseHelper.unauthorized(res, req, 'auth.tokenMissing');
+            return ResponseHelper_1.ResponseHelper.unauthorized(res, req, "auth.tokenMissing");
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         // Store the decoded user info instead of looking up from database
@@ -21,7 +21,7 @@ const authenticateToken = async (req, res, next) => {
         next();
     }
     catch (error) {
-        return ResponseHelper_1.ResponseHelper.forbidden(res, req, 'auth.tokenInvalid');
+        return ResponseHelper_1.ResponseHelper.forbidden(res, req, "auth.tokenInvalid");
     }
 };
 exports.authenticateToken = authenticateToken;

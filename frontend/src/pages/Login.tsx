@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../components/Logo";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 
 const Login: React.FC = () => {
@@ -10,7 +11,14 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+    isAuthenticated,
+    isLoading,
+    error,
+    clearError,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,6 +53,20 @@ const Login: React.FC = () => {
       console.log("Login error in handleSubmit:", error);
       // Error is handled by the auth context
     }
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    try {
+      await loginWithGoogle(credential);
+    } catch (error) {
+      console.log("Google login error:", error);
+      // Error is handled by the auth context
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.log("Google login error");
+    // You could set a specific error message here if needed
   };
 
   return (
@@ -174,6 +196,26 @@ const Login: React.FC = () => {
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">
+                  {t("auth.login.or")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <GoogleLoginButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+            />
+          </div>
         </div>
       </div>
     </div>

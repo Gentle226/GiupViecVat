@@ -1,11 +1,17 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { OAuth2Client } from "google-auth-library";
+import passport from "../config/passport";
 import { db } from "../data/adapter";
 import { authenticateToken } from "../middleware/auth";
 import ResponseHelper from "../utils/ResponseHelper";
+import { generateRandomPassword } from "../utils/auth";
 
 const router = Router();
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT token
 const generateToken = (userId: string): string => {
@@ -225,6 +231,113 @@ router.put("/change-password", authenticateToken, async (req: any, res) => {
     return ResponseHelper.success(res, req, "auth.profileUpdateSuccess");
   } catch (error: any) {
     return ResponseHelper.serverError(res, req, error.message);
+  }
+});
+
+// Google OAuth routes
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  async (req, res) => {
+    // Successful authentication, generate a token and redirect.
+    const token = generateToken((req.user as any)._id);
+    const user = transformUser(req.user);
+    res.redirect(
+      `${
+        process.env.FRONTEND_URL
+      }/auth/callback?token=${token}&user=${JSON.stringify(user)}`
+    );
+  }
+);
+
+// Google OAuth token verification route
+router.post("/google/verify", async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return ResponseHelper.error(res, req, "auth.tokenMissing", 400);
+    }
+
+    // Verify the Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return ResponseHelper.error(res, req, "auth.invalidToken", 400);
+    }
+
+    const {
+      sub: googleId,
+      email,
+      given_name: firstName,
+      family_name: lastName,
+      picture: avatar,
+    } = payload;
+
+    if (!email) {
+      return ResponseHelper.error(res, req, "auth.emailRequired", 400);
+    }
+
+    // Check if user already exists
+    let user = await db.findUserByEmail(email);
+    if (user) {
+      // Update user with Google ID if not already set
+      if (!user.googleId) {
+        user = await db.updateUser(user._id as string, {
+          googleId,
+          avatar: avatar || user.avatar,
+          emailVerified: true,
+        });
+      }
+    } else {
+      // Create new user
+      const newUserData = {
+        email,
+        firstName: firstName || "",
+        lastName: lastName || "",
+        googleId,
+        avatar: avatar || "",
+        password: generateRandomPassword(),
+        isTasker: false,
+        userType: "client" as const,
+        location: {
+          address: "Not specified",
+          coordinates: [0, 0] as [number, number],
+        },
+        emailVerified: true,
+      };
+
+      user = await db.createUser(newUserData);
+    }
+
+    // Generate JWT token
+    const token = generateToken(user._id as string);
+
+    // Transform user for response
+    const transformedUser = transformUser(user);
+
+    return ResponseHelper.success(res, req, "auth.loginSuccess", {
+      user: transformedUser,
+      token,
+    });
+  } catch (error: any) {
+    console.error("Google OAuth verification error:", error);
+    return ResponseHelper.error(
+      res,
+      req,
+      "auth.googleAuthFailed",
+      500,
+      error.message
+    );
   }
 });
 

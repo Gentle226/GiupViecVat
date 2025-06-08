@@ -18,20 +18,20 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req,
         const { taskId, amount, message, estimatedDuration } = req.body; // Check if task exists and is open
         const task = await adapter_1.db.findTaskById(taskId);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         if (task.status !== "open") {
-            return ResponseHelper_1.default.error(res, req, 'bids.taskNotAcceptingBids', 400);
+            return ResponseHelper_1.default.error(res, req, "bids.taskNotAcceptingBids", 400);
         }
         // Can't bid on own task
         if (task.postedBy.toString() === req.userId.toString()) {
-            return ResponseHelper_1.default.error(res, req, 'bids.cannotBidOnOwnTask', 400);
+            return ResponseHelper_1.default.error(res, req, "bids.cannotBidOnOwnTask", 400);
         } // Check if user already has a pending bid
         const existingBids = await adapter_1.db.findBidsByTaskRaw(taskId);
         const existingBid = existingBids.find((bid) => bid.bidderId.toString() === req.userId.toString() &&
             bid.status === "pending");
         if (existingBid) {
-            return ResponseHelper_1.default.error(res, req, 'bids.bidAlreadyExists', 400);
+            return ResponseHelper_1.default.error(res, req, "bids.bidAlreadyExists", 400);
         }
         const bidData = {
             taskId,
@@ -57,7 +57,7 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireTasker, async (req,
             amount,
             message,
         });
-        return ResponseHelper_1.default.success(res, req, 'bids.bidCreated', bid, 201);
+        return ResponseHelper_1.default.success(res, req, "bids.bidCreated", bid, 201);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -69,12 +69,12 @@ router.get("/task/:taskId", async (req, res) => {
         const { taskId } = req.params; // Check if task exists
         const task = await Task_1.Task.findById(taskId);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         } // Get all bids for this task
         const bids = await Bid_1.Bid.find({ taskId })
             .populate("bidderId", "firstName lastName rating reviewCount avatar bio skills")
             .sort({ createdAt: -1 });
-        return ResponseHelper_1.default.success(res, req, '', bids);
+        return ResponseHelper_1.default.success(res, req, "", bids);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -85,15 +85,15 @@ router.put("/:id/accept", auth_1.authenticateToken, async (req, res) => {
     try {
         const bid = await Bid_1.Bid.findById(req.params.id).populate("taskId");
         if (!bid) {
-            return ResponseHelper_1.default.notFound(res, req, 'bids.bidNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "bids.bidNotFound");
         }
         const task = bid.taskId;
         // Only task owner can accept bids
         if (task.postedBy.toString() !== req.userId.toString()) {
-            return ResponseHelper_1.default.forbidden(res, req, 'bids.onlyTaskOwnerCanAccept');
+            return ResponseHelper_1.default.forbidden(res, req, "bids.onlyTaskOwnerCanAccept");
         }
         if (bid.status !== "pending") {
-            return ResponseHelper_1.default.error(res, req, 'bids.bidNotPending', 400);
+            return ResponseHelper_1.default.error(res, req, "bids.bidNotPending", 400);
         }
         // Update bid status
         bid.status = "accepted";
@@ -126,7 +126,7 @@ router.put("/:id/accept", auth_1.authenticateToken, async (req, res) => {
         catch (notificationError) {
             console.error("Error sending bid accepted notification:", notificationError); // Don't fail the bid acceptance if notification fails
         }
-        return ResponseHelper_1.default.success(res, req, 'bids.bidAccepted', bid);
+        return ResponseHelper_1.default.success(res, req, "bids.bidAccepted", bid);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -146,7 +146,7 @@ router.get("/my-bids", auth_1.authenticateToken, async (req, res) => {
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit));
         const total = await Bid_1.Bid.countDocuments(query);
-        return ResponseHelper_1.default.success(res, req, '', {
+        return ResponseHelper_1.default.success(res, req, "", {
             bids,
             pagination: {
                 page: parseInt(page),

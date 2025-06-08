@@ -15,14 +15,14 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
         const { taskId, amount } = req.body;
         const task = await Task_1.Task.findById(taskId);
         if (!task) {
-            return ResponseHelper_1.ResponseHelper.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.ResponseHelper.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task poster can create payment
         if (task.postedBy.toString() !== req.userId.toString()) {
-            return ResponseHelper_1.ResponseHelper.forbidden(res, req, 'payments.unauthorizedAccess');
+            return ResponseHelper_1.ResponseHelper.forbidden(res, req, "payments.unauthorizedAccess");
         }
         if (!task.assignedTo) {
-            return ResponseHelper_1.ResponseHelper.error(res, req, 'payments.taskNotCompleted', 400);
+            return ResponseHelper_1.ResponseHelper.error(res, req, "payments.taskNotCompleted", 400);
         }
         // Simulate Stripe payment intent
         const mockPaymentIntentId = `pi_${Date.now()}_${Math.random()
@@ -42,10 +42,10 @@ router.post("/", auth_1.authenticateToken, async (req, res) => {
         task.status = "completed";
         task.completedAt = new Date();
         await task.save();
-        return ResponseHelper_1.ResponseHelper.success(res, req, 'payments.paymentProcessed', payment, 201);
+        return ResponseHelper_1.ResponseHelper.success(res, req, "payments.paymentProcessed", payment, 201);
     }
     catch (error) {
-        return ResponseHelper_1.ResponseHelper.error(res, req, 'payments.paymentProcessingFailed', 500, error);
+        return ResponseHelper_1.ResponseHelper.error(res, req, "payments.paymentProcessingFailed", 500, error);
     }
 });
 // Get payment history
@@ -79,10 +79,10 @@ router.get("/history", auth_1.authenticateToken, async (req, res) => {
                 pages: Math.ceil(total / parseInt(limit)),
             },
         };
-        return ResponseHelper_1.ResponseHelper.success(res, req, 'general.operationSuccess', responseData);
+        return ResponseHelper_1.ResponseHelper.success(res, req, "general.operationSuccess", responseData);
     }
     catch (error) {
-        return ResponseHelper_1.ResponseHelper.error(res, req, 'general.operationFailed', 500, error);
+        return ResponseHelper_1.ResponseHelper.error(res, req, "general.operationFailed", 500, error);
     }
 });
 exports.default = router;

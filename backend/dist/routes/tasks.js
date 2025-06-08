@@ -126,9 +126,9 @@ router.get("/:id", async (req, res) => {
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
-        return ResponseHelper_1.default.success(res, req, '', task);
+        return ResponseHelper_1.default.success(res, req, "", task);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -142,10 +142,10 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireClient, async (req,
             postedBy: req.userId, // Use req.userId instead of req.user._id
         };
         const task = await adapter_1.db.createTask(taskData);
-        return ResponseHelper_1.default.success(res, req, 'tasks.taskCreated', task, 201);
+        return ResponseHelper_1.default.success(res, req, "tasks.taskCreated", task, 201);
     }
     catch (error) {
-        return ResponseHelper_1.default.error(res, req, 'tasks.taskCreationFailed', 500, error.message);
+        return ResponseHelper_1.default.error(res, req, "tasks.taskCreationFailed", 500, error.message);
     }
 });
 // Update task
@@ -153,17 +153,17 @@ router.put("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, async (re
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task owner can update
         // Handle both populated and non-populated postedBy field
         const postedById = task.postedBy?._id || task.postedBy;
         const isTaskOwner = postedById.toString() === req.userId.toString();
         if (!isTaskOwner) {
-            return ResponseHelper_1.default.forbidden(res, req, 'tasks.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "tasks.unauthorizedAccess");
         }
         const updatedTask = await adapter_1.db.updateTask(req.params.id, req.body);
-        return ResponseHelper_1.default.success(res, req, 'tasks.taskUpdated', updatedTask);
+        return ResponseHelper_1.default.success(res, req, "tasks.taskUpdated", updatedTask);
     }
     catch (error) {
         console.error("Update task error:", error);
@@ -175,16 +175,16 @@ router.delete("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, async 
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task owner can delete
         // Handle both populated and non-populated postedBy field
         const postedById = task.postedBy?._id || task.postedBy;
         if (postedById.toString() !== req.userId.toString()) {
-            return ResponseHelper_1.default.forbidden(res, req, 'tasks.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "tasks.unauthorizedAccess");
         }
         await adapter_1.db.deleteTask(req.params.id);
-        return ResponseHelper_1.default.success(res, req, 'tasks.taskDeleted');
+        return ResponseHelper_1.default.success(res, req, "tasks.taskDeleted");
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -195,16 +195,16 @@ router.get("/:id/bids", auth_1.authenticateToken, async (req, res) => {
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task owner can view bids
         // Handle both populated and non-populated postedBy field
         const postedById = task.postedBy?._id || task.postedBy;
         if (postedById.toString() !== req.userId.toString()) {
-            return ResponseHelper_1.default.forbidden(res, req, 'bids.unauthorizedViewBids');
+            return ResponseHelper_1.default.forbidden(res, req, "bids.unauthorizedViewBids");
         }
         const bids = await adapter_1.db.findBidsByTask(req.params.id);
-        return ResponseHelper_1.default.success(res, req, '', bids);
+        return ResponseHelper_1.default.success(res, req, "", bids);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -215,23 +215,23 @@ router.patch("/:id/complete", auth_1.authenticateToken, roleAuth_1.requireClient
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task owner (client) can complete tasks
         const postedById = task.postedBy?._id || task.postedBy;
         const isTaskOwner = postedById.toString() === req.userId.toString();
         if (!isTaskOwner) {
-            return ResponseHelper_1.default.forbidden(res, req, 'tasks.onlyOwnerCanComplete');
+            return ResponseHelper_1.default.forbidden(res, req, "tasks.onlyOwnerCanComplete");
         }
         // Task must be assigned or in progress to be completed
         if (task.status !== "assigned" && task.status !== "in_progress") {
-            return ResponseHelper_1.default.error(res, req, 'tasks.invalidStatusForCompletion', 400);
+            return ResponseHelper_1.default.error(res, req, "tasks.invalidStatusForCompletion", 400);
         }
         const updatedTask = await adapter_1.db.updateTask(req.params.id, {
             status: "completed",
             completedAt: new Date(),
         });
-        return ResponseHelper_1.default.success(res, req, 'tasks.taskCompleted', updatedTask);
+        return ResponseHelper_1.default.success(res, req, "tasks.taskCompleted", updatedTask);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -242,17 +242,17 @@ router.patch("/:id/cancel", auth_1.authenticateToken, roleAuth_1.requireClient, 
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
-            return ResponseHelper_1.default.notFound(res, req, 'tasks.taskNotFound');
+            return ResponseHelper_1.default.notFound(res, req, "tasks.taskNotFound");
         }
         // Only task owner can cancel
         const postedById = task.postedBy?._id || task.postedBy;
         const isTaskOwner = postedById.toString() === req.userId.toString();
         if (!isTaskOwner) {
-            return ResponseHelper_1.default.forbidden(res, req, 'tasks.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "tasks.unauthorizedAccess");
         }
         // Can only cancel open or assigned tasks (not completed or already cancelled)
         if (task.status === "completed" || task.status === "cancelled") {
-            return ResponseHelper_1.default.error(res, req, 'tasks.cannotCancelTask', 400, `Cannot cancel a task that is already ${task.status}`);
+            return ResponseHelper_1.default.error(res, req, "tasks.cannotCancelTask", 400, `Cannot cancel a task that is already ${task.status}`);
         } // Update task status to cancelled
         const updatedTask = await adapter_1.db.updateTask(req.params.id, {
             status: "cancelled",
@@ -300,7 +300,7 @@ router.patch("/:id/cancel", auth_1.authenticateToken, roleAuth_1.requireClient, 
             console.error("Error sending cancellation notifications:", notificationError);
             // Don't fail the cancellation if notifications fail
         }
-        return ResponseHelper_1.default.success(res, req, 'tasks.taskCancelled', updatedTask);
+        return ResponseHelper_1.default.success(res, req, "tasks.taskCancelled", updatedTask);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);

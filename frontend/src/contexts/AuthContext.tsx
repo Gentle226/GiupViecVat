@@ -137,6 +137,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    try {
+      dispatch({ type: "AUTH_START" });
+      console.log("Google login attempt");
+      const response = await authAPI.loginWithGoogle(credential);
+      console.log("Google login response:", response);
+
+      if (response.success && response.data) {
+        localStorage.setItem("token", response.data.token);
+        console.log("Google login successful, dispatching AUTH_SUCCESS");
+        dispatch({
+          type: "AUTH_SUCCESS",
+          payload: {
+            user: response.data.user,
+            token: response.data.token,
+          },
+        });
+      } else {
+        console.log("Google login failed:", response.message);
+        dispatch({
+          type: "AUTH_FAILURE",
+          payload: response.message || "Google login failed",
+        });
+      }
+    } catch (error: unknown) {
+      console.log("Google login error:", error);
+      let errorMessage = "Google login failed";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      dispatch({
+        type: "AUTH_FAILURE",
+        payload: errorMessage,
+      });
+    }
+  }, []);
+
   const register = useCallback(async (userData: RegisterRequest) => {
     try {
       dispatch({ type: "AUTH_START" });
@@ -203,6 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         ...state,
         login,
+        loginWithGoogle,
         register,
         logout,
         clearError,

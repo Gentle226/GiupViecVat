@@ -74,6 +74,15 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         default: null,
     },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true, // Allow null values but maintain uniqueness when present
+    },
+    emailVerified: {
+        type: Boolean,
+        default: false,
+    },
     isTasker: {
         type: Boolean,
         default: false,

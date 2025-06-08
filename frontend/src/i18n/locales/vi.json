@@ -102,7 +102,10 @@
       "forgotPassword": "Quên mật khẩu?",
       "signIn": "Đăng Nhập",
       "noAccount": "Chưa có tài khoản?",
-      "signUpHere": "Đăng ký tại đây"
+      "signUpHere": "Đăng ký tại đây",
+      "or": "hoặc",
+      "continueWithGoogle": "Tiếp tục với Google",
+      "signInWithGoogle": "Đăng nhập với Google"
     },
     "register": {
       "title": "Tạo Tài Khoản",
@@ -131,7 +134,10 @@
       "agreeTerms": "Tôi đồng ý với Điều khoản Dịch vụ và Chính sách Bảo mật",
       "createAccount": "Tạo Tài Khoản",
       "haveAccount": "Đã có tài khoản?",
-      "signInHere": "Đăng nhập tại đây"
+      "signInHere": "Đăng nhập tại đây",
+      "or": "hoặc",
+      "continueWithGoogle": "Tiếp tục với Google",
+      "signUpWithGoogle": "Đăng ký với Google"
     }
   },
   "tasks": {

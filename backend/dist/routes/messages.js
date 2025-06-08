@@ -87,7 +87,7 @@ router.post("/conversations", auth_1.authenticateToken, async (req, res) => {
         }
         await conversation.populate("participants", "firstName lastName avatar");
         await conversation.populate("taskId", "title status");
-        return ResponseHelper_1.default.success(res, req, 'messages.conversationCreated', conversation);
+        return ResponseHelper_1.default.success(res, req, "messages.conversationCreated", conversation);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -99,13 +99,13 @@ router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req,
         const { content } = req.body;
         const conversationId = req.params.id; // Validate input
         if (!content || !content.trim()) {
-            return ResponseHelper_1.default.error(res, req, 'messages.messageContentRequired', 400);
+            return ResponseHelper_1.default.error(res, req, "messages.messageContentRequired", 400);
         }
         // Check if user is participant in the conversation
         const conversation = await Message_1.Conversation.findById(conversationId);
         if (!conversation ||
             !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
-            return ResponseHelper_1.default.forbidden(res, req, 'messages.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "messages.unauthorizedAccess");
         }
         // Create the message
         const message = new Message_1.Message({
@@ -119,7 +119,7 @@ router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req,
             lastMessage: message._id,
             updatedAt: new Date(),
         });
-        return ResponseHelper_1.default.success(res, req, 'messages.messageSent', message);
+        return ResponseHelper_1.default.success(res, req, "messages.messageSent", message);
     }
     catch (error) {
         return ResponseHelper_1.default.serverError(res, req, error.message);
@@ -166,7 +166,7 @@ router.post("/conversations/:id/mark-read", auth_1.authenticateToken, async (req
         const conversation = await Message_1.Conversation.findById(conversationId);
         if (!conversation ||
             !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
-            return ResponseHelper_1.default.forbidden(res, req, 'messages.unauthorizedAccess');
+            return ResponseHelper_1.default.forbidden(res, req, "messages.unauthorizedAccess");
         }
         // Mark all messages in the conversation as read by this user
         await Message_1.Message.updateMany({

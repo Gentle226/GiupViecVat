@@ -19,7 +19,9 @@
     "authenticationRequired": "Authentication required",
     "clientOnly": "Only clients can perform this action. Taskers are not allowed to post tasks.",
     "taskerOnly": "Only taskers can perform this action. Clients are not allowed to bid on tasks.",
-    "authorizationFailed": "Authorization check failed"
+    "authorizationFailed": "Authorization check failed",
+    "googleAuthFailed": "Google authentication failed",
+    "invalidToken": "Invalid or expired Google token"
   },
   "tasks": {
     "taskNotFound": "Task not found",

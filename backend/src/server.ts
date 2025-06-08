@@ -2,6 +2,11 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+
+// Load environment variables first
+dotenv.config();
+
+import passport from "./config/passport";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import middleware from "i18next-http-middleware";
@@ -17,8 +22,6 @@ import { authenticateSocket } from "./middleware/auth";
 import { setupSocketHandlers } from "./socket/handlers";
 import { setSocketInstance } from "./services/socketService";
 import { db } from "./data/adapter";
-
-dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
@@ -56,6 +59,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // i18n middleware for language detection and translation
 app.use(middleware.handle(i18n));
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {

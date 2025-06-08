@@ -79,6 +79,13 @@ export const authAPI = {
     return response.data;
   },
 
+  loginWithGoogle: async (
+    credential: string
+  ): Promise<ApiResponse<{ user: User; token: string }>> => {
+    const response = await api.post("/api/auth/google/verify", { credential });
+    return response.data;
+  },
+
   register: async (
     userData: RegisterRequest
   ): Promise<ApiResponse<{ user: User; token: string }>> => {

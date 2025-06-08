@@ -4,6 +4,8 @@ export interface User {
   firstName: string;
   lastName: string;
   avatar?: string;
+  googleId?: string; // Google OAuth ID
+  emailVerified?: boolean; // Email verification status
   isTasker: boolean;
   rating: number;
   reviewCount: number;
