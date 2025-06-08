@@ -527,7 +527,6 @@ const FindTasks: React.FC = () => {
                 ))}
               </div>
             </div>
-
             {/* Location Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -578,7 +577,6 @@ const FindTasks: React.FC = () => {
                 </label>
               </div>
             </div>
-
             {/* Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -644,65 +642,42 @@ const FindTasks: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-
+            </div>{" "}
             {/* Price Range */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Task Price
               </label>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    min="5"
-                    max="9999"
-                    value={filters.priceMin}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        priceMin: Number(e.target.value),
-                      }))
-                    }
-                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-500">to</span>
-                  <input
-                    type="number"
-                    min="5"
-                    max="9999"
-                    value={filters.priceMax}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        priceMax: Number(e.target.value),
-                      }))
-                    }
-                    className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="9999"
-                    value={filters.priceMax}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        priceMax: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>$5</span>
-                    <span>$9,999</span>
-                  </div>
-                </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="number"
+                  min="5"
+                  max="9999"
+                  value={filters.priceMin}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      priceMin: Number(e.target.value),
+                    }))
+                  }
+                  className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-500">to</span>
+                <input
+                  type="number"
+                  min="5"
+                  max="9999"
+                  value={filters.priceMax}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      priceMax: Number(e.target.value),
+                    }))
+                  }
+                  className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                />
               </div>
             </div>
-
             {/* Other Filters */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -743,7 +718,6 @@ const FindTasks: React.FC = () => {
                 </label>
               </div>
             </div>
-
             {/* Sort */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
