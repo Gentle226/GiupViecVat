@@ -7,7 +7,9 @@ import {
   reviewsAPI,
   messagesAPI,
   authAPI,
+  bidsAPI,
 } from "../services/api";
+import type { PopulatedTaskBid } from "../services/api";
 import type { User, Task, Review } from "../../../shared/types";
 import {
   User as UserIcon,
@@ -27,9 +29,9 @@ const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
-
   const [user, setUser] = useState<User | null>(null);
   const [userTasks, setUserTasks] = useState<Task[]>([]);
+  const [userBids, setUserBids] = useState<PopulatedTaskBid[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "tasks" | "reviews">(
@@ -54,25 +56,47 @@ const Profile: React.FC = () => {
       if (!targetUserId) {
         setLoading(false);
         return;
-      }
-
-      // Fetch user profile
+      } // Fetch user profile
       const userResponse = await usersAPI.getUser(targetUserId);
-
       if (userResponse.data && userResponse.data.user) {
         setUser(userResponse.data.user);
-      } // Fetch user's tasks
-      try {
-        const tasksResponse = await tasksAPI.getMyTasks();
-        if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
-          setUserTasks(tasksResponse.data);
-        } else {
-          console.warn("Tasks data is not an array:", tasksResponse.data);
+      }
+
+      // Fetch user's tasks or bids based on user type
+      if (userResponse.data?.user?.isTasker && isOwnProfile) {
+        // For taskers viewing their own profile, fetch their bids
+        try {
+          const bidsResponse = await bidsAPI.getMyBids();
+          if (bidsResponse.success && bidsResponse.data?.bids) {
+            setUserBids(bidsResponse.data.bids);
+            setUserTasks([]); // Clear tasks for taskers
+          } else {
+            console.warn("Bids data is not valid:", bidsResponse.data);
+            setUserBids([]);
+            setUserTasks([]);
+          }
+        } catch (bidsError) {
+          console.error("Error fetching bids:", bidsError);
+          setUserBids([]);
           setUserTasks([]);
         }
-      } catch (tasksError) {
-        console.error("Error fetching tasks:", tasksError);
-        setUserTasks([]);
+      } else {
+        // For clients or viewing other profiles, fetch tasks
+        try {
+          const tasksResponse = await tasksAPI.getMyTasks();
+          if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
+            setUserTasks(tasksResponse.data);
+            setUserBids([]); // Clear bids for clients
+          } else {
+            console.warn("Tasks data is not an array:", tasksResponse.data);
+            setUserTasks([]);
+            setUserBids([]);
+          }
+        } catch (tasksError) {
+          console.error("Error fetching tasks:", tasksError);
+          setUserTasks([]);
+          setUserBids([]);
+        }
       } // Fetch user's reviews
       try {
         const reviewsResponse = await reviewsAPI.getUserReviews(targetUserId);
@@ -175,13 +199,33 @@ const Profile: React.FC = () => {
     ).length;
     return Math.round((completed / userTasks.length) * 100);
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+  };
+  const formatBidStatus = (status: string) => {
+    switch (status) {
+      case "pending":
+        return { text: "Pending", color: "bg-yellow-100 text-yellow-800" };
+      case "accepted":
+        return { text: "Accepted", color: "bg-green-100 text-green-800" };
+      case "rejected":
+        return { text: "Rejected", color: "bg-red-100 text-red-800" };
+      default:
+        return { text: status, color: "bg-gray-100 text-gray-800" };
+    }
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    navigate(`/tasks/${taskId}`);
+  };
+
+  const handleBidClick = (bid: PopulatedTaskBid) => {
+    const taskId = typeof bid.taskId === "object" ? bid.taskId._id : bid.taskId;
+    navigate(`/tasks/${taskId}`);
   };
 
   if (loading) {
@@ -289,12 +333,21 @@ const Profile: React.FC = () => {
           </div>
           {/* Stats */}{" "}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {" "}
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
-                {Array.isArray(userTasks) ? userTasks.length : 0}
-              </div>{" "}
+                {user.isTasker && isOwnProfile
+                  ? userBids.length
+                  : Array.isArray(userTasks)
+                  ? userTasks.length
+                  : 0}
+              </div>
               <div className="text-sm text-gray-500">
-                {user.isTasker ? "Tasks Completed" : "Tasks Posted"}
+                {user.isTasker
+                  ? isOwnProfile
+                    ? "Bids Submitted"
+                    : "Tasks Completed"
+                  : "Tasks Posted"}
               </div>
             </div>
             <div className="text-center">
@@ -368,7 +421,7 @@ const Profile: React.FC = () => {
                 }`}
               >
                 Overview
-              </button>
+              </button>{" "}
               <button
                 onClick={() => setActiveTab("tasks")}
                 className={`py-4 text-sm font-medium ${
@@ -377,7 +430,11 @@ const Profile: React.FC = () => {
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Tasks ({Array.isArray(userTasks) ? userTasks.length : 0})
+                {user.isTasker && isOwnProfile ? "Bids" : "Tasks"} (
+                {user.isTasker && isOwnProfile
+                  ? userBids.length
+                  : userTasks.length}
+                )
               </button>
               <button
                 onClick={() => setActiveTab("reviews")}
@@ -393,46 +450,127 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="p-6">
+            {" "}
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-3">
                     Recent Activity
-                  </h3>
+                  </h3>{" "}
                   <div className="space-y-3">
-                    {userTasks.slice(0, 3).map((task) => (
-                      <div
-                        key={task._id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div>
-                          <h4 className="font-medium text-gray-900">
-                            {task.title}
-                          </h4>{" "}
-                          <p className="text-sm text-gray-500">
-                            {formatDate(task.createdAt.toString())}
-                          </p>
-                        </div>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            task.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : task.status === "in_progress"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {task.status.replace("_", " ")}
-                        </span>
-                      </div>
-                    ))}
+                    {user.isTasker && isOwnProfile
+                      ? // Show recent bids for taskers
+                        userBids.slice(0, 3).map((bid) => {
+                          const task =
+                            typeof bid.taskId === "object" ? bid.taskId : null;
+                          const bidStatusInfo = formatBidStatus(bid.status);
+                          return (
+                            <div
+                              key={bid._id}
+                              onClick={() => handleBidClick(bid)}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                            >
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  Bid: {task?.title || `Task ID: ${bid.taskId}`}
+                                </h4>
+                                <p className="text-sm text-gray-500">
+                                  {formatDate(bid.createdAt.toString())} • $
+                                  {bid.amount}
+                                </p>
+                              </div>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${bidStatusInfo.color}`}
+                              >
+                                {bidStatusInfo.text}
+                              </span>
+                            </div>
+                          );
+                        })
+                      : // Show recent tasks for clients or when viewing other profiles
+                        userTasks.slice(0, 3).map((task) => (
+                          <div
+                            key={task._id}
+                            onClick={() => handleTaskClick(task._id)}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                          >
+                            <div>
+                              <h4 className="font-medium text-gray-900">
+                                {task.title}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                {formatDate(task.createdAt.toString())}
+                              </p>
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                task.status === "completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : task.status === "in_progress"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {task.status.replace("_", " ")}
+                            </span>
+                          </div>
+                        ))}
                   </div>
                 </div>
               </div>
             )}{" "}
             {activeTab === "tasks" && (
               <div className="space-y-4">
-                {!Array.isArray(userTasks) || userTasks.length === 0 ? (
+                {user.isTasker && isOwnProfile ? (
+                  // Show bids for taskers viewing their own profile
+                  !Array.isArray(userBids) || userBids.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No bids found</p>
+                    </div>
+                  ) : (
+                    userBids.map((bid) => {
+                      const bidStatusInfo = formatBidStatus(bid.status);
+                      // Check if taskId is populated with Task object
+                      const task =
+                        typeof bid.taskId === "object" ? bid.taskId : null;
+                      return (
+                        <div
+                          key={bid._id}
+                          onClick={() => handleBidClick(bid)}
+                          className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-medium text-gray-900">
+                              {task?.title || `Task ID: ${bid.taskId}`}
+                            </h4>
+                            <span className="text-lg font-bold text-indigo-600">
+                              ${bid.amount}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 text-sm mb-3">
+                            {bid.message}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-gray-500 text-sm">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              <span>
+                                {formatDate(bid.createdAt.toString())}
+                              </span>
+                              <span className="mx-2">•</span>
+                              <span>{bid.estimatedDuration}h estimated</span>
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${bidStatusInfo.color}`}
+                            >
+                              {bidStatusInfo.text}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
+                ) : // Show tasks for clients or when viewing other profiles
+                !Array.isArray(userTasks) || userTasks.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No tasks found</p>
                   </div>
@@ -440,12 +578,13 @@ const Profile: React.FC = () => {
                   userTasks.map((task) => (
                     <div
                       key={task._id}
-                      className="border border-gray-200 rounded-lg p-4"
+                      onClick={() => handleTaskClick(task._id)}
+                      className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900">
                           {task.title}
-                        </h4>{" "}
+                        </h4>
                         <span className="text-lg font-bold text-indigo-600">
                           ${task.suggestedPrice}
                         </span>
@@ -454,7 +593,6 @@ const Profile: React.FC = () => {
                         {task.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        {" "}
                         <div className="flex items-center text-gray-500 text-sm">
                           <Calendar className="h-4 w-4 mr-1" />
                           <span>{formatDate(task.createdAt.toString())}</span>

@@ -16,6 +16,11 @@ import type {
   TaskCategory,
 } from "../../../shared/types";
 
+// Type for TaskBid with populated taskId from the API
+export interface PopulatedTaskBid extends Omit<TaskBid, "taskId"> {
+  taskId: Task | string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // Create axios instance
@@ -171,8 +176,9 @@ export const bidsAPI = {
     const response = await api.get(`/api/bids/task/${taskId}`);
     return response.data;
   },
-
-  getMyBids: async (): Promise<ApiResponse<TaskBid[]>> => {
+  getMyBids: async (): Promise<
+    ApiResponse<{ bids: PopulatedTaskBid[]; pagination?: unknown }>
+  > => {
     const response = await api.get("/api/bids/my-bids");
     return response.data;
   },
