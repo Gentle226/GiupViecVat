@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { TaskProvider } from "./contexts/TaskContext";
 import { SocketProvider } from "./contexts/SocketContext";
@@ -33,8 +38,12 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />{" "}                    <Route path="/tasks" element={<TaskList />} />
-                    <Route path="/find-tasks" element={<Navigate to="/tasks" replace />} />
+                    <Route path="/register" element={<Register />} />{" "}
+                    <Route path="/tasks" element={<TaskList />} />
+                    <Route
+                      path="/find-tasks"
+                      element={<Navigate to="/tasks" replace />}
+                    />
                     <Route path="/tasks/:id" element={<TaskDetail />} />
                     <Route path="/dev-tools" element={<DevTools />} />
                     <Route path="/map-demo" element={<MapDemo />} />{" "}
