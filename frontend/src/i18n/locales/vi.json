@@ -222,7 +222,18 @@
       "selectProvince": "Chọn tỉnh/thành phố",
       "selectDistrict": "Chọn quận/huyện",
       "selectWard": "Chọn phường/xã",
-      "currentLocation": "Vị trí hiện tại"
+      "currentLocation": "Vị trí hiện tại",
+      "categoryNames": {
+        "household": "Gia Đình",
+        "tech": "Công Nghệ",
+        "transportation": "Vận Chuyển",
+        "repairs": "Sửa Chữa",
+        "cleaning": "Dọn Dẹp",
+        "gardening": "Làm Vườn",
+        "moving": "Di Chuyển",
+        "handyman": "Thợ Sửa Chữa",
+        "other": "Khác"
+      }
     },
     "taskDetail": {
       "loading": "Đang tải chi tiết nhiệm vụ...",

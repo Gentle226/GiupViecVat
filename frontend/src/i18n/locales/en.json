@@ -223,7 +223,18 @@
       "selectProvince": "Select province/city",
       "selectDistrict": "Select district",
       "selectWard": "Select ward",
-      "currentLocation": "Current location"
+      "currentLocation": "Current location",
+      "categoryNames": {
+        "household": "Household",
+        "tech": "Tech",
+        "transportation": "Transportation",
+        "repairs": "Repairs",
+        "cleaning": "Cleaning",
+        "gardening": "Gardening",
+        "moving": "Moving",
+        "handyman": "Handyman",
+        "other": "Other"
+      }
     }
   },
   "createTask": {
