@@ -39,7 +39,7 @@ interface FilterState {
     | "price_high";
 }
 
-const FindTasks: React.FC = () => {
+const TaskList: React.FC = () => {
   const { user } = useAuth();
   const {
     tasks,
@@ -960,4 +960,4 @@ const FindTasks: React.FC = () => {
   );
 };
 
-export default FindTasks;
+export default TaskList;

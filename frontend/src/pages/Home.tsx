@@ -84,9 +84,8 @@ const Home: React.FC = () => {
               {" "}
               {isAuthenticated ? (
                 <>
-                  {" "}
-                  <Link
-                    to="/find-tasks"
+                  {" "}                  <Link
+                    to="/tasks"
                     className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                   >
                     <Search className="w-5 h-5 mr-2" />
@@ -108,9 +107,8 @@ const Home: React.FC = () => {
                     className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                   >
                     {t("home.signUp")}
-                  </Link>
-                  <Link
-                    to="/find-tasks"
+                  </Link>                  <Link
+                    to="/tasks"
                     className="bg-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-400 border-2 border-blue-400 transition-colors inline-flex items-center justify-center"
                   >
                     {t("home.findTasks")}

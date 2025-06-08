@@ -35,11 +35,10 @@ const Navbar: React.FC = () => {
           </div>
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8">
-            {" "}
-            <Link
-              to="/find-tasks"
+            {" "}            <Link
+              to="/tasks"
               className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive("/find-tasks")
+                isActive("/tasks")
                   ? "text-blue-600 bg-blue-50"
                   : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
               }`}

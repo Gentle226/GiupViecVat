@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { TaskProvider } from "./contexts/TaskContext";
 import { SocketProvider } from "./contexts/SocketContext";
@@ -8,7 +8,6 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TaskList from "./pages/TaskList";
-import FindTasks from "./pages/FindTasks";
 import Dashboard from "./pages/Dashboard";
 import TaskDetail from "./pages/TaskDetail";
 import CreateTask from "./pages/CreateTask";
@@ -34,9 +33,8 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />{" "}
-                    <Route path="/tasks" element={<TaskList />} />
-                    <Route path="/find-tasks" element={<FindTasks />} />
+                    <Route path="/register" element={<Register />} />{" "}                    <Route path="/tasks" element={<TaskList />} />
+                    <Route path="/find-tasks" element={<Navigate to="/tasks" replace />} />
                     <Route path="/tasks/:id" element={<TaskDetail />} />
                     <Route path="/dev-tools" element={<DevTools />} />
                     <Route path="/map-demo" element={<MapDemo />} />{" "}
