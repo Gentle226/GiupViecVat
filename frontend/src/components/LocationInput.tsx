@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { locationService } from "../services/locationService";
 import type { LocationSuggestion } from "../services/locationService";
 
@@ -21,16 +21,40 @@ const LocationInput: React.FC<LocationInputProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Debounce search
+  const searchLocations = useCallback(
+    async (query: string) => {
+      setLoading(true);
+      try {
+        const results = await locationService.searchLocations(query);
+        setSuggestions(results);
+        // Only show suggestions if user has interacted
+        if (hasInteracted) {
+          setShowSuggestions(true);
+        }
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error("Error searching locations:", error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [hasInteracted]
+  );
+
+  // Debounce search - only search when user has interacted
   useEffect(() => {
+    if (!hasInteracted) return; // Don't search until user interacts
+
     const timeoutId = setTimeout(() => {
       if (value.length >= 2) {
         searchLocations(value);
       } else if (value.length === 0) {
-        // Show popular cities when empty
+        // Show popular cities when empty and user has focused
         searchLocations("");
       } else {
         setSuggestions([]);
@@ -39,24 +63,9 @@ const LocationInput: React.FC<LocationInputProps> = ({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [value]);
-
-  const searchLocations = async (query: string) => {
-    setLoading(true);
-    try {
-      const results = await locationService.searchLocations(query);
-      setSuggestions(results);
-      setShowSuggestions(true);
-      setSelectedIndex(-1);
-    } catch (error) {
-      console.error("Error searching locations:", error);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  }, [value, hasInteracted, searchLocations]);
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHasInteracted(true); // Mark that user has interacted
     onChange(e.target.value);
   };
 
@@ -93,10 +102,13 @@ const LocationInput: React.FC<LocationInputProps> = ({
         break;
     }
   };
-
   const handleInputFocus = () => {
+    setHasInteracted(true); // Mark that user has interacted
     if (suggestions.length > 0) {
       setShowSuggestions(true);
+    } else if (value.length === 0) {
+      // Search for popular cities when focusing on empty input
+      searchLocations("");
     }
   };
 
