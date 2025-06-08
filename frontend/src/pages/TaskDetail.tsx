@@ -18,6 +18,7 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import RatingModal from "../components/RatingModal";
 
 const formatDate = (date: Date | undefined): string => {
   if (!date) return "Not specified";
@@ -43,6 +44,11 @@ const TaskDetail: React.FC = () => {
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState<{
+    userId: string;
+    name: string;
+  } | null>(null);
   const [editFormData, setEditFormData] = useState({
     title: "",
     description: "",
@@ -222,6 +228,31 @@ const TaskDetail: React.FC = () => {
       if (response.data) {
         setTask(response.data);
         setShowCompleteConfirmation(false);
+
+        // Show rating modal for the assigned tasker
+        if (task.assignedTo) {
+          const assignedTasker = bids.find((bid) => {
+            const bidderId =
+              typeof bid.bidderId === "string"
+                ? bid.bidderId
+                : bid.bidderId._id;
+            return bidderId === task.assignedTo && bid.status === "accepted";
+          });
+
+          if (assignedTasker) {
+            const taskerName =
+              typeof assignedTasker.bidderId === "string"
+                ? "Tasker"
+                : `${assignedTasker.bidderId.firstName} ${assignedTasker.bidderId.lastName}`;
+
+            setRatingTarget({
+              userId: task.assignedTo,
+              name: taskerName,
+            });
+            setShowRatingModal(true);
+          }
+        }
+
         alert("Task completed successfully!");
       }
     } catch (err: unknown) {
@@ -519,8 +550,7 @@ const TaskDetail: React.FC = () => {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Task
                   </button>
-                )}
-
+                )}{" "}
               {/* Delete Task Button - for task owners on deletable tasks */}
               {isTaskOwner &&
                 (task.status === TaskStatus.COMPLETED ||
@@ -533,8 +563,69 @@ const TaskDetail: React.FC = () => {
                     <Trash2 className="h-4 w-4 mr-2" />
                     {deleteLoading ? "Deleting..." : "Delete Task"}
                   </button>
-                )}
+                )}{" "}
+              {/* Rate Tasker Button - for completed tasks (clients only) */}
+              {isTaskOwner &&
+                task.status === TaskStatus.COMPLETED &&
+                task.assignedTo && (
+                  <button
+                    onClick={() => {
+                      const assignedTasker = bids.find((bid) => {
+                        const bidderId =
+                          typeof bid.bidderId === "string"
+                            ? bid.bidderId
+                            : bid.bidderId._id;
+                        return (
+                          bidderId === task.assignedTo &&
+                          bid.status === "accepted"
+                        );
+                      });
 
+                      if (assignedTasker && task.assignedTo) {
+                        const taskerName =
+                          typeof assignedTasker.bidderId === "string"
+                            ? "Tasker"
+                            : `${assignedTasker.bidderId.firstName} ${assignedTasker.bidderId.lastName}`;
+
+                        setRatingTarget({
+                          userId: task.assignedTo,
+                          name: taskerName,
+                        });
+                        setShowRatingModal(true);
+                      }
+                    }}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200 flex items-center text-sm"
+                  >
+                    {" "}
+                    <Star className="h-4 w-4 mr-2" />
+                    Rate Tasker
+                  </button>
+                )}
+              {/* Rate Client Button - for completed tasks (taskers only) */}
+              {isAssignedTasker && task.status === TaskStatus.COMPLETED && (
+                <button
+                  onClick={() => {
+                    const clientId =
+                      typeof task.postedBy === "string"
+                        ? task.postedBy
+                        : task.postedBy._id;
+                    const clientName =
+                      typeof task.postedBy === "string"
+                        ? "Client"
+                        : `${task.postedBy.firstName} ${task.postedBy.lastName}`;
+
+                    setRatingTarget({
+                      userId: clientId,
+                      name: clientName,
+                    });
+                    setShowRatingModal(true);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm"
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Rate Client
+                </button>
+              )}
               {/* Complete Task Button - for assigned/in_progress tasks (clients only) */}
               {isTaskOwner &&
                 (task.status === TaskStatus.ASSIGNED ||
@@ -548,7 +639,6 @@ const TaskDetail: React.FC = () => {
                     {completingTask ? "Closing..." : "Close Task"}
                   </button>
                 )}
-
               {/* Cancel Task Button - for task owners on cancellable tasks */}
               {isTaskOwner &&
                 (task.status === TaskStatus.OPEN ||
@@ -563,7 +653,6 @@ const TaskDetail: React.FC = () => {
                     {cancellingTask ? "Cancelling..." : "Cancel Task"}
                   </button>
                 )}
-
               <div className="text-right">
                 <div className="text-2xl font-bold text-indigo-600">
                   ${task.suggestedPrice}
@@ -1212,12 +1301,10 @@ const TaskDetail: React.FC = () => {
                 Delete Task
               </h3>
             </div>
-
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete this task? This action cannot be
               undone.
             </p>
-
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setShowDeleteConfirmation(false)}
@@ -1235,9 +1322,27 @@ const TaskDetail: React.FC = () => {
                 <CheckCircle className="h-4 w-4 mr-2" />
                 {deleteLoading ? "Deleting..." : "Yes, delete task"}
               </button>
-            </div>
+            </div>{" "}
           </div>
         </div>
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && task && ratingTarget && (
+        <RatingModal
+          isOpen={showRatingModal}
+          onClose={() => {
+            setShowRatingModal(false);
+            setRatingTarget(null);
+          }}
+          task={task}
+          revieweeId={ratingTarget.userId}
+          revieweeName={ratingTarget.name}
+          onReviewSubmitted={() => {
+            // Optionally refresh task data or show success message
+            console.log("Review submitted successfully");
+          }}
+        />
       )}
     </div>
   );

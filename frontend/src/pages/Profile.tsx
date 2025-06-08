@@ -13,6 +13,7 @@ import {
   MessageCircle,
   DollarSign,
 } from "lucide-react";
+import RatingDisplay from "../components/RatingDisplay";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -429,49 +430,7 @@ const Profile: React.FC = () => {
               </div>
             )}{" "}
             {activeTab === "reviews" && (
-              <div className="space-y-4">
-                {!Array.isArray(userReviews) || userReviews.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No reviews yet</p>
-                  </div>
-                ) : (
-                  userReviews.map((review) => (
-                    <div
-                      key={review._id}
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
-                            <UserIcon className="h-6 w-6 text-gray-600" />
-                          </div>
-                          <div className="ml-3">
-                            <div className="font-medium text-gray-900">
-                              Reviewer
-                            </div>
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating
-                                      ? "text-yellow-400 fill-current"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>{" "}
-                        <span className="text-sm text-gray-500">
-                          {formatDate(review.createdAt.toString())}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{review.comment}</p>
-                    </div>
-                  ))
-                )}
-              </div>
+              <RatingDisplay reviews={userReviews} showAll={true} />
             )}
           </div>
         </div>
