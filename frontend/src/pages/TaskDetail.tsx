@@ -9,6 +9,7 @@ import {
   TaskCategory,
   TimingType,
   TimeOfDay,
+  LocationType,
 } from "../../../shared/types";
 import {
   MapPin,
@@ -120,6 +121,7 @@ const TaskDetail: React.FC = () => {
     category: "",
     suggestedPrice: "",
     location: "",
+    locationType: "",
     dueDate: "",
     // New timing fields
     timingType: TimingType.FLEXIBLE as string,
@@ -390,9 +392,12 @@ const TaskDetail: React.FC = () => {
       category: task.category,
       suggestedPrice: task.suggestedPrice.toString(),
       location:
-        typeof task.location === "string"
+        task.locationType === "online"
+          ? "" // Don't show "Online" in the location field for online tasks
+          : typeof task.location === "string"
           ? task.location
           : task.location.address,
+      locationType: task.locationType || "in_person",
       dueDate: task.dueDate
         ? new Date(task.dueDate).toISOString().split("T")[0]
         : "",
@@ -447,9 +452,13 @@ const TaskDetail: React.FC = () => {
         category: editFormData.category as TaskCategory,
         suggestedPrice: parseFloat(editFormData.suggestedPrice),
         location: {
-          address: editFormData.location.trim(),
+          address:
+            editFormData.locationType === "online"
+              ? "Online"
+              : editFormData.location.trim(),
           coordinates: [0, 0] as [number, number],
         },
+        locationType: editFormData.locationType as LocationType,
         dueDate: editFormData.dueDate
           ? new Date(editFormData.dueDate)
           : undefined,
@@ -685,7 +694,20 @@ const TaskDetail: React.FC = () => {
               <Clock className="h-5 w-5 mr-2" />
               <span>Posted: {formatDate(task.createdAt!)}</span>
             </div>
-          </div>{" "}
+          </div>
+          {/* Show Preferred Time of Day separately if specified */}
+          {task.needsSpecificTime &&
+            task.timeOfDay &&
+            task.timeOfDay.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center text-blue-800">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span className="text-sm font-medium">
+                    Preferred Time of Day: {getTimeOfDayLabel(task.timeOfDay)}
+                  </span>
+                </div>
+              </div>
+            )}{" "}
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Description
@@ -1073,7 +1095,6 @@ const TaskDetail: React.FC = () => {
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label
                     htmlFor="edit-price"
@@ -1092,33 +1113,87 @@ const TaskDetail: React.FC = () => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                </div>
+                </div>{" "}
               </div>{" "}
-              {/* Location */}
+              {/* Location Type */}
               <div>
-                <label
-                  htmlFor="edit-location"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Location *
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Tell us where *
                 </label>
-                <input
-                  type="text"
-                  id="edit-location"
-                  name="location"
-                  value={editFormData.location}
-                  onChange={handleEditFormChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="e.g., Downtown Seattle, WA"
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <label
+                    className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      editFormData.locationType === "in_person"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="locationType"
+                      value="in_person"
+                      checked={editFormData.locationType === "in_person"}
+                      onChange={handleEditFormChange}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">In-person</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        Select this if you need the Tasker physically there
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      editFormData.locationType === "online"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="locationType"
+                      value="online"
+                      checked={editFormData.locationType === "online"}
+                      onChange={handleEditFormChange}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">Online</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        Select this if the Tasker can do it from home
+                      </div>
+                    </div>
+                  </label>
+                </div>
               </div>
+              {/* Location - Only show for in-person tasks */}
+              {editFormData.locationType === "in_person" && (
+                <div>
+                  <label
+                    htmlFor="edit-location"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-location"
+                    name="location"
+                    value={editFormData.location}
+                    onChange={handleEditFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Downtown Seattle, WA"
+                  />
+                </div>
+              )}
               {/* Timing Section */}
               <div className="border-t pt-4">
                 <h4 className="text-lg font-medium text-gray-900 mb-4">
                   When do you need this done?
                 </h4>
-
                 {/* Timing Type */}
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center">
@@ -1177,7 +1252,6 @@ const TaskDetail: React.FC = () => {
                     </label>
                   </div>
                 </div>
-
                 {/* Date Selection */}
                 {(editFormData.timingType === TimingType.ON_DATE ||
                   editFormData.timingType === TimingType.BEFORE_DATE) && (
@@ -1199,66 +1273,62 @@ const TaskDetail: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
-                )}
-
-                {/* Time of Day Selection */}
-                {(editFormData.timingType === TimingType.ON_DATE ||
-                  editFormData.timingType === TimingType.BEFORE_DATE) && (
-                  <div className="mb-4">
-                    <div className="flex items-center mb-3">
-                      {" "}
-                      <input
-                        id="edit-needsSpecificTime"
-                        name="needsSpecificTime"
-                        type="checkbox"
-                        checked={editFormData.needsSpecificTime}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setEditFormData((prev) => ({
-                            ...prev,
-                            needsSpecificTime: checked,
-                            timeOfDay: checked ? prev.timeOfDay : [],
-                          }));
-                        }}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label
-                        htmlFor="edit-needsSpecificTime"
-                        className="ml-2 block text-sm text-gray-700"
-                      >
-                        I need this done at a specific time of day
-                      </label>
-                    </div>
-
-                    {editFormData.needsSpecificTime && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Time of Day *
-                        </label>{" "}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {Object.values(TimeOfDay).map((time) => (
-                            <div key={time} className="flex items-center">
-                              <input
-                                id={`edit-time-${time}`}
-                                type="checkbox"
-                                value={time}
-                                checked={editFormData.timeOfDay.includes(time)}
-                                onChange={() => handleEditTimeOfDayChange(time)}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              />
-                              <label
-                                htmlFor={`edit-time-${time}`}
-                                className="ml-2 block text-sm text-gray-700 capitalize"
-                              >
-                                {time.toLowerCase()}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                )}{" "}
+                {/* Time of Day Selection - Available for all timing types */}
+                <div className="mb-4">
+                  <div className="flex items-center mb-3">
+                    {" "}
+                    <input
+                      id="edit-needsSpecificTime"
+                      name="needsSpecificTime"
+                      type="checkbox"
+                      checked={editFormData.needsSpecificTime}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setEditFormData((prev) => ({
+                          ...prev,
+                          needsSpecificTime: checked,
+                          timeOfDay: checked ? prev.timeOfDay : [],
+                        }));
+                      }}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="edit-needsSpecificTime"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
+                      I need this done at a specific time of day
+                    </label>
                   </div>
-                )}
+
+                  {editFormData.needsSpecificTime && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Time of Day *
+                      </label>{" "}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {Object.values(TimeOfDay).map((time) => (
+                          <div key={time} className="flex items-center">
+                            <input
+                              id={`edit-time-${time}`}
+                              type="checkbox"
+                              value={time}
+                              checked={editFormData.timeOfDay.includes(time)}
+                              onChange={() => handleEditTimeOfDayChange(time)}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`edit-time-${time}`}
+                              className="ml-2 block text-sm text-gray-700 capitalize"
+                            >
+                              {time.toLowerCase()}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               {/* Action Buttons */}
               <div className="flex space-x-3 justify-end pt-4">
