@@ -163,41 +163,40 @@ const CreateTask: React.FC = () => {
   };
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
+      newErrors.title = t("createTask.validation.titleRequired");
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
+      newErrors.description = t("createTask.validation.descriptionRequired");
     } else if (formData.description.trim().length < 10) {
-      newErrors.description = "Description must be at least 10 characters";
+      newErrors.description = t("createTask.validation.descriptionTooShort");
     }
     if (!formData.budget || parseFloat(formData.budget) <= 0) {
-      newErrors.budget = "Budget must be greater than 0";
+      newErrors.budget = t("createTask.validation.budgetRequired");
     }
     if (
       formData.locationType === LocationType.IN_PERSON &&
       !formData.location.trim()
     ) {
-      newErrors.location = "Location is required for in-person tasks";
+      newErrors.location = t("createTask.validation.locationRequired");
     } // Validate timing fields
     if (
       formData.timingType === TimingType.ON_DATE ||
       formData.timingType === TimingType.BEFORE_DATE
     ) {
       if (!formData.specificDate) {
-        newErrors.specificDate = "Please select a date";
+        newErrors.specificDate = t("createTask.validation.dateRequired");
       } else {
         const selectedDate = new Date(formData.specificDate);
         const today = new Date();
         if (selectedDate <= today) {
-          newErrors.specificDate = "Date must be in the future";
+          newErrors.specificDate = t("createTask.validation.dateFuture");
         }
       }
     }
     if (formData.needsSpecificTime && formData.timeOfDay.length === 0) {
-      newErrors.timeOfDay = "Please select at least one time of day";
+      newErrors.timeOfDay = t("createTask.validation.timeOfDayRequired");
     }
 
     setErrors(newErrors);
@@ -211,7 +210,7 @@ const CreateTask: React.FC = () => {
     }
 
     if (!user) {
-      alert("You must be logged in to create a task");
+      alert(t("createTask.alerts.loginRequired"));
       return;
     }
 
@@ -245,14 +244,14 @@ const CreateTask: React.FC = () => {
             : undefined,
       };
       const response = await tasksAPI.createTask(taskData);
-      alert("Task created successfully!");
+      alert(t("createTask.alerts.taskCreated"));
       if (response.data?._id) {
         navigate(`/tasks/${response.data._id}`);
       } else {
         navigate("/tasks");
       }
     } catch (err) {
-      alert("Failed to create task. Please try again.");
+      alert(t("createTask.alerts.createFailed"));
       console.error("Error creating task:", err);
     } finally {
       setLoading(false);
@@ -627,8 +626,9 @@ const CreateTask: React.FC = () => {
 
               {formData.needsSpecificTime && (
                 <div>
+                  {" "}
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred Time of Day *
+                    {t("createTask.form.preferredTimeOfDay")}
                   </label>{" "}
                   <div className="grid grid-cols-2 gap-2">
                     <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
@@ -640,10 +640,14 @@ const CreateTask: React.FC = () => {
                           handleTimeOfDayChange(TimeOfDay.MORNING)
                         }
                         className="mr-2"
-                      />
+                      />{" "}
                       <div>
-                        <div className="font-medium">Morning</div>
-                        <div className="text-sm text-gray-500">Before 10am</div>
+                        <div className="font-medium">
+                          {t("createTask.form.morningLabel")}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {t("createTask.form.morningTime")}
+                        </div>
                       </div>
                     </label>
                     <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
@@ -653,10 +657,14 @@ const CreateTask: React.FC = () => {
                         checked={formData.timeOfDay.includes(TimeOfDay.MIDDAY)}
                         onChange={() => handleTimeOfDayChange(TimeOfDay.MIDDAY)}
                         className="mr-2"
-                      />
+                      />{" "}
                       <div>
-                        <div className="font-medium">Midday</div>
-                        <div className="text-sm text-gray-500">10am - 2pm</div>
+                        <div className="font-medium">
+                          {t("createTask.form.middayLabel")}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {t("createTask.form.middayTime")}
+                        </div>
                       </div>
                     </label>
                     <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
@@ -670,10 +678,14 @@ const CreateTask: React.FC = () => {
                           handleTimeOfDayChange(TimeOfDay.AFTERNOON)
                         }
                         className="mr-2"
-                      />
+                      />{" "}
                       <div>
-                        <div className="font-medium">Afternoon</div>
-                        <div className="text-sm text-gray-500">2pm - 6pm</div>
+                        <div className="font-medium">
+                          {t("createTask.form.afternoonLabel")}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {t("createTask.form.afternoonTime")}
+                        </div>
                       </div>
                     </label>
                     <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
@@ -685,10 +697,14 @@ const CreateTask: React.FC = () => {
                           handleTimeOfDayChange(TimeOfDay.EVENING)
                         }
                         className="mr-2"
-                      />
+                      />{" "}
                       <div>
-                        <div className="font-medium">Evening</div>
-                        <div className="text-sm text-gray-500">After 6pm</div>
+                        <div className="font-medium">
+                          {t("createTask.form.eveningLabel")}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {t("createTask.form.eveningTime")}
+                        </div>
                       </div>
                     </label>
                   </div>
@@ -703,8 +719,9 @@ const CreateTask: React.FC = () => {
             </div>
             {/* Requirements */}
             <div>
+              {" "}
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Requirements (Optional)
+                {t("createTask.form.requirementsOptional")}
               </label>
               <div className="flex gap-2 mb-2">
                 <input
@@ -715,7 +732,7 @@ const CreateTask: React.FC = () => {
                     e.key === "Enter" && (e.preventDefault(), addRequirement())
                   }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Add a requirement..."
+                  placeholder={t("createTask.form.addRequirement")}
                 />
                 <button
                   type="button"
@@ -747,8 +764,9 @@ const CreateTask: React.FC = () => {
             </div>
             {/* Tags */}
             <div>
+              {" "}
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags (Optional)
+                {t("createTask.form.tagsOptional")}
               </label>
               <div className="flex gap-2 mb-2">
                 <div className="relative flex-1">
@@ -761,7 +779,7 @@ const CreateTask: React.FC = () => {
                       e.key === "Enter" && (e.preventDefault(), addTag())
                     }
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Add a tag..."
+                    placeholder={t("createTask.form.addTag")}
                   />
                 </div>
                 <button
@@ -799,14 +817,16 @@ const CreateTask: React.FC = () => {
                 disabled={loading}
                 className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Creating Task..." : "Post Task"}
+                {loading
+                  ? t("createTask.form.creatingTask")
+                  : t("createTask.form.postTask")}
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/tasks")}
                 className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                {t("createTask.form.cancel")}
               </button>
             </div>
           </form>

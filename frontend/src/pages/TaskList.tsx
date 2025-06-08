@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import LocationInput from "../components/LocationInput";
@@ -40,6 +41,7 @@ interface FilterState {
 }
 
 const TaskList: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     tasks,
@@ -407,24 +409,23 @@ const TaskList: React.FC = () => {
             box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
           }
         `}
-      </style>
+      </style>{" "}
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Tasks</h1>
-        <p className="text-gray-600">
-          Discover tasks in your area and start earning money today
-        </p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {t("findTasks.title")}
+        </h1>
+        <p className="text-gray-600">{t("home.subtitle")}</p>
       </div>
-
       {/* Search and View Toggle */}
       <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />{" "}
             <input
               type="text"
-              placeholder="Search for tasks..."
+              placeholder={t("findTasks.searchPlaceholder")}
               value={filters.search}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, search: e.target.value }))
@@ -444,7 +445,7 @@ const TaskList: React.FC = () => {
               }`}
             >
               <List className="h-4 w-4" />
-              List
+              {t("findTasks.listView")}
             </button>
             <button
               onClick={() => setViewMode("map")}
@@ -455,7 +456,7 @@ const TaskList: React.FC = () => {
               }`}
             >
               <Map className="h-4 w-4" />
-              Map
+              {t("findTasks.mapView")}
             </button>
           </div>
 
@@ -465,7 +466,7 @@ const TaskList: React.FC = () => {
             className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center gap-2"
           >
             <Sliders className="h-4 w-4" />
-            Filters
+            {t("findTasks.filters")}
             {(filters.categories.length > 0 ||
               filters.locationType !== "all" ||
               filters.availableOnly ||
@@ -483,18 +484,19 @@ const TaskList: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Advanced Filters Panel */}
       {showFilters && (
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t("findTasks.filters")}
+            </h3>
             <div className="flex gap-2">
               <button
                 onClick={clearAllFilters}
                 className="text-sm text-gray-600 hover:text-gray-800"
               >
-                Clear All
+                {t("findTasks.clearFilters")}
               </button>
               <button
                 onClick={() => setShowFilters(false)}
@@ -506,10 +508,11 @@ const TaskList: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {" "}
             {/* Categories */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Categories
+                {t("findTasks.categories")}
               </label>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {Object.values(TaskCategory).map((category) => (
@@ -526,11 +529,11 @@ const TaskList: React.FC = () => {
                   </label>
                 ))}
               </div>
-            </div>
+            </div>{" "}
             {/* Location Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Task Type
+                {t("findTasks.locationType")}
               </label>
               <div className="space-y-2">
                 <label className="flex items-center">
@@ -543,7 +546,9 @@ const TaskList: React.FC = () => {
                     }
                     className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">All</span>
+                  <span className="ml-2 text-sm text-gray-700">
+                    {t("findTasks.allLocations")}
+                  </span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -558,7 +563,9 @@ const TaskList: React.FC = () => {
                     }
                     className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">In-person</span>
+                  <span className="ml-2 text-sm text-gray-700">
+                    {t("findTasks.inPerson")}
+                  </span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -573,24 +580,26 @@ const TaskList: React.FC = () => {
                     }
                     className="text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Remote</span>
+                  <span className="ml-2 text-sm text-gray-700">
+                    {t("findTasks.online")}
+                  </span>
                 </label>
               </div>
-            </div>
+            </div>{" "}
             {/* Location */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Location
+                {t("findTasks.location")}
               </label>
               <div className="space-y-3">
+                {" "}
                 <LocationInput
                   value={locationSearch}
                   onChange={setLocationSearch}
                   onLocationSelect={handleLocationSelect}
-                  placeholder="Enter address to find tasks nearby..."
+                  placeholder={t("findTasks.enterLocation")}
                   className="border-gray-300"
                 />
-
                 <div className="flex items-center space-x-2">
                   {user?.location?.coordinates &&
                     user.location.coordinates[0] !== 0 && (
@@ -603,7 +612,7 @@ const TaskList: React.FC = () => {
                         }`}
                       >
                         <Navigation className="h-3 w-3 mr-1" />
-                        Use My Location
+                        {t("findTasks.useMyLocation")}
                       </button>
                     )}
 
@@ -612,15 +621,14 @@ const TaskList: React.FC = () => {
                       onClick={clearLocationFilter}
                       className="text-xs text-red-600 hover:text-red-800"
                     >
-                      Clear
+                      {t("findTasks.clearFilters")}
                     </button>
                   )}
                 </div>
-
                 {filters.location && (
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">
-                      Distance: {filters.distance}km
+                      {t("findTasks.distance")}: {filters.distance}km
                     </label>
                     <input
                       type="range"
@@ -646,7 +654,7 @@ const TaskList: React.FC = () => {
             {/* Price Range */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Task Price
+                {t("findTasks.priceRange")}
               </label>
               <div className="flex items-center space-x-2">
                 <input
@@ -662,7 +670,9 @@ const TaskList: React.FC = () => {
                   }
                   className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
                 />
-                <span className="text-sm text-gray-500">to</span>
+                <span className="text-sm text-gray-500">
+                  {t("findTasks.to")}
+                </span>
                 <input
                   type="number"
                   min="5"
@@ -677,11 +687,11 @@ const TaskList: React.FC = () => {
                   className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
                 />
               </div>
-            </div>
+            </div>{" "}
             {/* Other Filters */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Other Filters
+                {t("findTasks.options")}
               </label>
               <div className="space-y-2">
                 <label className="flex items-center">
@@ -697,7 +707,7 @@ const TaskList: React.FC = () => {
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="ml-2 text-sm text-gray-700">
-                    Available tasks only
+                    {t("findTasks.availableOnly")}
                   </span>
                 </label>
                 <label className="flex items-center">
@@ -713,15 +723,15 @@ const TaskList: React.FC = () => {
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="ml-2 text-sm text-gray-700">
-                    Tasks with no offers only
+                    {t("findTasks.noOffersOnly")}
                   </span>
                 </label>
               </div>
-            </div>
+            </div>{" "}
             {/* Sort */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Sort By
+                {t("findTasks.sortBy")}
               </label>
               <select
                 value={filters.sortBy}
@@ -733,18 +743,19 @@ const TaskList: React.FC = () => {
                 }
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="recommended">Recommended</option>
-                <option value="recent">Most recently posted</option>
-                <option value="due_soon">Due soon</option>
-                <option value="closest">Closest to me</option>
-                <option value="price_low">Lowest price</option>
-                <option value="price_high">Highest price</option>
+                <option value="recommended">
+                  {t("findTasks.recommended")}
+                </option>
+                <option value="recent">{t("findTasks.recent")}</option>
+                <option value="due_soon">{t("findTasks.dueSoon")}</option>
+                <option value="closest">{t("findTasks.closest")}</option>
+                <option value="price_low">{t("findTasks.priceLow")}</option>
+                <option value="price_high">{t("findTasks.priceHigh")}</option>
               </select>
             </div>
           </div>
         </div>
       )}
-
       {/* Results */}
       <div className="flex gap-6">
         {/* Task List */}
@@ -753,12 +764,12 @@ const TaskList: React.FC = () => {
             viewMode === "map" ? "w-1/2" : "w-full"
           } transition-all duration-300`}
         >
+          {" "}
           <div className="mb-4 flex justify-between items-center">
             <p className="text-sm text-gray-600">
-              {filteredAndSortedTasks.length} tasks found
+              {filteredAndSortedTasks.length} {t("findTasks.results")}
             </p>
           </div>
-
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(6)].map((_, i) => (
@@ -776,16 +787,16 @@ const TaskList: React.FC = () => {
           ) : paginatedTasks.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No tasks found
+                {t("findTasks.noTasksFound")}
               </h3>
               <p className="text-gray-600 mb-4">
-                Try adjusting your filters to see more results.
+                {t("findTasks.adjustFilters")}
               </p>
               <button
                 onClick={clearAllFilters}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
-                Clear Filters
+                {t("findTasks.clearFilters")}
               </button>
             </div>
           ) : (
@@ -822,11 +833,11 @@ const TaskList: React.FC = () => {
                             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                               {formatCategoryName(task.category)}
                             </span>
-                          </div>
+                          </div>{" "}
                           {task.locationType === LocationType.ONLINE && (
                             <div className="flex items-center gap-1">
                               <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                                Remote
+                                {t("findTasks.online")}
                               </span>
                             </div>
                           )}
@@ -839,7 +850,7 @@ const TaskList: React.FC = () => {
                         {distance && (
                           <div className="text-sm text-gray-600 flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {distance}km away
+                            {t("taskList.kmAway", { distance })}
                           </div>
                         )}
                       </div>
@@ -865,19 +876,21 @@ const TaskList: React.FC = () => {
                         )}
                         {task.dueDate && (
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
+                            <Calendar className="h-4 w-4" />{" "}
                             <span>
-                              Due {new Date(task.dueDate).toLocaleDateString()}
+                              {t("taskList.due")}{" "}
+                              {new Date(task.dueDate).toLocaleDateString()}
                             </span>
                           </div>
                         )}
                       </div>
                       <div className="flex gap-2">
+                        {" "}
                         <Link
                           to={`/tasks/${task._id}`}
                           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
                         >
-                          View Details
+                          {t("findTasks.viewDetails")}
                         </Link>
                       </div>
                     </div>
@@ -886,7 +899,6 @@ const TaskList: React.FC = () => {
               })}
             </div>
           )}
-
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center space-x-4 mt-8">
@@ -896,7 +908,7 @@ const TaskList: React.FC = () => {
                 className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
+                {t("findTasks.previous")}
               </button>
 
               <div className="flex space-x-2">
@@ -924,7 +936,7 @@ const TaskList: React.FC = () => {
                 disabled={currentPage === totalPages}
                 className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t("findTasks.next")}
                 <ChevronRight className="h-4 w-4 ml-1" />
               </button>
             </div>
@@ -936,12 +948,13 @@ const TaskList: React.FC = () => {
           <div className="w-1/2">
             <div className="sticky top-8">
               <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                {" "}
                 <div className="p-4 border-b">
                   <h3 className="font-semibold text-gray-900">
-                    Task Locations
+                    {t("findTasks.taskLocations")}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {mapMarkers.length} tasks on map
+                    {mapMarkers.length} {t("findTasks.tasksOnMap")}
                   </p>
                 </div>
                 <LocationMap
