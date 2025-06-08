@@ -18,8 +18,10 @@ import {
   Edit,
   MessageCircle,
   DollarSign,
+  Key,
 } from "lucide-react";
 import RatingDisplay from "../components/RatingDisplay";
+import ChangePasswordModal from "../components/ChangePasswordModal";
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -34,6 +36,8 @@ const Profile: React.FC = () => {
     "overview"
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
@@ -247,17 +251,25 @@ const Profile: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-
+            </div>{" "}
             <div className="flex space-x-3">
               {isOwnProfile ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </button>
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => setIsChangePasswordModalOpen(true)}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Change Password
+                  </button>
+                </>
               ) : (
                 <>
                   <button
@@ -560,10 +572,16 @@ const Profile: React.FC = () => {
                   Cancel
                 </button>
               </div>
-            </form>
+            </form>{" "}
           </div>
         </div>
       )}
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
     </div>
   );
 };

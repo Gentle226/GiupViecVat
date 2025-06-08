@@ -85,9 +85,16 @@ export const authAPI = {
     const response = await api.get("/api/auth/me");
     return response.data;
   },
-
   updateProfile: async (updates: Partial<User>): Promise<ApiResponse<User>> => {
     const response = await api.put("/api/auth/profile", updates);
+    return response.data;
+  },
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> => {
+    const response = await api.put("/api/auth/change-password", data);
     return response.data;
   },
 };

@@ -18,6 +18,10 @@ export interface AuthContextType extends AuthState {
   register: (userData: RegisterRequest) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  changePassword: (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<void>;
 }
 
 export type AuthAction =

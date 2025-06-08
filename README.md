@@ -228,10 +228,62 @@ The application uses Socket.IO for real-time functionality:
 
 - **JWT Authentication**: Secure token-based authentication
 - **Password Hashing**: bcrypt for secure password storage
+- **Password Change**: Secure password update with validation
+- **Password Strength**: Real-time strength indicator and requirements
 - **Input Validation**: Request data validation and sanitization
 - **CORS Protection**: Configured cross-origin resource sharing
 - **Rate Limiting**: API rate limiting for abuse prevention
 - **Helmet Security**: Security headers for Express
+
+## 🔗 API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user profile
+- `PUT /api/auth/profile` - Update user profile
+- `PUT /api/auth/change-password` - Change user password
+
+### Tasks
+
+- `GET /api/tasks` - List tasks with filters
+- `POST /api/tasks` - Create new task (Client only)
+- `GET /api/tasks/:id` - Get task details
+- `PUT /api/tasks/:id` - Update task
+- `DELETE /api/tasks/:id` - Delete task
+- `PATCH /api/tasks/:id/complete` - Mark task complete
+
+### Bids
+
+- `POST /api/bids` - Submit bid (Tasker only)
+- `GET /api/bids/task/:taskId` - Get task bids
+- `GET /api/bids/my-bids` - Get user's bids
+- `PATCH /api/bids/:id/accept` - Accept bid
+
+### Messages
+
+- `GET /api/messages/conversations` - Get conversations
+- `GET /api/messages/conversations/:id/messages` - Get conversation messages
+- `POST /api/messages` - Send message
+
+### Users
+
+- `GET /api/users/:id` - Get user profile
+- `GET /api/users/:id/tasks` - Get user's tasks
+- `GET /api/users/:id/reviews` - Get user's reviews
+
+### Reviews
+
+- `POST /api/reviews` - Create review
+- `GET /api/reviews/user/:userId` - Get user reviews
+- `GET /api/reviews/task/:taskId` - Get task reviews
+
+### Payments
+
+- `POST /api/payments/create-payment-intent` - Create payment intent
+- `POST /api/payments/confirm` - Confirm payment
+- `GET /api/payments/my-payments` - Get user payments
 
 ## 💾 Database Schema
 

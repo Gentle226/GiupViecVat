@@ -170,10 +170,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "LOGOUT" });
   }, []);
 
+  const changePassword = useCallback(
+    async (data: { currentPassword: string; newPassword: string }) => {
+      try {
+        const response = await authAPI.changePassword(data);
+        if (!response.success) {
+          throw new Error(response.message || "Failed to change password");
+        }
+      } catch (error: unknown) {
+        let errorMessage = "Failed to change password";
+        if (error && typeof error === "object" && "response" in error) {
+          const axiosError = error as {
+            response?: { data?: { message?: string } };
+          };
+          if (axiosError.response?.data?.message) {
+            errorMessage = axiosError.response.data.message;
+          }
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        throw new Error(errorMessage);
+      }
+    },
+    []
+  );
+
   const clearError = useCallback(() => {
     dispatch({ type: "CLEAR_ERROR" });
   }, []);
-
   return (
     <AuthContext.Provider
       value={{
@@ -182,6 +206,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         register,
         logout,
         clearError,
+        changePassword,
       }}
     >
       {children}
