@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { Bell, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
   const {
     bidNotifications,
     taskCancellationNotifications,
@@ -112,10 +114,12 @@ const NotificationDropdown: React.FC = () => {
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto">
           {" "}
           <div className="p-4 border-b">
+            {" "}
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">
-                Notifications{" "}
-                {totalUnreadCount > 0 && `(${totalUnreadCount} unread)`}
+                {t("notifications.title")}{" "}
+                {totalUnreadCount > 0 &&
+                  `(${totalUnreadCount} ${t("notifications.unread")})`}
               </h3>
               <div className="flex gap-2">
                 {" "}
@@ -128,7 +132,7 @@ const NotificationDropdown: React.FC = () => {
                     }}
                     className="text-sm text-green-600 hover:text-green-700"
                   >
-                    Mark all read
+                    {t("notifications.markAllRead")}
                   </button>
                 )}
                 {totalNotifications > 0 && (
@@ -136,16 +140,17 @@ const NotificationDropdown: React.FC = () => {
                     onClick={handleClearAll}
                     className="text-sm text-blue-600 hover:text-blue-700"
                   >
-                    Clear all
+                    {t("notifications.clearAll")}
                   </button>
                 )}
               </div>
             </div>
           </div>{" "}
           <div className="max-h-80 overflow-y-auto">
+            {" "}
             {totalNotifications === 0 ? (
               <div className="p-4 text-center text-gray-500">
-                No new notifications
+                {t("notifications.noNotifications")}
               </div>
             ) : (
               <>
@@ -163,6 +168,7 @@ const NotificationDropdown: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
+                          {" "}
                           <p
                             className={`text-sm font-medium ${
                               notification.read
@@ -170,7 +176,8 @@ const NotificationDropdown: React.FC = () => {
                                 : "text-red-900"
                             }`}
                           >
-                            Task Cancelled: "{notification.taskTitle}"
+                            {t("notifications.taskCancelledMessage")} "
+                            {notification.taskTitle}"
                           </p>
                           {!notification.read && (
                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
@@ -182,10 +189,11 @@ const NotificationDropdown: React.FC = () => {
                           }`}
                         >
                           {notification.message}
-                        </p>
+                        </p>{" "}
                         {notification.bidAmount && (
                           <p className="text-xs text-gray-500 mt-1">
-                            Your bid: ${notification.bidAmount}
+                            {t("notifications.yourBid")}: $
+                            {notification.bidAmount}
                           </p>
                         )}
                       </div>
@@ -221,6 +229,7 @@ const NotificationDropdown: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
+                          {" "}
                           <p
                             className={`text-sm font-medium ${
                               notification.read
@@ -228,12 +237,13 @@ const NotificationDropdown: React.FC = () => {
                                 : "text-gray-900"
                             }`}
                           >
-                            New bid on "{notification.taskTitle}"
+                            {t("notifications.newBid")} "
+                            {notification.taskTitle}"
                           </p>
                           {!notification.read && (
                             <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                           )}
-                        </div>
+                        </div>{" "}
                         <p
                           className={`text-sm mt-1 ${
                             notification.read
@@ -241,7 +251,8 @@ const NotificationDropdown: React.FC = () => {
                               : "text-gray-600"
                           }`}
                         >
-                          {notification.bidderName} bid ${notification.amount}
+                          {notification.bidderName}{" "}
+                          {t("notifications.bidAmount")} ${notification.amount}
                         </p>
                         {notification.message && (
                           <p className="text-xs text-gray-500 mt-1 truncate">
@@ -278,6 +289,7 @@ const NotificationDropdown: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
+                          {" "}
                           <p
                             className={`text-sm font-medium ${
                               notification.read
@@ -285,12 +297,12 @@ const NotificationDropdown: React.FC = () => {
                                 : "text-green-900"
                             }`}
                           >
-                            🎉 Your bid was accepted!
+                            {t("notifications.bidAcceptedMessage")}
                           </p>
                           {!notification.read && (
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                           )}
-                        </div>
+                        </div>{" "}
                         <p
                           className={`text-sm mt-1 ${
                             notification.read
@@ -298,8 +310,8 @@ const NotificationDropdown: React.FC = () => {
                               : "text-green-700"
                           }`}
                         >
-                          Task: "{notification.taskTitle}"
-                        </p>
+                          {t("notifications.task")}: "{notification.taskTitle}"
+                        </p>{" "}
                         <p
                           className={`text-sm mt-1 ${
                             notification.read
@@ -307,7 +319,8 @@ const NotificationDropdown: React.FC = () => {
                               : "text-gray-600"
                           }`}
                         >
-                          {notification.clientName} accepted your $
+                          {notification.clientName}{" "}
+                          {t("notifications.acceptedYourBid")} $
                           {notification.amount} bid
                         </p>
                       </div>

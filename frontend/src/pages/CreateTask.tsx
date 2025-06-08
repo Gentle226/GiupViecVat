@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
 import LocationInput from "../components/LocationInput";
@@ -24,6 +25,7 @@ import {
 const CreateTask: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -51,19 +53,18 @@ const CreateTask: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md mx-auto text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />{" "}
           <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            Access Restricted
+            {t("createTask.accessRestricted")}
           </h1>
           <p className="text-gray-600 mb-4">
-            Taskers cannot post tasks. You can browse and bid on existing tasks
-            instead.
+            {t("createTask.taskersCannotPost")}
           </p>
           <button
             onClick={() => navigate("/tasks")}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Browse Tasks
+            {t("createTask.browseTasks")}
           </button>
         </div>
       </div>
@@ -263,22 +264,22 @@ const CreateTask: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="mb-6">
+            {" "}
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Post a New Task
+              {t("createTask.pageTitle")}
             </h1>
-            <p className="text-gray-600">
-              Describe your task in detail to attract the right Taskers
-            </p>
+            <p className="text-gray-600">{t("createTask.pageSubtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
+              {" "}
               <label
                 htmlFor="title"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Task Title *
+                {t("createTask.form.title")}
               </label>
               <input
                 type="text"
@@ -289,7 +290,7 @@ const CreateTask: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                   errors.title ? "border-red-500" : "border-gray-300"
                 }`}
-                placeholder="e.g., Help me move furniture to new apartment"
+                placeholder={t("createTask.form.titlePlaceholder")}
                 maxLength={100}
               />
               {errors.title && (
@@ -301,11 +302,12 @@ const CreateTask: React.FC = () => {
             </div>
             {/* Description */}
             <div>
+              {" "}
               <label
                 htmlFor="description"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Description *
+                {t("createTask.form.description")}
               </label>
               <textarea
                 id="description"
@@ -316,7 +318,7 @@ const CreateTask: React.FC = () => {
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                   errors.description ? "border-red-500" : "border-gray-300"
                 }`}
-                placeholder="Provide detailed information about your task, including what needs to be done, when, and any special requirements..."
+                placeholder={t("createTask.form.descriptionPlaceholder")}
               />
               {errors.description && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -328,11 +330,12 @@ const CreateTask: React.FC = () => {
             {/* Category and Budget */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                {" "}
                 <label
                   htmlFor="category"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Category
+                  {t("createTask.form.category")}
                 </label>
                 <select
                   id="category"
@@ -341,22 +344,21 @@ const CreateTask: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
+                  {" "}
                   {categories.map((category) => (
                     <option key={category} value={category}>
-                      {category
-                        .replace("_", " ")
-                        .toLowerCase()
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {t(`createTask.categories.${category}`)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
+                {" "}
                 <label
                   htmlFor="budget"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Budget ($) *
+                  {t("createTask.form.budget")}
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -371,7 +373,7 @@ const CreateTask: React.FC = () => {
                     className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                       errors.budget ? "border-red-500" : "border-gray-300"
                     }`}
-                    placeholder="0.00"
+                    placeholder={t("createTask.form.budgetPlaceholder")}
                   />
                 </div>
                 {errors.budget && (
@@ -384,8 +386,9 @@ const CreateTask: React.FC = () => {
             </div>{" "}
             {/* Location Type */}
             <div>
+              {" "}
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Tell us where *
+                {t("createTask.form.tellUsWhere")}
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label
@@ -402,11 +405,13 @@ const CreateTask: React.FC = () => {
                     checked={formData.locationType === LocationType.IN_PERSON}
                     onChange={handleInputChange}
                     className="mt-1 mr-3"
-                  />
+                  />{" "}
                   <div>
-                    <div className="font-medium text-gray-900">In-person</div>
+                    <div className="font-medium text-gray-900">
+                      {t("createTask.form.inPerson")}
+                    </div>
                     <div className="text-sm text-gray-500 mt-1">
-                      Select this if you need the Tasker physically there
+                      {t("createTask.descriptions.inPersonDesc")}
                     </div>
                   </div>
                 </label>
@@ -425,11 +430,13 @@ const CreateTask: React.FC = () => {
                     checked={formData.locationType === LocationType.ONLINE}
                     onChange={handleInputChange}
                     className="mt-1 mr-3"
-                  />
+                  />{" "}
                   <div>
-                    <div className="font-medium text-gray-900">Online</div>
+                    <div className="font-medium text-gray-900">
+                      {t("createTask.form.online")}
+                    </div>
                     <div className="text-sm text-gray-500 mt-1">
-                      Select this if the Tasker can do it from home
+                      {t("createTask.descriptions.onlineDesc")}
                     </div>
                   </div>
                 </label>
@@ -441,11 +448,12 @@ const CreateTask: React.FC = () => {
               {formData.locationType === LocationType.IN_PERSON && (
                 <div className="space-y-4">
                   <div>
+                    {" "}
                     <label
                       htmlFor="location"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Location *
+                      {t("createTask.form.location")}
                     </label>
                     <LocationInput
                       value={formData.location}
@@ -453,7 +461,7 @@ const CreateTask: React.FC = () => {
                         setFormData({ ...formData, location: value })
                       }
                       onLocationSelect={handleLocationSelect}
-                      placeholder="Nhập địa chỉ tại Việt Nam..."
+                      placeholder={t("createTask.form.locationPlaceholder")}
                       className={
                         errors.location ? "border-red-500" : "border-gray-300"
                       }
@@ -473,8 +481,11 @@ const CreateTask: React.FC = () => {
                       onClick={() => setShowMap(!showMap)}
                       className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
                     >
+                      {" "}
                       <MapPin className="h-4 w-4 mr-1" />
-                      {showMap ? "Ẩn bản đồ" : "Xem trên bản đồ"}
+                      {showMap
+                        ? t("createTask.form.hideMap")
+                        : t("createTask.form.showMap")}
                     </button>
                   </div>
 
@@ -490,8 +501,9 @@ const CreateTask: React.FC = () => {
                                 {
                                   position: selectedLocation,
                                   popup:
-                                    formData.location || "Vị trí được chọn",
-                                  title: "Vị trí nhiệm vụ",
+                                    formData.location ||
+                                    t("createTask.form.selectedLocation"),
+                                  title: t("createTask.form.taskLocation"),
                                 },
                               ]
                             : []
@@ -512,11 +524,13 @@ const CreateTask: React.FC = () => {
                     : ""
                 }
               >
+                {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  When do you need this done? *
+                  {t("createTask.form.whenNeedDone")}
                 </label>
                 <div className="space-y-2">
                   <div className="flex gap-2">
+                    {" "}
                     <label className="flex items-center">
                       <input
                         type="radio"
@@ -526,7 +540,7 @@ const CreateTask: React.FC = () => {
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      On date
+                      {t("createTask.form.onDate")}
                     </label>
                     <label className="flex items-center">
                       <input
@@ -537,7 +551,7 @@ const CreateTask: React.FC = () => {
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      Before date
+                      {t("createTask.form.beforeDate")}
                     </label>
                     <label className="flex items-center">
                       <input
@@ -548,7 +562,7 @@ const CreateTask: React.FC = () => {
                         onChange={handleInputChange}
                         className="mr-2"
                       />
-                      I'm flexible
+                      {t("createTask.form.flexible")}
                     </label>
                   </div>
                 </div>
@@ -562,9 +576,10 @@ const CreateTask: React.FC = () => {
                   htmlFor="specificDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
+                  {" "}
                   {formData.timingType === TimingType.ON_DATE
-                    ? "Select Date *"
-                    : "Complete Before *"}
+                    ? t("createTask.form.selectDate")
+                    : t("createTask.form.completeBefore")}
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -592,6 +607,7 @@ const CreateTask: React.FC = () => {
             <div>
               <div className="mb-2">
                 <label className="flex items-center">
+                  {" "}
                   <input
                     type="checkbox"
                     name="needsSpecificTime"
@@ -605,7 +621,7 @@ const CreateTask: React.FC = () => {
                     }
                     className="mr-2"
                   />
-                  I need a specific time of day
+                  {t("createTask.form.needSpecificTime")}
                 </label>
               </div>
 

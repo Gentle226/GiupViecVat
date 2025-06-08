@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { Eye, EyeOff, Lock, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   onClose,
 }) => {
   const { changePassword } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -25,7 +27,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-
   const getPasswordStrength = (password: string) => {
     let score = 0;
     if (password.length >= 6) score++;
@@ -35,9 +36,19 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
 
-    if (score < 3) return { level: "weak", color: "red", text: "Weak" };
-    if (score < 5) return { level: "medium", color: "yellow", text: "Medium" };
-    return { level: "strong", color: "green", text: "Strong" };
+    if (score < 3)
+      return { level: "weak", color: "red", text: t("changePassword.weak") };
+    if (score < 5)
+      return {
+        level: "medium",
+        color: "yellow",
+        text: t("changePassword.medium"),
+      };
+    return {
+      level: "strong",
+      color: "green",
+      text: t("changePassword.strong"),
+    };
   };
 
   const passwordStrength = formData.newPassword
@@ -60,31 +71,30 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       [field]: !prev[field],
     }));
   };
-
   const validateForm = () => {
     if (!formData.currentPassword) {
-      setError("Current password is required");
+      setError(t("changePassword.currentPasswordRequired"));
       return false;
     }
     if (!formData.newPassword) {
-      setError("New password is required");
+      setError(t("changePassword.newPasswordRequired"));
       return false;
     }
     if (formData.newPassword.length < 6) {
-      setError("New password must be at least 6 characters long");
+      setError(t("changePassword.newPasswordTooShort"));
       return false;
     }
     const strength = getPasswordStrength(formData.newPassword);
     if (strength.level === "weak") {
-      setError("Please choose a stronger password");
+      setError(t("changePassword.chooseStrongerPassword"));
       return false;
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      setError("New passwords do not match");
+      setError(t("changePassword.passwordsMismatch"));
       return false;
     }
     if (formData.currentPassword === formData.newPassword) {
-      setError("New password must be different from current password");
+      setError(t("changePassword.newPasswordMustBeDifferent"));
       return false;
     }
     return true;
@@ -118,7 +128,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         message?: string;
         response?: { data?: { message?: string } };
       };
-      setError(error.message || "Failed to change password");
+      setError(error.message || t("changePassword.failedToChangePassword"));
     } finally {
       setLoading(false);
     }
@@ -140,9 +150,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        {" "}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-900">
-            Change Password
+            {t("changePassword.title")}
           </h2>
           <button
             onClick={handleClose}
@@ -150,15 +161,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           >
             <X className="w-6 h-6" />
           </button>
-        </div>
-
+        </div>{" "}
         {success ? (
           <div className="text-center py-4">
             <div className="text-green-600 text-lg font-semibold mb-2">
-              Password Changed Successfully!
+              {t("changePassword.passwordChangedSuccessfully")}
             </div>
             <p className="text-gray-600">
-              Your password has been updated successfully.
+              {t("changePassword.passwordUpdatedMessage")}
             </p>
           </div>
         ) : (
@@ -167,15 +177,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
                 <p className="text-sm text-red-700">{error}</p>
               </div>
-            )}
-
+            )}{" "}
             {/* Current Password */}
             <div>
               <label
                 htmlFor="currentPassword"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Current Password
+                {t("changePassword.currentPassword")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -187,7 +196,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   type={showPasswords.current ? "text" : "password"}
                   required
                   className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter current password"
+                  placeholder={t("changePassword.currentPasswordPlaceholder")}
                   value={formData.currentPassword}
                   onChange={handleInputChange}
                 />
@@ -203,15 +212,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   )}
                 </button>
               </div>
-            </div>
-
+            </div>{" "}
             {/* New Password */}
             <div>
               <label
                 htmlFor="newPassword"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                New Password
+                {t("changePassword.newPassword")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -223,7 +231,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   type={showPasswords.new ? "text" : "password"}
                   required
                   className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter new password"
+                  placeholder={t("changePassword.newPasswordPlaceholder")}
                   value={formData.newPassword}
                   onChange={handleInputChange}
                 />
@@ -238,12 +246,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     <Eye className="h-5 w-5 text-gray-400" />
                   )}
                 </button>
-              </div>
+              </div>{" "}
               {/* Password Strength Indicator */}
               {formData.newPassword && passwordStrength && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Password strength:</span>
+                    <span className="text-gray-600">
+                      {t("changePassword.passwordStrength")}
+                    </span>
                     <span
                       className={`font-medium ${
                         passwordStrength.color === "red"
@@ -266,10 +276,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                           : "bg-green-500 w-full"
                       }`}
                     />
-                  </div>
+                  </div>{" "}
                   {/* Password Requirements */}
                   <div className="mt-2 text-xs text-gray-500">
-                    Password should contain:
+                    {t("changePassword.passwordRequirements")}
                     <ul className="mt-1 space-y-1">
                       <li
                         className={`${
@@ -278,7 +288,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             : "text-gray-500"
                         }`}
                       >
-                        • At least 6 characters
+                        {t("changePassword.atLeast6Characters")}
                       </li>
                       <li
                         className={`${
@@ -287,7 +297,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             : "text-gray-500"
                         }`}
                       >
-                        • One uppercase letter
+                        {t("changePassword.oneUppercase")}
                       </li>
                       <li
                         className={`${
@@ -296,7 +306,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             : "text-gray-500"
                         }`}
                       >
-                        • One lowercase letter
+                        {t("changePassword.oneLowercase")}
                       </li>
                       <li
                         className={`${
@@ -305,7 +315,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             : "text-gray-500"
                         }`}
                       >
-                        • One number
+                        {t("changePassword.oneNumber")}
                       </li>
                       <li
                         className={`${
@@ -314,21 +324,20 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             : "text-gray-500"
                         }`}
                       >
-                        • One special character
+                        {t("changePassword.oneSpecialCharacter")}
                       </li>
                     </ul>
                   </div>
                 </div>
               )}
-            </div>
-
+            </div>{" "}
             {/* Confirm New Password */}
             <div>
               <label
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Confirm New Password
+                {t("changePassword.confirmNewPassword")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -340,7 +349,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   type={showPasswords.confirm ? "text" : "password"}
                   required
                   className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Confirm new password"
+                  placeholder={t("changePassword.confirmPasswordPlaceholder")}
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                 />
@@ -357,15 +366,15 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                 </button>
               </div>
             </div>
-
             {/* Buttons */}
             <div className="flex space-x-3 pt-4">
+              {" "}
               <button
                 type="button"
                 onClick={handleClose}
                 className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
               >
-                Cancel
+                {t("changePassword.cancel")}
               </button>
               <button
                 type="submit"
@@ -377,7 +386,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   </div>
                 ) : (
-                  "Change Password"
+                  t("changePassword.changePassword")
                 )}
               </button>
             </div>
