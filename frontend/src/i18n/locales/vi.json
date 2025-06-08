@@ -1,0 +1,172 @@
+{
+  "nav": {
+    "findTasks": "Tìm Công Việc",
+    "postTask": "Đăng Công Việc",
+    "myTasks": "Công Việc Của Tôi",
+    "dashboard": "Bảng Điều Khiển",
+    "messages": "Tin Nhắn",
+    "profile": "Hồ Sơ",
+    "logout": "Đăng Xuất",
+    "login": "Đăng Nhập",
+    "register": "Đăng Ký"
+  },
+  "home": {
+    "title": "Hoàn Thành Công Việc với",
+    "brandName": "GiúpViệcVặt",
+    "subtitle": "Kết nối với những người thợ địa phương cho mọi nhu cầu hàng ngày của bạn. Từ dọn dẹp đến sửa chữa, tìm những chuyên gia có kỹ năng trong khu vực của bạn.",
+    "findTasks": "Tìm Công Việc",
+    "postTask": "Đăng Công Việc",
+    "signUp": "Đăng Ký",
+    "features": {
+      "easyPosting": {
+        "title": "Đăng Việc Dễ Dàng",
+        "description": "Đăng công việc của bạn trong vài phút với mô tả chi tiết và yêu cầu ngân sách."
+      },
+      "skilledTaskers": {
+        "title": "Thợ Có Kỹ Năng",
+        "description": "Kết nối với những freelancer địa phương đã được xác minh với đúng kỹ năng mà bạn cần."
+      },
+      "realTimeChat": {
+        "title": "Trò Chuyện Thời Gian Thực",
+        "description": "Giao tiếp trực tiếp với Thợ thông qua hệ thống nhắn tin tích hợp của chúng tôi."
+      },
+      "securePayments": {
+        "title": "Thanh Toán An Toàn",
+        "description": "Thanh toán an toàn thông qua GiúpViệcVặt Pay với bảo vệ người mua được đảm bảo."
+      },
+      "ratingSystem": {
+        "title": "Hệ Thống Đánh Giá",
+        "description": "Đưa ra quyết định sáng suốt với các đánh giá và xếp hạng minh bạch."
+      },
+      "locationBased": {
+        "title": "Dựa Trên Vị Trí",
+        "description": "Tìm Thợ địa phương trong khu vực của bạn để phục vụ nhanh chóng và tiện lợi."
+      }
+    },
+    "categories": {
+      "homeCleaning": "Dọn Dẹp Nhà Cửa",
+      "handyman": "Thợ Sửa Chữa",
+      "movingDelivery": "Di Chuyển & Giao Hàng",
+      "gardening": "Làm Vườn",
+      "petCare": "Chăm Sóc Thú Cưng",
+      "techSupport": "Hỗ Trợ Kỹ Thuật",
+      "tutoring": "Gia Sư",
+      "photography": "Chụp Ảnh"
+    },
+    "stats": {
+      "tasksCompleted": "Công Việc Hoàn Thành",
+      "happyCustomers": "Khách Hàng Hài Lòng",
+      "skilledTaskers": "Thợ Có Kỹ Năng",
+      "averageRating": "Đánh Giá Trung Bình"
+    },
+    "howItWorks": "Cách Hoạt Động",
+    "readyToStart": "Sẵn Sàng Bắt Đầu?",
+    "joinCommunity": "Tham gia hàng nghìn khách hàng hài lòng và Thợ có kỹ năng trong cộng đồng đang phát triển của chúng tôi."
+  },
+  "auth": {
+    "login": {
+      "title": "Chào Mừng Trở Lại",
+      "subtitle": "Đăng nhập vào tài khoản của bạn",
+      "email": "Email",
+      "password": "Mật Khẩu",
+      "rememberMe": "Ghi nhớ tôi",
+      "forgotPassword": "Quên mật khẩu?",
+      "signIn": "Đăng Nhập",
+      "noAccount": "Chưa có tài khoản?",
+      "signUpHere": "Đăng ký tại đây"
+    },
+    "register": {
+      "title": "Tạo Tài Khoản",
+      "subtitle": "Tham gia cộng đồng của chúng tôi ngay hôm nay",
+      "mainGoal": "Mục tiêu chính của bạn trên GiupViecVat là gì?",
+      "getThingsDone": "Hoàn thành công việc",
+      "earnMoney": "Kiếm tiền",
+      "client": "Khách hàng",
+      "tasker": "Thợ",
+      "firstName": "Tên",
+      "lastName": "Họ",
+      "firstNamePlaceholder": "Nhập tên của bạn",
+      "lastNamePlaceholder": "Nhập họ của bạn",
+      "name": "Họ và Tên",
+      "email": "Email",
+      "emailPlaceholder": "Nhập địa chỉ email",
+      "address": "Địa chỉ của bạn",
+      "addressPlaceholder": "Nhập địa chỉ tại Việt Nam...",
+      "addressHelp": "Địa chỉ này sẽ giúp bạn tìm các nhiệm vụ gần nhà",
+      "password": "Mật Khẩu",
+      "passwordPlaceholder": "Tạo mật khẩu",
+      "confirmPassword": "Xác Nhận Mật Khẩu",
+      "confirmPasswordPlaceholder": "Xác nhận mật khẩu của bạn",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự",
+      "passwordMismatch": "Mật khẩu không khớp",
+      "agreeTerms": "Tôi đồng ý với Điều khoản Dịch vụ và Chính sách Bảo mật",
+      "createAccount": "Tạo Tài Khoản",
+      "haveAccount": "Đã có tài khoản?",
+      "signInHere": "Đăng nhập tại đây"
+    }
+  },
+  "tasks": {
+    "createTask": "Tạo Công Việc",
+    "title": "Tiêu Đề Công Việc",
+    "description": "Mô Tả",
+    "budget": "Ngân Sách",
+    "location": "Địa Điểm",
+    "category": "Danh Mục",
+    "deadline": "Hạn Chót",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "submit": "Gửi",
+    "edit": "Chỉnh Sửa",
+    "delete": "Xóa",
+    "viewDetails": "Xem Chi Tiết",
+    "placeBid": "Đặt Giá",
+    "status": {
+      "open": "Mở",
+      "assigned": "Đã Giao",
+      "inProgress": "Đang Thực Hiện",
+      "completed": "Hoàn Thành",
+      "cancelled": "Đã Hủy"
+    }
+  },
+  "messages": {
+    "typeMessage": "Nhập tin nhắn...",
+    "send": "Gửi",
+    "online": "Trực Tuyến",
+    "offline": "Ngoại Tuyến",
+    "newMessage": "Tin Nhắn Mới"
+  },
+  "profile": {
+    "editProfile": "Chỉnh Sửa Hồ Sơ",
+    "personalInfo": "Thông Tin Cá Nhân",
+    "contactInfo": "Thông Tin Liên Hệ",
+    "skills": "Kỹ Năng",
+    "portfolio": "Danh Mục Đầu Tư",
+    "reviews": "Đánh Giá",
+    "ratings": "Xếp Hạng"
+  },
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "success": "Thành Công",
+    "warning": "Cảnh Báo",
+    "info": "Thông Tin",
+    "confirm": "Xác Nhận",
+    "yes": "Có",
+    "no": "Không",
+    "ok": "OK",
+    "search": "Tìm Kiếm",
+    "filter": "Lọc",
+    "sort": "Sắp Xếp",
+    "clear": "Xóa",
+    "apply": "Áp Dụng",
+    "close": "Đóng",
+    "back": "Quay Lại",
+    "next": "Tiếp Theo",
+    "previous": "Trước Đó",
+    "selectLanguage": "Chọn Ngôn Ngữ"
+  },
+  "languages": {
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}

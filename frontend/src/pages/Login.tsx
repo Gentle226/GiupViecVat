@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import Logo from "../components/Logo";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -53,17 +55,17 @@ const Login: React.FC = () => {
           {/* Logo component */}
           <div className="flex justify-center mb-4">
             <Logo size="large" />
-          </div>
+          </div>{" "}
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            {t("auth.login.title")}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Or{" "}
+            {t("auth.login.noAccount")}{" "}
             <Link
               to="/register"
               className="font-medium text-blue-600 hover:text-blue-500"
             >
-              create a new account
+              {t("auth.login.signUpHere")}
             </Link>
           </p>
         </div>
@@ -83,11 +85,12 @@ const Login: React.FC = () => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
+              {" "}
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                {t("auth.login.email")}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -100,7 +103,7 @@ const Login: React.FC = () => {
                   autoComplete="email"
                   required
                   className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your email"
+                  placeholder={t("auth.login.email")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -108,11 +111,12 @@ const Login: React.FC = () => {
             </div>
 
             <div>
+              {" "}
               <label
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                {t("auth.login.password")}
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -125,7 +129,7 @@ const Login: React.FC = () => {
                   autoComplete="current-password"
                   required
                   className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your password"
+                  placeholder={t("auth.login.password")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -145,11 +149,12 @@ const Login: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
+                {" "}
                 <a
                   href="#"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  Forgot your password?
+                  {t("auth.login.forgotPassword")}
                 </a>
               </div>
             </div>
@@ -160,10 +165,11 @@ const Login: React.FC = () => {
                 disabled={isLoading || !email || !password}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                {" "}
                 {isLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
-                  "Sign in"
+                  t("auth.login.signIn")
                 )}
               </button>
             </div>

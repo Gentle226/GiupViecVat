@@ -1,0 +1,172 @@
+{
+  "nav": {
+    "findTasks": "Find Tasks",
+    "postTask": "Post Task",
+    "myTasks": "My Tasks",
+    "dashboard": "Dashboard",
+    "messages": "Messages",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "home": {
+    "title": "Get Things Done with",
+    "brandName": "GiupViecVat",
+    "subtitle": "Connect with local Taskers for all your daily needs. From cleaning to repairs, find skilled professionals in your area.",
+    "findTasks": "Find Tasks",
+    "postTask": "Post Task",
+    "signUp": "Sign Up",
+    "features": {
+      "easyPosting": {
+        "title": "Easy Job Posting",
+        "description": "Post your task in minutes with detailed descriptions and budget requirements."
+      },
+      "skilledTaskers": {
+        "title": "Skilled Taskers",
+        "description": "Connect with verified local freelancers with the right skills for your needs."
+      },
+      "realTimeChat": {
+        "title": "Real-time Chat",
+        "description": "Communicate directly with Taskers through our built-in messaging system."
+      },
+      "securePayments": {
+        "title": "Secure Payments",
+        "description": "Pay safely through GiupViecVat Pay with buyer protection guaranteed."
+      },
+      "ratingSystem": {
+        "title": "Rating System",
+        "description": "Make informed decisions with transparent reviews and ratings."
+      },
+      "locationBased": {
+        "title": "Location-based",
+        "description": "Find local Taskers in your area for quick and convenient service."
+      }
+    },
+    "categories": {
+      "homeCleaning": "Home Cleaning",
+      "handyman": "Handyman",
+      "movingDelivery": "Moving & Delivery",
+      "gardening": "Gardening",
+      "petCare": "Pet Care",
+      "techSupport": "Tech Support",
+      "tutoring": "Tutoring",
+      "photography": "Photography"
+    },
+    "stats": {
+      "tasksCompleted": "Tasks Completed",
+      "happyCustomers": "Happy Customers",
+      "skilledTaskers": "Skilled Taskers",
+      "averageRating": "Average Rating"
+    },
+    "howItWorks": "How It Works",
+    "readyToStart": "Ready to Get Started?",
+    "joinCommunity": "Join thousands of satisfied customers and skilled Taskers in our growing community."
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot your password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUpHere": "Sign up here"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join our community today",
+      "mainGoal": "What is your main goal on GiupViecVat?",
+      "getThingsDone": "Get things done",
+      "earnMoney": "Earn money",
+      "client": "Client",
+      "tasker": "Tasker",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "firstNamePlaceholder": "First name",
+      "lastNamePlaceholder": "Last name",
+      "name": "Full Name",
+      "email": "Email address",
+      "emailPlaceholder": "Enter your email",
+      "address": "Your address",
+      "addressPlaceholder": "Enter address in Vietnam...",
+      "addressHelp": "This address will help you find tasks near home",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "passwordTooShort": "Password must be at least 6 characters long",
+      "passwordMismatch": "Passwords do not match",
+      "agreeTerms": "I agree to the Terms of Service and Privacy Policy",
+      "createAccount": "Create Account",
+      "haveAccount": "Already have an account?",
+      "signInHere": "Sign in here"
+    }
+  },
+  "tasks": {
+    "createTask": "Create Task",
+    "title": "Task Title",
+    "description": "Description",
+    "budget": "Budget",
+    "location": "Location",
+    "category": "Category",
+    "deadline": "Deadline",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "edit": "Edit",
+    "delete": "Delete",
+    "viewDetails": "View Details",
+    "placeBid": "Place Bid",
+    "status": {
+      "open": "Open",
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "messages": {
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "online": "Online",
+    "offline": "Offline",
+    "newMessage": "New Message"
+  },
+  "profile": {
+    "editProfile": "Edit Profile",
+    "personalInfo": "Personal Information",
+    "contactInfo": "Contact Information",
+    "skills": "Skills",
+    "portfolio": "Portfolio",
+    "reviews": "Reviews",
+    "ratings": "Ratings"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "clear": "Clear",
+    "apply": "Apply",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "selectLanguage": "Select Language"
+  },
+  "languages": {
+    "en": "English",
+    "vi": "Tiếng Việt"
+  }
+}

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Search,
@@ -12,63 +13,57 @@ import {
 } from "lucide-react";
 
 const Home: React.FC = () => {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
-
   const features = [
     {
       icon: Search,
-      title: "Easy Job Posting",
-      description:
-        "Post your task in minutes with detailed descriptions and budget requirements.",
+      title: t("home.features.easyPosting.title"),
+      description: t("home.features.easyPosting.description"),
     },
     {
       icon: Users,
-      title: "Skilled Taskers",
-      description:
-        "Connect with verified local freelancers with the right skills for your needs.",
+      title: t("home.features.skilledTaskers.title"),
+      description: t("home.features.skilledTaskers.description"),
     },
     {
       icon: MessageCircle,
-      title: "Real-time Chat",
-      description:
-        "Communicate directly with Taskers through our built-in messaging system.",
+      title: t("home.features.realTimeChat.title"),
+      description: t("home.features.realTimeChat.description"),
     },
     {
       icon: Shield,
-      title: "Secure Payments",
-      description:
-        "Pay safely through GiupViecVat Pay with buyer protection guaranteed.",
+      title: t("home.features.securePayments.title"),
+      description: t("home.features.securePayments.description"),
     },
     {
       icon: Star,
-      title: "Rating System",
-      description:
-        "Make informed decisions with transparent reviews and ratings.",
+      title: t("home.features.ratingSystem.title"),
+      description: t("home.features.ratingSystem.description"),
     },
     {
       icon: MapPin,
-      title: "Location-based",
-      description:
-        "Find local Taskers in your area for quick and convenient service.",
+      title: t("home.features.locationBased.title"),
+      description: t("home.features.locationBased.description"),
     },
   ];
 
   const categories = [
-    "Home Cleaning",
-    "Handyman",
-    "Moving & Delivery",
-    "Gardening",
-    "Pet Care",
-    "Tech Support",
-    "Tutoring",
-    "Photography",
+    t("home.categories.homeCleaning"),
+    t("home.categories.handyman"),
+    t("home.categories.movingDelivery"),
+    t("home.categories.gardening"),
+    t("home.categories.petCare"),
+    t("home.categories.techSupport"),
+    t("home.categories.tutoring"),
+    t("home.categories.photography"),
   ];
 
   const stats = [
-    { number: "50K+", label: "Tasks Completed" },
-    { number: "25K+", label: "Happy Customers" },
-    { number: "10K+", label: "Skilled Taskers" },
-    { number: "4.8/5", label: "Average Rating" },
+    { number: "50K+", label: t("home.stats.tasksCompleted") },
+    { number: "25K+", label: t("home.stats.happyCustomers") },
+    { number: "10K+", label: t("home.stats.skilledTaskers") },
+    { number: "4.8/5", label: t("home.stats.averageRating") },
   ];
 
   return (
@@ -77,46 +72,48 @@ const Home: React.FC = () => {
       <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
+            {" "}
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Get Things Done with{" "}
-              <span className="text-blue-200">GiupViecVat</span>
+              {t("home.title")}{" "}
+              <span className="text-blue-200">{t("home.brandName")}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
-              Connect with local Taskers for all your daily needs. From cleaning
-              to repairs, find skilled professionals in your area.
+              {t("home.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {" "}
               {isAuthenticated ? (
                 <>
+                  {" "}
                   <Link
                     to="/find-tasks"
                     className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                   >
                     <Search className="w-5 h-5 mr-2" />
-                    Find Tasks
+                    {t("home.findTasks")}
                   </Link>
                   <Link
                     to="/post-task"
                     className="bg-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-400 border-2 border-blue-400 transition-colors inline-flex items-center justify-center"
                   >
                     <Clock className="w-5 h-5 mr-2" />
-                    Post a Task
+                    {t("home.postTask")}
                   </Link>
                 </>
               ) : (
                 <>
+                  {" "}
                   <Link
                     to="/register"
                     className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                   >
-                    Get Started
+                    {t("home.signUp")}
                   </Link>
                   <Link
                     to="/find-tasks"
                     className="bg-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-400 border-2 border-blue-400 transition-colors inline-flex items-center justify-center"
                   >
-                    Browse Tasks
+                    {t("home.findTasks")}
                   </Link>
                 </>
               )}
