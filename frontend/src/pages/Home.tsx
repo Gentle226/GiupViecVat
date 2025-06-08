@@ -86,10 +86,11 @@ const Home: React.FC = () => {
               to repairs, find skilled professionals in your area.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {" "}
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/tasks"
+                    to="/find-tasks"
                     className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center justify-center"
                   >
                     <Search className="w-5 h-5 mr-2" />
@@ -112,7 +113,7 @@ const Home: React.FC = () => {
                     Get Started
                   </Link>
                   <Link
-                    to="/tasks"
+                    to="/find-tasks"
                     className="bg-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-400 border-2 border-blue-400 transition-colors inline-flex items-center justify-center"
                   >
                     Browse Tasks
