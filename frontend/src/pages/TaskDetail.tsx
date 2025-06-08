@@ -523,7 +523,7 @@ const TaskDetail: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {" "}
-        {/* Header */}
+        {/* Header */}{" "}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
@@ -537,8 +537,48 @@ const TaskDetail: React.FC = () => {
               >
                 {task.status.replace("_", " ")}
               </span>
-            </div>{" "}
-            <div className="flex items-center gap-3">
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-indigo-600">
+                ${task.suggestedPrice}
+              </div>
+              <div className="text-sm text-gray-500">Budget</div>
+            </div>
+          </div>
+          {/* Task Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {" "}
+            <div className="flex items-center text-gray-600">
+              <MapPin className="h-5 w-5 mr-2" />
+              <span>{task.location.address}</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <Calendar className="h-5 w-5 mr-2" />
+              <span>Due: {formatDate(task.dueDate)}</span>
+            </div>
+            <div className="flex items-center text-gray-600">
+              <Clock className="h-5 w-5 mr-2" />
+              <span>Posted: {formatDate(task.createdAt!)}</span>
+            </div>
+          </div>{" "}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Description
+            </h3>
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {task.description}
+            </p>
+          </div>{" "}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {task.category && (
+              <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+                {task.category}
+              </span>
+            )}
+          </div>
+          {/* Task Action Buttons - Bottom Right */}
+          <div className="flex justify-end">
+            <div className="flex flex-wrap gap-2">
               {/* Edit Task Button - for task owners on editable tasks */}
               {isTaskOwner &&
                 (task.status === TaskStatus.OPEN ||
@@ -550,7 +590,7 @@ const TaskDetail: React.FC = () => {
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Task
                   </button>
-                )}{" "}
+                )}
               {/* Delete Task Button - for task owners on deletable tasks */}
               {isTaskOwner &&
                 (task.status === TaskStatus.COMPLETED ||
@@ -563,7 +603,7 @@ const TaskDetail: React.FC = () => {
                     <Trash2 className="h-4 w-4 mr-2" />
                     {deleteLoading ? "Deleting..." : "Delete Task"}
                   </button>
-                )}{" "}
+                )}
               {/* Rate Tasker Button - for completed tasks (clients only) */}
               {isTaskOwner &&
                 task.status === TaskStatus.COMPLETED &&
@@ -596,7 +636,6 @@ const TaskDetail: React.FC = () => {
                     }}
                     className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200 flex items-center text-sm"
                   >
-                    {" "}
                     <Star className="h-4 w-4 mr-2" />
                     Rate Tasker
                   </button>
@@ -653,44 +692,7 @@ const TaskDetail: React.FC = () => {
                     {cancellingTask ? "Cancelling..." : "Cancel Task"}
                   </button>
                 )}
-              <div className="text-right">
-                <div className="text-2xl font-bold text-indigo-600">
-                  ${task.suggestedPrice}
-                </div>
-                <div className="text-sm text-gray-500">Budget</div>
-              </div>
-            </div>{" "}
-          </div>
-          {/* Task Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {" "}
-            <div className="flex items-center text-gray-600">
-              <MapPin className="h-5 w-5 mr-2" />
-              <span>{task.location.address}</span>
             </div>
-            <div className="flex items-center text-gray-600">
-              <Calendar className="h-5 w-5 mr-2" />
-              <span>Due: {formatDate(task.dueDate)}</span>
-            </div>
-            <div className="flex items-center text-gray-600">
-              <Clock className="h-5 w-5 mr-2" />
-              <span>Posted: {formatDate(task.createdAt!)}</span>
-            </div>
-          </div>{" "}
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Description
-            </h3>
-            <p className="text-gray-700 whitespace-pre-wrap">
-              {task.description}
-            </p>
-          </div>{" "}
-          <div className="flex flex-wrap gap-2">
-            {task.category && (
-              <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-                {task.category}
-              </span>
-            )}
           </div>
         </div>{" "}
         {/* Bid Section */}
