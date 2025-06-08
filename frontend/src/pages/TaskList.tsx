@@ -2,12 +2,18 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
-import { TaskCategory, TaskStatus } from "../../../shared/types";
+import {
+  TaskCategory,
+  TaskStatus,
+  TimingType,
+  TimeOfDay,
+} from "../../../shared/types";
 import {
   Search,
   Filter,
   MapPin,
   Clock,
+  Calendar,
   User as UserIcon,
   ChevronLeft,
   ChevronRight,
@@ -57,6 +63,70 @@ const TaskList: React.FC = () => {
       currency: "USD",
     }).format(price);
   };
+  const formatTiming = (task: {
+    timingType?: TimingType;
+    specificDate?: Date;
+    needsSpecificTime?: boolean;
+    timeOfDay?: TimeOfDay[];
+  }) => {
+    if (!task.timingType) return "Timing not specified";
+
+    switch (task.timingType) {
+      case TimingType.FLEXIBLE:
+        return "Flexible timing";
+      case TimingType.ON_DATE:
+        if (task.specificDate) {
+          const dateStr = new Date(task.specificDate).toLocaleDateString();
+          if (
+            task.needsSpecificTime &&
+            task.timeOfDay &&
+            task.timeOfDay.length > 0
+          ) {
+            const timeLabel = getTimeOfDayLabel(task.timeOfDay);
+            return `On ${dateStr} (${timeLabel})`;
+          }
+          return `On ${dateStr}`;
+        }
+        return "On specific date";
+      case TimingType.BEFORE_DATE:
+        if (task.specificDate) {
+          const dateStr = new Date(task.specificDate).toLocaleDateString();
+          if (
+            task.needsSpecificTime &&
+            task.timeOfDay &&
+            task.timeOfDay.length > 0
+          ) {
+            const timeLabel = getTimeOfDayLabel(task.timeOfDay);
+            return `Before ${dateStr} (${timeLabel})`;
+          }
+          return `Before ${dateStr}`;
+        }
+        return "Before specific date";
+      default:
+        return "Timing not specified";
+    }
+  };
+  const getTimeOfDayLabel = (timeOfDay: TimeOfDay[]): string => {
+    if (!timeOfDay || timeOfDay.length === 0) return "Any time";
+
+    const labels = timeOfDay.map((time) => {
+      switch (time) {
+        case TimeOfDay.MORNING:
+          return "Morning";
+        case TimeOfDay.MIDDAY:
+          return "Midday";
+        case TimeOfDay.AFTERNOON:
+          return "Afternoon";
+        case TimeOfDay.EVENING:
+          return "Evening";
+        default:
+          return time;
+      }
+    });
+
+    return labels.join(", ");
+  };
+
   const getCategoryIcon = (category: TaskCategory) => {
     // Return appropriate icon based on category
     switch (category) {
@@ -302,6 +372,10 @@ const TaskList: React.FC = () => {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <MapPin className="h-4 w-4" />
                       <span>{task.location.address}</span>
+                    </div>{" "}
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatTiming(task)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Clock className="h-4 w-4" />
@@ -317,6 +391,10 @@ const TaskList: React.FC = () => {
                           ? "User"
                           : `${task.postedBy.firstName} ${task.postedBy.lastName}`}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatTiming(task)}</span>
                     </div>
                   </div>
                   {/* Action Button */}

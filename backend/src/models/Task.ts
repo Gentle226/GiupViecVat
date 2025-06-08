@@ -16,6 +16,11 @@ export interface ITask extends Document {
   updatedAt: Date;
   dueDate?: Date;
   completedAt?: Date;
+  // New timing fields
+  timingType: string;
+  specificDate?: Date;
+  timeOfDay?: string[];
+  needsSpecificTime: boolean;
 }
 
 const taskSchema = new Schema(
@@ -30,6 +35,7 @@ const taskSchema = new Schema(
       type: String,
       required: true,
       maxlength: 1000,
+      minlength: 10,
     },
     category: {
       type: String,
@@ -80,6 +86,27 @@ const taskSchema = new Schema(
     completedAt: {
       type: Date,
       default: null,
+    },
+    // New timing fields
+    timingType: {
+      type: String,
+      enum: ["on_date", "before_date", "flexible"],
+      required: true,
+      default: "flexible",
+    },
+    specificDate: {
+      type: Date,
+      default: null,
+    },
+    timeOfDay: {
+      type: [String],
+      enum: ["morning", "midday", "afternoon", "evening"],
+      default: [],
+    },
+    needsSpecificTime: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
   },
   {

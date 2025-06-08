@@ -4,7 +4,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import { tasksAPI, bidsAPI, messagesAPI } from "../services/api";
 import type { Task, TaskBid } from "../../../shared/types";
-import { TaskStatus, TaskCategory } from "../../../shared/types";
+import {
+  TaskStatus,
+  TaskCategory,
+  TimingType,
+  TimeOfDay,
+} from "../../../shared/types";
 import {
   MapPin,
   Calendar,
@@ -23,6 +28,66 @@ import RatingModal from "../components/RatingModal";
 const formatDate = (date: Date | undefined): string => {
   if (!date) return "Not specified";
   return new Date(date).toLocaleDateString();
+};
+
+const formatTiming = (task: Task): string => {
+  if (!task.timingType) return "Timing: Not specified";
+
+  switch (task.timingType) {
+    case TimingType.FLEXIBLE:
+      return "Timing: Flexible";
+    case TimingType.ON_DATE:
+      if (task.specificDate) {
+        const dateStr = formatDate(task.specificDate);
+        if (
+          task.needsSpecificTime &&
+          task.timeOfDay &&
+          task.timeOfDay.length > 0
+        ) {
+          const timeLabel = getTimeOfDayLabel(task.timeOfDay);
+          return `Timing: On ${dateStr} (${timeLabel})`;
+        }
+        return `Timing: On ${dateStr}`;
+      }
+      return "Timing: On specific date";
+    case TimingType.BEFORE_DATE:
+      if (task.specificDate) {
+        const dateStr = formatDate(task.specificDate);
+        if (
+          task.needsSpecificTime &&
+          task.timeOfDay &&
+          task.timeOfDay.length > 0
+        ) {
+          const timeLabel = getTimeOfDayLabel(task.timeOfDay);
+          return `Timing: Before ${dateStr} (${timeLabel})`;
+        }
+        return `Timing: Before ${dateStr}`;
+      }
+      return "Timing: Before specific date";
+    default:
+      return "Timing: Not specified";
+  }
+};
+
+const getTimeOfDayLabel = (timeOfDay: TimeOfDay[]): string => {
+  if (!timeOfDay || timeOfDay.length === 0) return "Any time";
+
+  const labels = timeOfDay.map((time) => {
+    switch (time) {
+      case TimeOfDay.MORNING:
+        return "Morning";
+      case TimeOfDay.MIDDAY:
+        return "Midday";
+      case TimeOfDay.AFTERNOON:
+        return "Afternoon";
+      case TimeOfDay.EVENING:
+        return "Evening";
+      default:
+        return time;
+    }
+  });
+
+  return labels.join(", ");
 };
 
 const TaskDetail: React.FC = () => {
@@ -56,6 +121,11 @@ const TaskDetail: React.FC = () => {
     suggestedPrice: "",
     location: "",
     dueDate: "",
+    // New timing fields
+    timingType: TimingType.FLEXIBLE as string,
+    specificDate: "",
+    needsSpecificTime: false,
+    timeOfDay: [] as string[],
   });
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -326,20 +396,44 @@ const TaskDetail: React.FC = () => {
       dueDate: task.dueDate
         ? new Date(task.dueDate).toISOString().split("T")[0]
         : "",
+      // New timing fields
+      timingType: task.timingType || TimingType.FLEXIBLE,
+      specificDate: task.specificDate
+        ? new Date(task.specificDate).toISOString().split("T")[0]
+        : "",
+      needsSpecificTime: task.needsSpecificTime || false,
+      timeOfDay: task.timeOfDay || [],
     });
     setShowEditModal(true);
   };
-
   const handleEditFormChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+
     setEditFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleEditTimeOfDayChange = (time: string) => {
+    setEditFormData((prev) => {
+      const currentTimes = prev.timeOfDay;
+      const isSelected = currentTimes.includes(time);
+
+      const newTimes = isSelected
+        ? currentTimes.filter((t) => t !== time)
+        : [...currentTimes, time];
+
+      return {
+        ...prev,
+        timeOfDay: newTimes,
+      };
+    });
   };
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,6 +453,16 @@ const TaskDetail: React.FC = () => {
         dueDate: editFormData.dueDate
           ? new Date(editFormData.dueDate)
           : undefined,
+        // New timing fields
+        timingType: editFormData.timingType as TimingType,
+        specificDate: editFormData.specificDate
+          ? new Date(editFormData.specificDate)
+          : undefined,
+        needsSpecificTime: editFormData.needsSpecificTime,
+        timeOfDay:
+          editFormData.timeOfDay.length > 0
+            ? (editFormData.timeOfDay as TimeOfDay[])
+            : undefined,
       };
 
       // Call the API directly to ensure we get the updated task data
@@ -565,7 +669,7 @@ const TaskDetail: React.FC = () => {
               </div>
               <div className="text-sm text-gray-500">Budget</div>
             </div>
-          </div>
+          </div>{" "}
           {/* Task Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {" "}
@@ -575,7 +679,7 @@ const TaskDetail: React.FC = () => {
             </div>
             <div className="flex items-center text-gray-600">
               <Calendar className="h-5 w-5 mr-2" />
-              <span>Due: {formatDate(task.dueDate)}</span>
+              <span>{formatTiming(task)}</span>
             </div>
             <div className="flex items-center text-gray-600">
               <Clock className="h-5 w-5 mr-2" />
@@ -893,7 +997,6 @@ const TaskDetail: React.FC = () => {
           )}
         </div>{" "}
       </div>
-
       {/* Edit Task Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -927,7 +1030,6 @@ const TaskDetail: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-
               {/* Description */}
               <div>
                 <label
@@ -946,7 +1048,6 @@ const TaskDetail: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-
               {/* Category and Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -992,48 +1093,173 @@ const TaskDetail: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
+              </div>{" "}
+              {/* Location */}
+              <div>
+                <label
+                  htmlFor="edit-location"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  id="edit-location"
+                  name="location"
+                  value={editFormData.location}
+                  onChange={handleEditFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g., Downtown Seattle, WA"
+                />
               </div>
+              {/* Timing Section */}
+              <div className="border-t pt-4">
+                <h4 className="text-lg font-medium text-gray-900 mb-4">
+                  When do you need this done?
+                </h4>
 
-              {/* Location and Due Date */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="edit-location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    id="edit-location"
-                    name="location"
-                    value={editFormData.location}
-                    onChange={handleEditFormChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="e.g., Downtown Seattle, WA"
-                  />
+                {/* Timing Type */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center">
+                    <input
+                      id="edit-on-date"
+                      name="timingType"
+                      type="radio"
+                      value={TimingType.ON_DATE}
+                      checked={editFormData.timingType === TimingType.ON_DATE}
+                      onChange={handleEditFormChange}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    />
+                    <label
+                      htmlFor="edit-on-date"
+                      className="ml-3 block text-sm text-gray-700"
+                    >
+                      On a specific date
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="edit-before-date"
+                      name="timingType"
+                      type="radio"
+                      value={TimingType.BEFORE_DATE}
+                      checked={
+                        editFormData.timingType === TimingType.BEFORE_DATE
+                      }
+                      onChange={handleEditFormChange}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    />
+                    <label
+                      htmlFor="edit-before-date"
+                      className="ml-3 block text-sm text-gray-700"
+                    >
+                      Before a specific date
+                    </label>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="edit-flexible"
+                      name="timingType"
+                      type="radio"
+                      value={TimingType.FLEXIBLE}
+                      checked={editFormData.timingType === TimingType.FLEXIBLE}
+                      onChange={handleEditFormChange}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    />
+                    <label
+                      htmlFor="edit-flexible"
+                      className="ml-3 block text-sm text-gray-700"
+                    >
+                      I'm flexible
+                    </label>
+                  </div>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="edit-dueDate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    id="edit-dueDate"
-                    name="dueDate"
-                    value={editFormData.dueDate}
-                    onChange={handleEditFormChange}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
+                {/* Date Selection */}
+                {(editFormData.timingType === TimingType.ON_DATE ||
+                  editFormData.timingType === TimingType.BEFORE_DATE) && (
+                  <div className="mb-4">
+                    <label
+                      htmlFor="edit-specificDate"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Select Date *
+                    </label>
+                    <input
+                      type="date"
+                      id="edit-specificDate"
+                      name="specificDate"
+                      value={editFormData.specificDate}
+                      onChange={handleEditFormChange}
+                      min={new Date().toISOString().split("T")[0]}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                )}
 
+                {/* Time of Day Selection */}
+                {(editFormData.timingType === TimingType.ON_DATE ||
+                  editFormData.timingType === TimingType.BEFORE_DATE) && (
+                  <div className="mb-4">
+                    <div className="flex items-center mb-3">
+                      {" "}
+                      <input
+                        id="edit-needsSpecificTime"
+                        name="needsSpecificTime"
+                        type="checkbox"
+                        checked={editFormData.needsSpecificTime}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEditFormData((prev) => ({
+                            ...prev,
+                            needsSpecificTime: checked,
+                            timeOfDay: checked ? prev.timeOfDay : [],
+                          }));
+                        }}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label
+                        htmlFor="edit-needsSpecificTime"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
+                        I need this done at a specific time of day
+                      </label>
+                    </div>
+
+                    {editFormData.needsSpecificTime && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Time of Day *
+                        </label>{" "}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {Object.values(TimeOfDay).map((time) => (
+                            <div key={time} className="flex items-center">
+                              <input
+                                id={`edit-time-${time}`}
+                                type="checkbox"
+                                value={time}
+                                checked={editFormData.timeOfDay.includes(time)}
+                                onChange={() => handleEditTimeOfDayChange(time)}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <label
+                                htmlFor={`edit-time-${time}`}
+                                className="ml-2 block text-sm text-gray-700 capitalize"
+                              >
+                                {time.toLowerCase()}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Action Buttons */}
               <div className="flex space-x-3 justify-end pt-4">
                 <button
@@ -1056,7 +1282,6 @@ const TaskDetail: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Delete Task Confirmation Dialog */}
       {showDeleteConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1095,7 +1320,6 @@ const TaskDetail: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Complete Task Confirmation Dialog */}
       {showCompleteConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1133,7 +1357,6 @@ const TaskDetail: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Cancel Task Confirmation Dialog */}
       {showCancelConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1170,191 +1393,7 @@ const TaskDetail: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Edit Task Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
-            </div>
-
-            <form onSubmit={handleEditSubmit}>
-              <div className="grid grid-cols-1 gap-4 mb-4">
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={editFormData.title}
-                    onChange={handleEditFormChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter task title"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={editFormData.description}
-                    onChange={handleEditFormChange}
-                    rows={3}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter task description"
-                  />
-                </div>{" "}
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={editFormData.category}
-                    onChange={handleEditFormChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    {Object.values(TaskCategory).map((category) => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() +
-                          category.slice(1).replace("_", " ")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="suggestedPrice"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Suggested Price ($)
-                  </label>
-                  <input
-                    type="number"
-                    id="suggestedPrice"
-                    name="suggestedPrice"
-                    value={editFormData.suggestedPrice}
-                    onChange={handleEditFormChange}
-                    min="0"
-                    step="0.01"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter suggested price"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={editFormData.location}
-                    onChange={handleEditFormChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter task location"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="dueDate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    id="dueDate"
-                    name="dueDate"
-                    value={editFormData.dueDate}
-                    onChange={handleEditFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200 flex items-center"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={editLoading}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {editLoading ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Task Confirmation Dialog */}
-      {showDeleteConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center mb-4">
-              <Trash2 className="h-8 w-8 text-red-600 mr-3" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Delete Task
-              </h3>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this task? This action cannot be
-              undone.
-            </p>
-            <div className="flex space-x-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirmation(false)}
-                disabled={deleteLoading}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
-              >
-                <X className="h-4 w-4 mr-2" />
-                No, keep it
-              </button>
-              <button
-                onClick={handleDeleteTask}
-                disabled={deleteLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {deleteLoading ? "Deleting..." : "Yes, delete task"}
-              </button>
-            </div>{" "}
-          </div>
-        </div>
-      )}
-
+      )}{" "}
       {/* Rating Modal */}
       {showRatingModal && task && ratingTarget && (
         <RatingModal

@@ -37,6 +37,11 @@ export interface Task {
   dueDate?: Date;
   completedAt?: Date;
   requirements?: string[];
+  // New timing fields
+  timingType: TimingType;
+  specificDate?: Date;
+  timeOfDay?: TimeOfDay[];
+  needsSpecificTime: boolean;
 }
 
 export interface Bid {
@@ -105,6 +110,19 @@ export enum TaskCategory {
   OTHER = "other",
 }
 
+export enum TimingType {
+  ON_DATE = "on_date",
+  BEFORE_DATE = "before_date",
+  FLEXIBLE = "flexible",
+}
+
+export enum TimeOfDay {
+  MORNING = "morning",
+  MIDDAY = "midday",
+  AFTERNOON = "afternoon",
+  EVENING = "evening",
+}
+
 export enum TaskStatus {
   OPEN = "open",
   ASSIGNED = "assigned",
@@ -167,6 +185,11 @@ export interface CreateTaskRequest {
   };
   suggestedPrice: number;
   dueDate?: Date;
+  // New timing fields
+  timingType: TimingType;
+  specificDate?: Date;
+  timeOfDay?: TimeOfDay;
+  needsSpecificTime: boolean;
 }
 
 export interface CreateBidRequest {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
-import { TaskCategory } from "../../../shared/types";
+import { TaskCategory, TimingType, TimeOfDay } from "../../../shared/types";
 import {
   MapPin,
   Calendar,
@@ -16,7 +16,6 @@ import {
 const CreateTask: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -25,7 +24,11 @@ const CreateTask: React.FC = () => {
     location: "",
     dueDate: "",
     requirements: [] as string[],
-    tags: [] as string[],
+    tags: [] as string[], // New timing fields
+    timingType: TimingType.FLEXIBLE as string,
+    specificDate: "",
+    needsSpecificTime: false,
+    timeOfDay: [] as string[],
   });
 
   const [newRequirement, setNewRequirement] = useState("");
@@ -58,7 +61,6 @@ const CreateTask: React.FC = () => {
   }
 
   const categories = Object.values(TaskCategory);
-
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -75,6 +77,30 @@ const CreateTask: React.FC = () => {
       setErrors((prev) => ({
         ...prev,
         [name]: "",
+      }));
+    }
+  };
+
+  const handleTimeOfDayChange = (time: string) => {
+    setFormData((prev) => {
+      const currentTimes = prev.timeOfDay;
+      const isSelected = currentTimes.includes(time);
+
+      const newTimes = isSelected
+        ? currentTimes.filter((t) => t !== time)
+        : [...currentTimes, time];
+
+      return {
+        ...prev,
+        timeOfDay: newTimes,
+      };
+    });
+
+    // Clear error when user makes selection
+    if (errors.timeOfDay) {
+      setErrors((prev) => ({
+        ...prev,
+        timeOfDay: "",
       }));
     }
   };
@@ -112,7 +138,6 @@ const CreateTask: React.FC = () => {
       tags: prev.tags.filter((t) => t !== tag),
     }));
   };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -122,6 +147,8 @@ const CreateTask: React.FC = () => {
 
     if (!formData.description.trim()) {
       newErrors.description = "Description is required";
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = "Description must be at least 10 characters";
     }
 
     if (!formData.budget || parseFloat(formData.budget) <= 0) {
@@ -130,22 +157,28 @@ const CreateTask: React.FC = () => {
 
     if (!formData.location.trim()) {
       newErrors.location = "Location is required";
-    }
-
-    if (!formData.dueDate) {
-      newErrors.dueDate = "Due date is required";
-    } else {
-      const dueDate = new Date(formData.dueDate);
-      const today = new Date();
-      if (dueDate <= today) {
-        newErrors.dueDate = "Due date must be in the future";
+    } // Validate timing fields
+    if (
+      formData.timingType === TimingType.ON_DATE ||
+      formData.timingType === TimingType.BEFORE_DATE
+    ) {
+      if (!formData.specificDate) {
+        newErrors.specificDate = "Please select a date";
+      } else {
+        const selectedDate = new Date(formData.specificDate);
+        const today = new Date();
+        if (selectedDate <= today) {
+          newErrors.specificDate = "Date must be in the future";
+        }
       }
+    }
+    if (formData.needsSpecificTime && formData.timeOfDay.length === 0) {
+      newErrors.timeOfDay = "Please select at least one time of day";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -170,6 +203,16 @@ const CreateTask: React.FC = () => {
           coordinates: [0, 0] as [number, number], // Default coordinates - would need geolocation in real app
         },
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        // New timing fields
+        timingType: formData.timingType as TimingType,
+        specificDate: formData.specificDate
+          ? new Date(formData.specificDate)
+          : undefined,
+        needsSpecificTime: formData.needsSpecificTime,
+        timeOfDay:
+          formData.timeOfDay.length > 0
+            ? (formData.timeOfDay as TimeOfDay[])
+            : undefined,
       };
       const response = await tasksAPI.createTask(taskData);
       alert("Task created successfully!");
@@ -185,8 +228,6 @@ const CreateTask: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const minDate = new Date().toISOString().split("T")[0];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -229,7 +270,6 @@ const CreateTask: React.FC = () => {
                 </p>
               )}
             </div>
-
             {/* Description */}
             <div>
               <label
@@ -256,7 +296,6 @@ const CreateTask: React.FC = () => {
                 </p>
               )}
             </div>
-
             {/* Category and Budget */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -314,9 +353,8 @@ const CreateTask: React.FC = () => {
                   </p>
                 )}
               </div>
-            </div>
-
-            {/* Location and Due Date */}
+            </div>{" "}
+            {/* Location and Timing */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label
@@ -348,35 +386,179 @@ const CreateTask: React.FC = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  When do you need this done? *
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="timingType"
+                        value={TimingType.ON_DATE}
+                        checked={formData.timingType === TimingType.ON_DATE}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      On date
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="timingType"
+                        value={TimingType.BEFORE_DATE}
+                        checked={formData.timingType === TimingType.BEFORE_DATE}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      Before date
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="timingType"
+                        value={TimingType.FLEXIBLE}
+                        checked={formData.timingType === TimingType.FLEXIBLE}
+                        onChange={handleInputChange}
+                        className="mr-2"
+                      />
+                      I'm flexible
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>{" "}
+            {/* Specific Date (shown when On Date or Before Date is selected) */}
+            {(formData.timingType === TimingType.ON_DATE ||
+              formData.timingType === TimingType.BEFORE_DATE) && (
+              <div>
                 <label
-                  htmlFor="dueDate"
+                  htmlFor="specificDate"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Due Date *
+                  {formData.timingType === TimingType.ON_DATE
+                    ? "Select Date *"
+                    : "Complete Before *"}
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <input
                     type="date"
-                    id="dueDate"
-                    name="dueDate"
-                    value={formData.dueDate}
+                    id="specificDate"
+                    name="specificDate"
+                    value={formData.specificDate}
                     onChange={handleInputChange}
-                    min={minDate}
+                    min={new Date().toISOString().split("T")[0]}
                     className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      errors.dueDate ? "border-red-500" : "border-gray-300"
+                      errors.specificDate ? "border-red-500" : "border-gray-300"
                     }`}
                   />
                 </div>
-                {errors.dueDate && (
+                {errors.specificDate && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
                     <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.dueDate}
+                    {errors.specificDate}
                   </p>
                 )}
               </div>
-            </div>
+            )}
+            {/* Time of Day Preference */}
+            <div>
+              <div className="mb-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="needsSpecificTime"
+                    checked={formData.needsSpecificTime}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        needsSpecificTime: e.target.checked,
+                        timeOfDay: e.target.checked ? prev.timeOfDay : [],
+                      }))
+                    }
+                    className="mr-2"
+                  />
+                  I need a specific time of day
+                </label>
+              </div>
 
+              {formData.needsSpecificTime && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preferred Time of Day *
+                  </label>{" "}
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        value={TimeOfDay.MORNING}
+                        checked={formData.timeOfDay.includes(TimeOfDay.MORNING)}
+                        onChange={() =>
+                          handleTimeOfDayChange(TimeOfDay.MORNING)
+                        }
+                        className="mr-2"
+                      />
+                      <div>
+                        <div className="font-medium">Morning</div>
+                        <div className="text-sm text-gray-500">Before 10am</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        value={TimeOfDay.MIDDAY}
+                        checked={formData.timeOfDay.includes(TimeOfDay.MIDDAY)}
+                        onChange={() => handleTimeOfDayChange(TimeOfDay.MIDDAY)}
+                        className="mr-2"
+                      />
+                      <div>
+                        <div className="font-medium">Midday</div>
+                        <div className="text-sm text-gray-500">10am - 2pm</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        value={TimeOfDay.AFTERNOON}
+                        checked={formData.timeOfDay.includes(
+                          TimeOfDay.AFTERNOON
+                        )}
+                        onChange={() =>
+                          handleTimeOfDayChange(TimeOfDay.AFTERNOON)
+                        }
+                        className="mr-2"
+                      />
+                      <div>
+                        <div className="font-medium">Afternoon</div>
+                        <div className="text-sm text-gray-500">2pm - 6pm</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        value={TimeOfDay.EVENING}
+                        checked={formData.timeOfDay.includes(TimeOfDay.EVENING)}
+                        onChange={() =>
+                          handleTimeOfDayChange(TimeOfDay.EVENING)
+                        }
+                        className="mr-2"
+                      />
+                      <div>
+                        <div className="font-medium">Evening</div>
+                        <div className="text-sm text-gray-500">After 6pm</div>
+                      </div>
+                    </label>
+                  </div>
+                  {errors.timeOfDay && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.timeOfDay}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
             {/* Requirements */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -421,7 +603,6 @@ const CreateTask: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -469,7 +650,6 @@ const CreateTask: React.FC = () => {
                 </div>
               )}
             </div>
-
             {/* Submit Button */}
             <div className="flex gap-4">
               <button

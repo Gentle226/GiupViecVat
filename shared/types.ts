@@ -34,6 +34,11 @@ export interface Task {
   updatedAt: Date;
   dueDate?: Date;
   completedAt?: Date;
+  // New timing fields
+  timingType: TimingType;
+  specificDate?: Date;
+  timeOfDay?: TimeOfDay[];
+  needsSpecificTime: boolean;
 }
 
 export interface PopulatedUser {
@@ -139,6 +144,23 @@ export const TaskCategory = {
 
 export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory];
 
+export const TimingType = {
+  ON_DATE: "on_date",
+  BEFORE_DATE: "before_date",
+  FLEXIBLE: "flexible",
+} as const;
+
+export type TimingType = (typeof TimingType)[keyof typeof TimingType];
+
+export const TimeOfDay = {
+  MORNING: "morning",
+  MIDDAY: "midday",
+  AFTERNOON: "afternoon",
+  EVENING: "evening",
+} as const;
+
+export type TimeOfDay = (typeof TimeOfDay)[keyof typeof TimeOfDay];
+
 export const TaskStatus = {
   OPEN: "open",
   ASSIGNED: "assigned",
@@ -202,6 +224,11 @@ export interface CreateTaskRequest {
   };
   suggestedPrice: number;
   dueDate?: Date;
+  // New timing fields
+  timingType: TimingType;
+  specificDate?: Date;
+  timeOfDay?: TimeOfDay[];
+  needsSpecificTime: boolean;
 }
 
 export interface UpdateTaskRequest {
@@ -215,6 +242,11 @@ export interface UpdateTaskRequest {
   suggestedPrice?: number;
   dueDate?: Date;
   status?: TaskStatus;
+  // New timing fields
+  timingType?: TimingType;
+  specificDate?: Date;
+  timeOfDay?: TimeOfDay[];
+  needsSpecificTime?: boolean;
 }
 
 export interface CreateBidRequest {
