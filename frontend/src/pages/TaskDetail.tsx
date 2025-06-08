@@ -1217,7 +1217,7 @@ const TaskDetail: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Enter task description"
                   />
-                </div>
+                </div>{" "}
                 <div>
                   <label
                     htmlFor="category"
@@ -1225,16 +1225,21 @@ const TaskDetail: React.FC = () => {
                   >
                     Category
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="category"
                     name="category"
                     value={editFormData.category}
                     onChange={handleEditFormChange}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter task category"
-                  />
+                  >
+                    {Object.values(TaskCategory).map((category) => (
+                      <option key={category} value={category}>
+                        {category.charAt(0).toUpperCase() +
+                          category.slice(1).replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label
