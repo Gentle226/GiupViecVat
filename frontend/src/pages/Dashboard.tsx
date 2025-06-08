@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import {
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { myTasks, loadMyTasks, isLoading } = useTask();
 
@@ -25,7 +27,7 @@ const Dashboard: React.FC = () => {
   }, [loadMyTasks]);
   const stats = [
     {
-      title: "Active Tasks",
+      title: t("dashboard.activeTasks"),
       value: myTasks.filter(
         (task) => task.status === "open" || task.status === "in_progress"
       ).length,
@@ -33,19 +35,19 @@ const Dashboard: React.FC = () => {
       color: "bg-blue-500",
     },
     {
-      title: "Completed Tasks",
+      title: t("dashboard.completedTasks"),
       value: myTasks.filter((task) => task.status === "completed").length,
       icon: CheckCircle,
       color: "bg-green-500",
     },
     {
-      title: "Total Earnings",
+      title: t("dashboard.totalEarnings"),
       value: "$0.00", // TODO: Calculate from completed tasks
       icon: DollarSign,
       color: "bg-yellow-500",
     },
     {
-      title: "Rating",
+      title: t("dashboard.rating"),
       value: user?.rating ? user.rating.toFixed(1) : "N/A",
       icon: Star,
       color: "bg-purple-500",
@@ -81,10 +83,10 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {user?.firstName} {user?.lastName}!
+          {t("dashboard.welcomeBack")}, {user?.firstName} {user?.lastName}!
         </h1>
         <p className="text-lg text-gray-600 mt-2">
-          Here's what's happening with your tasks
+          {t("dashboard.hereIsWhatHappening")}
         </p>
       </div>
 
@@ -115,7 +117,9 @@ const Dashboard: React.FC = () => {
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {user?.isTasker ? "Available Tasks" : "Recent Tasks"}
+                  {user?.isTasker
+                    ? t("dashboard.availableTasks")
+                    : t("dashboard.recentTasks")}
                 </h2>
                 {/* Show "New Task" button only for clients */}
                 {!user?.isTasker && (
@@ -124,7 +128,7 @@ const Dashboard: React.FC = () => {
                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <Plus className="h-4 w-4" />
-                    New Task
+                    {t("dashboard.newTask")}
                   </Link>
                 )}
                 {/* Show "Browse Tasks" button for taskers */}
@@ -134,7 +138,7 @@ const Dashboard: React.FC = () => {
                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
                   >
                     <Search className="h-4 w-4" />
-                    Browse Tasks
+                    {t("dashboard.browseTasks")}
                   </Link>
                 )}
               </div>
@@ -156,26 +160,28 @@ const Dashboard: React.FC = () => {
                     <Calendar className="h-8 w-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {user?.isTasker ? "No tasks available" : "No tasks yet"}
+                    {user?.isTasker
+                      ? t("dashboard.noTasksAvailable")
+                      : t("dashboard.noTasksYet")}
                   </h3>
                   <p className="text-gray-600 mb-4">
                     {user?.isTasker
-                      ? "Browse available tasks to start earning money and build your reputation."
-                      : "Start by posting your first task to get help with your daily needs."}
+                      ? t("dashboard.browseTasksToStart")
+                      : t("dashboard.startByPostingTask")}
                   </p>
                   {user?.isTasker ? (
                     <Link
                       to="/tasks"
                       className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
                     >
-                      Browse Tasks
+                      {t("dashboard.browseTasks")}
                     </Link>
                   ) : (
                     <Link
                       to="/post-task"
                       className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
                     >
-                      Post Your First Task
+                      {t("dashboard.postYourFirstTask")}
                     </Link>
                   )}
                 </div>
@@ -222,7 +228,7 @@ const Dashboard: React.FC = () => {
                           to={`/tasks/${task._id}`}
                           className="ml-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
                         >
-                          View
+                          {t("dashboard.view")}
                         </Link>
                       </div>
                     </div>
@@ -246,21 +252,22 @@ const Dashboard: React.FC = () => {
               </h3>
               <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
               <p className="text-sm text-gray-600 mb-4">
-                {user?.isTasker ? "Tasker" : "Client"} • Member since{" "}
+                {user?.isTasker ? t("dashboard.tasker") : t("dashboard.client")}{" "}
+                • {t("dashboard.memberSince")}{" "}
                 {formatDate(user?.createdAt?.toString() || "")}
               </p>
               <Link
                 to={`/profile/${user?._id}`}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
-                Edit Profile
+                {t("dashboard.editProfile")}
               </Link>
             </div>
           </div>{" "}
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Quick Actions
+              {t("dashboard.quickActions")}
             </h3>
             <div className="space-y-3">
               {!user?.isTasker && (
@@ -272,9 +279,11 @@ const Dashboard: React.FC = () => {
                     <Plus className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Post a Task</p>
+                    <p className="font-medium text-gray-900">
+                      {t("dashboard.postATask")}
+                    </p>
                     <p className="text-sm text-gray-600">
-                      Get help with your daily needs
+                      {t("dashboard.getHelpWithDailyNeeds")}
                     </p>
                   </div>
                 </Link>
@@ -289,12 +298,14 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">
-                    {user?.isTasker ? "Find Tasks" : "Browse Tasks"}
+                    {user?.isTasker
+                      ? t("dashboard.findTasks")
+                      : t("dashboard.browseTasks")}
                   </p>
                   <p className="text-sm text-gray-600">
                     {user?.isTasker
-                      ? "Find tasks to work on and earn money"
-                      : "See all available tasks"}
+                      ? t("dashboard.findTasksToWorkOn")
+                      : t("dashboard.seeAllAvailableTasks")}
                   </p>
                 </div>
               </Link>
@@ -307,9 +318,13 @@ const Dashboard: React.FC = () => {
                   <MessageCircle className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Messages</p>
+                  <p className="font-medium text-gray-900">
+                    {t("dashboard.messages")}
+                  </p>
                   <p className="text-sm text-gray-600">
-                    {user?.isTasker ? "Chat with Clients" : "Chat with Taskers"}
+                    {user?.isTasker
+                      ? t("dashboard.chatWithClients")
+                      : t("dashboard.chatWithTaskers")}
                   </p>
                 </div>
               </Link>
@@ -318,12 +333,14 @@ const Dashboard: React.FC = () => {
           {/* Performance Insights */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              This Month
+              {t("dashboard.thisMonth")}
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  {user?.isTasker ? "Tasks Completed" : "Tasks Posted"}
+                  {user?.isTasker
+                    ? t("dashboard.tasksCompleted")
+                    : t("dashboard.tasksPosted")}
                 </span>
                 <span className="font-medium">
                   {user?.isTasker
@@ -342,7 +359,9 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  {user?.isTasker ? "Earnings" : "Active Tasks"}
+                  {user?.isTasker
+                    ? t("dashboard.earnings")
+                    : t("dashboard.activeTasks")}
                 </span>
                 <span className="font-medium">
                   {user?.isTasker
@@ -356,7 +375,9 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">
-                  {user?.isTasker ? "Success Rate" : "Response Rate"}
+                  {user?.isTasker
+                    ? t("dashboard.successRate")
+                    : t("dashboard.responseRate")}
                 </span>
                 <span className="font-medium">95%</span>
               </div>

@@ -51,6 +51,7 @@ const Profile: React.FC = () => {
   });
 
   const isOwnProfile = !userId || userId === currentUser?._id;
+
   const fetchUserData = useCallback(async () => {
     try {
       setLoading(true);
@@ -58,7 +59,9 @@ const Profile: React.FC = () => {
       if (!targetUserId) {
         setLoading(false);
         return;
-      } // Fetch user profile
+      }
+
+      // Fetch user profile
       const userResponse = await usersAPI.getUser(targetUserId);
       if (userResponse.data && userResponse.data.user) {
         setUser(userResponse.data.user);
@@ -99,7 +102,9 @@ const Profile: React.FC = () => {
           setUserTasks([]);
           setUserBids([]);
         }
-      } // Fetch user's reviews
+      }
+
+      // Fetch user's reviews
       try {
         const reviewsResponse = await reviewsAPI.getUserReviews(targetUserId);
         if (reviewsResponse.data && Array.isArray(reviewsResponse.data)) {
@@ -111,7 +116,9 @@ const Profile: React.FC = () => {
       } catch (reviewsError) {
         console.error("Error fetching reviews:", reviewsError);
         setUserReviews([]);
-      } // Set edit form data
+      }
+
+      // Set edit form data
       if (isOwnProfile && userResponse.data?.user) {
         setEditForm({
           firstName: userResponse.data.user.firstName,
@@ -131,6 +138,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -174,6 +182,7 @@ const Profile: React.FC = () => {
       alert(`Failed to update profile: ${errorMessage}`);
     }
   };
+
   const handleMessageUser = async () => {
     if (!user || !currentUser || isOwnProfile) return;
 
@@ -188,6 +197,7 @@ const Profile: React.FC = () => {
       alert("Failed to start conversation");
     }
   };
+
   const calculateAverageRating = () => {
     if (!Array.isArray(userReviews) || userReviews.length === 0) return 0;
     const total = userReviews.reduce((sum, review) => sum + review.rating, 0);
@@ -201,6 +211,7 @@ const Profile: React.FC = () => {
     ).length;
     return Math.round((completed / userTasks.length) * 100);
   };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -208,6 +219,7 @@ const Profile: React.FC = () => {
       day: "numeric",
     });
   };
+
   const formatBidStatus = (status: string) => {
     switch (status) {
       case "pending":
@@ -246,6 +258,7 @@ const Profile: React.FC = () => {
       </div>
     );
   }
+
   if (!user) {
     // Check if user is not authenticated and no specific userId was provided
     const isNotAuthenticated = !currentUser && !userId;
@@ -297,10 +310,10 @@ const Profile: React.FC = () => {
               <div className="ml-6">
                 <h1 className="text-2xl font-bold text-gray-900">
                   {user.firstName} {user.lastName}
-                </h1>{" "}
+                </h1>
                 <p className="text-lg text-gray-600 capitalize">
                   {user.isTasker ? t("profile.tasker") : t("profile.client")}
-                </p>{" "}
+                </p>
                 {user.location && (
                   <div className="flex items-center text-gray-500 mt-1">
                     <MapPin className="h-4 w-4 mr-1" />
@@ -308,18 +321,17 @@ const Profile: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>{" "}
+            </div>
             <div className="flex space-x-3">
               {isOwnProfile ? (
                 <>
-                  {" "}
                   <button
                     onClick={() => setIsEditing(true)}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     {t("profile.editProfile")}
-                  </button>{" "}
+                  </button>
                   <button
                     onClick={() => setIsChangePasswordModalOpen(true)}
                     className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center"
@@ -330,7 +342,6 @@ const Profile: React.FC = () => {
                 </>
               ) : (
                 <>
-                  {" "}
                   <button
                     onClick={handleMessageUser}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center"
@@ -346,9 +357,8 @@ const Profile: React.FC = () => {
               )}
             </div>
           </div>
-          {/* Stats */}{" "}
+          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {" "}
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">
                 {user.isTasker && isOwnProfile
@@ -356,7 +366,7 @@ const Profile: React.FC = () => {
                   : Array.isArray(userTasks)
                   ? userTasks.length
                   : 0}
-              </div>{" "}
+              </div>
               <div className="text-sm text-gray-500">
                 {user.isTasker
                   ? isOwnProfile
@@ -369,7 +379,7 @@ const Profile: React.FC = () => {
               <div className="text-2xl font-bold text-gray-900 flex items-center justify-center">
                 <Star className="h-6 w-6 text-yellow-400 mr-1" />
                 {calculateAverageRating()}
-              </div>{" "}
+              </div>
               <div className="text-sm text-gray-500">
                 {t("profile.averageRating")}
               </div>
@@ -392,7 +402,8 @@ const Profile: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Bio and Details */}{" "}
+
+        {/* Bio and Details */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             {t("profile.about")}
@@ -420,8 +431,8 @@ const Profile: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}{" "}
-          {/* Note: Hourly rate functionality would need to be implemented */}{" "}
+          )}
+          {/* Note: Hourly rate functionality would need to be implemented */}
           {user.isTasker && (
             <div className="flex items-center text-gray-700">
               <DollarSign className="h-5 w-5 mr-2" />
@@ -429,7 +440,7 @@ const Profile: React.FC = () => {
                 {t("profile.rate")}: {t("profile.contactForPricing")}
               </span>
             </div>
-          )}{" "}
+          )}
           <div className="flex items-center text-gray-500 mt-2">
             <Calendar className="h-4 w-4 mr-2" />
             <span>
@@ -437,11 +448,11 @@ const Profile: React.FC = () => {
             </span>
           </div>
         </div>
+
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-md">
           <div className="border-b border-gray-200">
             <nav className="flex space-x-8 px-6">
-              {" "}
               <button
                 onClick={() => setActiveTab("overview")}
                 className={`py-4 text-sm font-medium ${
@@ -451,7 +462,7 @@ const Profile: React.FC = () => {
                 }`}
               >
                 {t("profile.overview")}
-              </button>{" "}
+              </button>
               <button
                 onClick={() => setActiveTab("tasks")}
                 className={`py-4 text-sm font-medium ${
@@ -484,14 +495,12 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="p-6">
-            {" "}
             {activeTab === "overview" && (
               <div className="space-y-6">
-                {" "}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 mb-3">
                     {t("profile.recentActivity")}
-                  </h3>{" "}
+                  </h3>
                   <div className="space-y-3">
                     {user.isTasker && isOwnProfile
                       ? // Show recent bids for taskers
@@ -505,7 +514,6 @@ const Profile: React.FC = () => {
                               onClick={() => handleBidClick(bid)}
                               className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
                             >
-                              {" "}
                               <div>
                                 <h4 className="font-medium text-gray-900">
                                   {t("profile.bid")}:{" "}
@@ -556,7 +564,8 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
               </div>
-            )}{" "}
+            )}
+
             {activeTab === "tasks" && (
               <div className="space-y-4">
                 {user.isTasker && isOwnProfile ? (
@@ -579,7 +588,6 @@ const Profile: React.FC = () => {
                           onClick={() => handleBidClick(bid)}
                           className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
                         >
-                          {" "}
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="font-medium text-gray-900">
                               {task?.title ||
@@ -659,6 +667,7 @@ const Profile: React.FC = () => {
                 )}
               </div>
             )}
+
             {activeTab === "reviews" && (
               <RatingDisplay reviews={userReviews} showAll={true} />
             )}
@@ -670,14 +679,12 @@ const Profile: React.FC = () => {
       {isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            {" "}
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               {t("profile.editProfileModal")}
             </h2>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  {" "}
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t("profile.firstName")}
                   </label>
@@ -694,7 +701,6 @@ const Profile: React.FC = () => {
                   />
                 </div>
                 <div>
-                  {" "}
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t("profile.lastName")}
                   </label>
@@ -713,7 +719,6 @@ const Profile: React.FC = () => {
               </div>
 
               <div>
-                {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("profile.bio")}
                 </label>
@@ -728,7 +733,6 @@ const Profile: React.FC = () => {
               </div>
 
               <div>
-                {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("profile.location")}
                 </label>
@@ -742,11 +746,10 @@ const Profile: React.FC = () => {
                     }))
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />{" "}
+                />
               </div>
 
               <div className="flex space-x-3 pt-4">
-                {" "}
                 <button
                   type="submit"
                   className="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
@@ -761,7 +764,7 @@ const Profile: React.FC = () => {
                   {t("profile.cancel")}
                 </button>
               </div>
-            </form>{" "}
+            </form>
           </div>
         </div>
       )}

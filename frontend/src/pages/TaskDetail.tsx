@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
 import { tasksAPI, bidsAPI, messagesAPI } from "../services/api";
@@ -26,63 +27,82 @@ import {
 } from "lucide-react";
 import RatingModal from "../components/RatingModal";
 
-const formatDate = (date: Date | undefined): string => {
-  if (!date) return "Not specified";
+const formatDate = (
+  date: Date | undefined,
+  t: (key: string) => string
+): string => {
+  if (!date) return t("taskDetail.notSpecified");
   return new Date(date).toLocaleDateString();
 };
 
-const formatTiming = (task: Task): string => {
-  if (!task.timingType) return "Timing: Not specified";
+const formatTiming = (task: Task, t: (key: string) => string): string => {
+  if (!task.timingType)
+    return `${t("taskDetail.timing")}: ${t("taskDetail.notSpecified")}`;
 
   switch (task.timingType) {
     case TimingType.FLEXIBLE:
-      return "Timing: Flexible";
+      return `${t("taskDetail.timing")}: ${t("taskDetail.flexible")}`;
     case TimingType.ON_DATE:
       if (task.specificDate) {
-        const dateStr = formatDate(task.specificDate);
+        const dateStr = formatDate(task.specificDate, t);
         if (
           task.needsSpecificTime &&
           task.timeOfDay &&
           task.timeOfDay.length > 0
         ) {
-          const timeLabel = getTimeOfDayLabel(task.timeOfDay);
-          return `Timing: On ${dateStr} (${timeLabel})`;
+          const timeLabel = getTimeOfDayLabel(task.timeOfDay, t);
+          return `${t("taskDetail.timing")}: ${t(
+            "taskDetail.onDate"
+          )} ${dateStr} (${timeLabel})`;
         }
-        return `Timing: On ${dateStr}`;
+        return `${t("taskDetail.timing")}: ${t(
+          "taskDetail.onDate"
+        )} ${dateStr}`;
       }
-      return "Timing: On specific date";
+      return `${t("taskDetail.timing")}: ${t("taskDetail.onDate")} ${t(
+        "taskDetail.specificDate"
+      )}`;
     case TimingType.BEFORE_DATE:
       if (task.specificDate) {
-        const dateStr = formatDate(task.specificDate);
+        const dateStr = formatDate(task.specificDate, t);
         if (
           task.needsSpecificTime &&
           task.timeOfDay &&
           task.timeOfDay.length > 0
         ) {
-          const timeLabel = getTimeOfDayLabel(task.timeOfDay);
-          return `Timing: Before ${dateStr} (${timeLabel})`;
+          const timeLabel = getTimeOfDayLabel(task.timeOfDay, t);
+          return `${t("taskDetail.timing")}: ${t(
+            "taskDetail.beforeDate"
+          )} ${dateStr} (${timeLabel})`;
         }
-        return `Timing: Before ${dateStr}`;
+        return `${t("taskDetail.timing")}: ${t(
+          "taskDetail.beforeDate"
+        )} ${dateStr}`;
       }
-      return "Timing: Before specific date";
+      return `${t("taskDetail.timing")}: ${t("taskDetail.beforeDate")} ${t(
+        "taskDetail.specificDate"
+      )}`;
     default:
-      return "Timing: Not specified";
+      return `${t("taskDetail.timing")}: ${t("taskDetail.notSpecified")}`;
   }
 };
 
-const getTimeOfDayLabel = (timeOfDay: TimeOfDay[]): string => {
-  if (!timeOfDay || timeOfDay.length === 0) return "Any time";
+const getTimeOfDayLabel = (
+  timeOfDay: TimeOfDay[],
+  t: (key: string) => string
+): string => {
+  if (!timeOfDay || timeOfDay.length === 0) return t("taskDetail.anyTime");
 
   const labels = timeOfDay.map((time) => {
     switch (time) {
       case TimeOfDay.MORNING:
-        return "Morning";
+        return t("taskDetail.morning");
       case TimeOfDay.MIDDAY:
-        return "Midday";
+        return t("taskDetail.midday");
       case TimeOfDay.AFTERNOON:
-        return "Afternoon";
+        return t("taskDetail.afternoon");
       case TimeOfDay.EVENING:
-        return "Evening";
+        return t("taskDetail.evening");
       default:
         return time;
     }
@@ -92,6 +112,7 @@ const getTimeOfDayLabel = (timeOfDay: TimeOfDay[]): string => {
 };
 
 const TaskDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -144,11 +165,9 @@ const TaskDetail: React.FC = () => {
 
     const fetchTaskDetails = async () => {
       try {
-        setLoading(true);
-
-        // Validate task ID format before making API calls
+        setLoading(true); // Validate task ID format before making API calls
         if (!isValidTaskIdFormat(id)) {
-          setError("Invalid task ID format");
+          setError(t("taskDetail.invalidTaskId"));
           // Fetch available tasks for suggestions
           try {
             const tasksResponse = await tasksAPI.getTasks();
@@ -174,10 +193,9 @@ const TaskDetail: React.FC = () => {
       } catch (err: unknown) {
         // Enhanced error handling with suggestions
         console.error("Error fetching task details:", err);
-
         const error = err as { response?: { status?: number } };
         if (error.response?.status === 404) {
-          setError("Task not found");
+          setError(t("taskDetail.notFound"));
           // Fetch available tasks for suggestions
           try {
             const tasksResponse = await tasksAPI.getTasks();
@@ -188,15 +206,14 @@ const TaskDetail: React.FC = () => {
             console.error("Error fetching available tasks:", e);
           }
         } else {
-          setError("Failed to load task details");
+          setError(t("common.error"));
         }
       } finally {
         setLoading(false);
       }
     };
-
     fetchTaskDetails();
-  }, [id]);
+  }, [id, t]);
   const handleSubmitBid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task || !user || !bidAmount || !bidMessage) return;
@@ -215,7 +232,7 @@ const TaskDetail: React.FC = () => {
       }
       setBidAmount("");
       setBidMessage("");
-      alert("Bid submitted successfully!");
+      alert(t("taskDetail.bidSubmitted"));
     } catch (err: unknown) {
       const error = err as {
         response?: { status?: number; data?: { message?: string } };
@@ -227,15 +244,13 @@ const TaskDetail: React.FC = () => {
         error.response?.status === 403 &&
         error.response?.data?.message?.includes("Tasker")
       ) {
-        alert(
-          "Only taskers can place bids on tasks. Please switch to a tasker account to bid."
-        );
+        alert(t("taskDetail.taskerOnly"));
       } else if (error.response?.status === 400) {
         // Show the specific 400 error message from the server
         const message = error.response?.data?.message || "Bad request";
-        alert(`Failed to submit bid: ${message}`);
+        alert(`${t("taskDetail.bidError")}: ${message}`);
       } else {
-        alert("Failed to submit bid");
+        alert(t("taskDetail.bidError"));
       }
     } finally {
       setSubmittingBid(false);
@@ -251,7 +266,7 @@ const TaskDetail: React.FC = () => {
       if (response.data) {
         setTask(response.data);
       }
-      alert("Bid accepted successfully!");
+      alert(t("taskDetail.bidSubmitted"));
     } catch (err: unknown) {
       const error = err as {
         response?: { status?: number; data?: { message?: string } };
@@ -260,9 +275,9 @@ const TaskDetail: React.FC = () => {
         error.response?.status === 403 &&
         error.response?.data?.message?.includes("Client")
       ) {
-        alert("Only clients can accept bids on their tasks.");
+        alert(t("taskDetail.clientOnly"));
       } else {
-        alert("Failed to accept bid");
+        alert(t("taskDetail.bidError"));
       }
       console.error("Error accepting bid:", err);
     }
@@ -293,7 +308,7 @@ const TaskDetail: React.FC = () => {
       }
     } catch (err) {
       console.error("Error creating conversation:", err);
-      alert("Failed to start conversation. Please try again.");
+      alert(t("taskDetail.bidError"));
     }
   };
   const handleCompleteTask = async () => {
@@ -330,8 +345,7 @@ const TaskDetail: React.FC = () => {
             setShowRatingModal(true);
           }
         }
-
-        alert("Task completed successfully!");
+        alert(t("taskDetail.taskCompleted"));
       }
     } catch (err: unknown) {
       const error = err as {
@@ -340,12 +354,12 @@ const TaskDetail: React.FC = () => {
       console.error("Error completing task:", err);
 
       if (error.response?.status === 403) {
-        alert("Only task owners can complete their tasks.");
+        alert(t("taskDetail.clientOnly"));
       } else if (error.response?.status === 400) {
         const message = error.response?.data?.message || "Invalid task status";
-        alert(`Failed to complete task: ${message}`);
+        alert(`${t("taskDetail.completeError")}: ${message}`);
       } else {
-        alert("Failed to complete task. Please try again.");
+        alert(t("taskDetail.completeError"));
       }
     } finally {
       setCompletingTask(false);
@@ -358,7 +372,7 @@ const TaskDetail: React.FC = () => {
       setCancellingTask(true);
       await cancelTask(task._id);
       setShowCancelConfirmation(false);
-      alert("Task cancelled successfully!");
+      alert(t("taskDetail.taskCancelled"));
       // Refresh task data to show updated status
       const response = await tasksAPI.getTask(task._id);
       if (response.data) {
@@ -371,12 +385,12 @@ const TaskDetail: React.FC = () => {
       console.error("Error cancelling task:", err);
 
       if (error.response?.status === 403) {
-        alert("Only task owners can cancel their tasks.");
+        alert(t("taskDetail.clientOnly"));
       } else if (error.response?.status === 400) {
         const message = error.response?.data?.message || "Invalid task status";
-        alert(`Failed to cancel task: ${message}`);
+        alert(`${t("taskDetail.cancelError")}: ${message}`);
       } else {
-        alert("Failed to cancel task. Please try again.");
+        alert(t("taskDetail.cancelError"));
       }
     } finally {
       setCancellingTask(false);
@@ -483,9 +497,8 @@ const TaskDetail: React.FC = () => {
 
         // Also update TaskContext for consistency
         updateTask(task._id, updatedTaskData);
-
         setShowEditModal(false);
-        alert("Task updated successfully!");
+        alert(t("taskDetail.taskCompleted"));
       } else {
         throw new Error(response.message || "Failed to update task");
       }
@@ -496,9 +509,9 @@ const TaskDetail: React.FC = () => {
       console.error("Error updating task:", err);
 
       if (error.response?.status === 403) {
-        alert("Only task owners can edit their tasks.");
+        alert(t("taskDetail.clientOnly"));
       } else {
-        alert("Failed to update task. Please try again.");
+        alert(t("taskDetail.bidError"));
       }
     } finally {
       setEditLoading(false);
@@ -510,7 +523,7 @@ const TaskDetail: React.FC = () => {
     try {
       setDeleteLoading(true);
       await deleteTask(task._id);
-      alert("Task deleted successfully!");
+      alert(t("taskDetail.messages.taskDeletedSuccess"));
       navigate("/tasks");
     } catch (err: unknown) {
       const error = err as {
@@ -519,9 +532,9 @@ const TaskDetail: React.FC = () => {
       console.error("Error deleting task:", err);
 
       if (error.response?.status === 403) {
-        alert("Only task owners can delete their tasks.");
+        alert(t("taskDetail.messages.deleteTaskOwnerOnly"));
       } else {
-        alert("Failed to delete task. Please try again.");
+        alert(t("taskDetail.messages.deleteTaskFailed"));
       }
     } finally {
       setDeleteLoading(false);
@@ -557,22 +570,22 @@ const TaskDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />{" "}
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Task Not Found
-          </h2>
+            {t("taskDetail.messages.taskNotFound")}
+          </h2>{" "}
           <p className="text-gray-600 mb-4">
-            {error === "Invalid task ID format"
-              ? "The task ID format is invalid. Task IDs should be alphanumeric."
-              : error === "Task not found"
-              ? `The task with ID "${id}" doesn't exist.`
-              : error || "The task you're looking for doesn't exist."}
+            {error === t("taskDetail.invalidTaskId")
+              ? t("taskDetail.messages.invalidTaskIdDesc")
+              : error === t("taskDetail.notFound")
+              ? t("taskDetail.messages.taskNotExistDesc", { id: id })
+              : error || t("taskDetail.messages.taskNotExistGeneral")}
           </p>
-
           {availableTasks.length > 0 && (
             <div className="mb-6">
+              {" "}
               <h3 className="text-lg font-medium text-gray-900 mb-3">
-                Available Tasks
+                {t("taskDetail.messages.availableTasks")}
               </h3>
               <div className="space-y-2">
                 {availableTasks.map((availableTask) => (
@@ -581,8 +594,9 @@ const TaskDetail: React.FC = () => {
                     onClick={() => navigate(`/tasks/${availableTask._id}`)}
                     className="w-full p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-sm transition-all duration-200"
                   >
+                    {" "}
                     <div className="text-sm font-medium text-indigo-600 mb-1">
-                      ID: {availableTask._id}
+                      {t("taskDetail.messages.taskId")}: {availableTask._id}
                     </div>
                     <div className="text-sm text-gray-700 truncate">
                       {availableTask.title}
@@ -591,13 +605,12 @@ const TaskDetail: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}
-
+          )}{" "}
           <button
             onClick={() => navigate("/tasks")}
             className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-200"
           >
-            Back to Tasks
+            {t("taskDetail.backToTasks")}
           </button>
         </div>
       </div>
@@ -662,9 +675,9 @@ const TaskDetail: React.FC = () => {
                   onClick={handleViewTaskOwnerProfile}
                   className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer"
                 >
-                  <User className="h-4 w-4 mr-1" />
+                  <User className="h-4 w-4 mr-1" />{" "}
                   <span>
-                    Posted by{" "}
+                    {t("taskDetail.postedBy")}{" "}
                     {typeof task.postedBy === "string" || !task.postedBy
                       ? "User"
                       : `${task.postedBy.firstName} ${task.postedBy.lastName}`}
@@ -676,7 +689,9 @@ const TaskDetail: React.FC = () => {
               <div className="text-2xl font-bold text-indigo-600">
                 ${task.suggestedPrice}
               </div>
-              <div className="text-sm text-gray-500">Budget</div>
+              <div className="text-sm text-gray-500">
+                {t("taskDetail.budget")}
+              </div>
             </div>
           </div>{" "}
           {/* Task Actions */}
@@ -685,14 +700,14 @@ const TaskDetail: React.FC = () => {
             <div className="flex items-center text-gray-600">
               <MapPin className="h-5 w-5 mr-2" />
               <span>{task.location.address}</span>
-            </div>
+            </div>{" "}
             <div className="flex items-center text-gray-600">
               <Calendar className="h-5 w-5 mr-2" />
-              <span>{formatTiming(task)}</span>
-            </div>
+              <span>{formatTiming(task, t)}</span>
+            </div>{" "}
             <div className="flex items-center text-gray-600">
               <Clock className="h-5 w-5 mr-2" />
-              <span>Posted: {formatDate(task.createdAt!)}</span>
+              <span>Posted: {formatDate(task.createdAt!, t)}</span>
             </div>
           </div>
           {/* Show Preferred Time of Day separately if specified */}
@@ -701,16 +716,18 @@ const TaskDetail: React.FC = () => {
             task.timeOfDay.length > 0 && (
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center text-blue-800">
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="h-4 w-4 mr-2" />{" "}
                   <span className="text-sm font-medium">
-                    Preferred Time of Day: {getTimeOfDayLabel(task.timeOfDay)}
+                    {t("taskDetail.timeOfDay")}:{" "}
+                    {getTimeOfDayLabel(task.timeOfDay, t)}
                   </span>
                 </div>
               </div>
             )}{" "}
           <div className="mb-4">
+            {" "}
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Description
+              {t("taskDetail.description")}
             </h3>
             <p className="text-gray-700 whitespace-pre-wrap">
               {task.description}
@@ -734,8 +751,9 @@ const TaskDetail: React.FC = () => {
                     onClick={handleEditTask}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm"
                   >
+                    {" "}
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Task
+                    {t("taskDetail.editTask")}
                   </button>
                 )}
               {/* Delete Task Button - for task owners on deletable tasks */}
@@ -748,7 +766,9 @@ const TaskDetail: React.FC = () => {
                     className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {deleteLoading ? "Deleting..." : "Delete Task"}
+                    {deleteLoading
+                      ? t("taskDetail.deleting")
+                      : t("taskDetail.deleteTask")}
                   </button>
                 )}
               {/* Rate Tasker Button - for completed tasks (clients only) */}
@@ -783,8 +803,9 @@ const TaskDetail: React.FC = () => {
                     }}
                     className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors duration-200 flex items-center text-sm"
                   >
+                    {" "}
                     <Star className="h-4 w-4 mr-2" />
-                    Rate Tasker
+                    {t("taskDetail.rateTasker")}
                   </button>
                 )}
               {/* Rate Client Button - for completed tasks (taskers only) */}
@@ -808,8 +829,9 @@ const TaskDetail: React.FC = () => {
                   }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center text-sm"
                 >
+                  {" "}
                   <Star className="h-4 w-4 mr-2" />
-                  Rate Client
+                  {t("taskDetail.messages.rateClient")}
                 </button>
               )}
               {/* Complete Task Button - for assigned/in_progress tasks (clients only) */}
@@ -822,7 +844,9 @@ const TaskDetail: React.FC = () => {
                     className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    {completingTask ? "Closing..." : "Close Task"}
+                    {completingTask
+                      ? t("taskDetail.completing")
+                      : t("taskDetail.markComplete")}
                   </button>
                 )}
               {/* Cancel Task Button - for task owners on cancellable tasks */}
@@ -835,8 +859,11 @@ const TaskDetail: React.FC = () => {
                     disabled={cancellingTask}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center text-sm"
                   >
+                    {" "}
                     <X className="h-4 w-4 mr-2" />
-                    {cancellingTask ? "Cancelling..." : "Cancel Task"}
+                    {cancellingTask
+                      ? t("taskDetail.cancelling")
+                      : t("taskDetail.cancel")}
                   </button>
                 )}
             </div>
@@ -845,17 +872,19 @@ const TaskDetail: React.FC = () => {
         {/* Bid Section */}
         {canBid && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            {" "}
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Submit Your Bid
+              {t("taskDetail.placeBid")}
             </h2>
             <form onSubmit={handleSubmitBid}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
+                  {" "}
                   <label
                     htmlFor="bidAmount"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Bid Amount ($)
+                    {t("taskDetail.bidAmount")}
                   </label>
                   <input
                     type="number"
@@ -866,16 +895,17 @@ const TaskDetail: React.FC = () => {
                     step="0.01"
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your bid amount"
+                    placeholder={t("taskDetail.bidAmountPlaceholder")}
                   />
                 </div>
               </div>
               <div className="mb-4">
+                {" "}
                 <label
                   htmlFor="bidMessage"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Message to Client
+                  {t("taskDetail.message")}
                 </label>
                 <textarea
                   id="bidMessage"
@@ -884,7 +914,7 @@ const TaskDetail: React.FC = () => {
                   rows={4}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Explain why you're the best fit for this task..."
+                  placeholder={t("taskDetail.messagePlaceholder")}
                 />
               </div>
               <button
@@ -892,7 +922,9 @@ const TaskDetail: React.FC = () => {
                 disabled={submittingBid}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submittingBid ? "Submitting..." : "Submit Bid"}
+                {submittingBid
+                  ? t("taskDetail.messages.submitting")
+                  : t("taskDetail.submitBid")}
               </button>
             </form>{" "}
           </div>
@@ -906,12 +938,12 @@ const TaskDetail: React.FC = () => {
               <div className="flex items-center">
                 <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
                 <div>
+                  {" "}
                   <h3 className="text-sm font-medium text-blue-800">
-                    Client Account
+                    {t("taskDetail.messages.clientAccount")}
                   </h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    As a client, you can post tasks but cannot bid on them.
-                    Switch to a tasker account to bid on tasks.
+                    {t("taskDetail.messages.clientAccountDesc")}
                   </p>
                 </div>
               </div>
@@ -919,21 +951,22 @@ const TaskDetail: React.FC = () => {
           )}
         {/* Bids Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
+          {" "}
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Bids ({bids.length})
+            {t("taskDetail.messages.bidsCount")} ({bids.length})
             {isTaskOwner && bids.length > 0 && (
               <span className="text-sm font-normal text-gray-500 ml-2">
-                - Choose the best bid for your task
+                {t("taskDetail.messages.chooseBestBid")}
               </span>
             )}
           </h2>{" "}
           {bids.length === 0 ? (
             <div className="text-center py-8">
-              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />{" "}
               <p className="text-gray-500">
                 {user?.isTasker && !isTaskOwner
-                  ? "No bids yet. Be the first to bid on this task!"
-                  : "No bids yet. Taskers will be able to see and bid on your task."}
+                  ? t("taskDetail.messages.noBidsTasker")
+                  : t("taskDetail.messages.noBidsClient")}
               </p>
             </div>
           ) : (
@@ -954,13 +987,13 @@ const TaskDetail: React.FC = () => {
                           className="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors cursor-pointer"
                         >
                           {typeof bid.bidderId === "string"
-                            ? "Tasker"
+                            ? t("taskDetail.messages.tasker")
                             : `${bid.bidderId.firstName} ${bid.bidderId.lastName}`}
                         </button>
                         <div className="text-sm text-gray-500 flex items-center">
-                          <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                          <Star className="h-4 w-4 text-yellow-400 mr-1" />{" "}
                           {typeof bid.bidderId === "string"
-                            ? "4.8 (12 reviews)"
+                            ? t("taskDetail.messages.defaultRating")
                             : `${bid.bidderId.rating || 0} (${
                                 bid.bidderId.reviewCount || 0
                               } reviews)`}
@@ -970,9 +1003,9 @@ const TaskDetail: React.FC = () => {
                     <div className="text-right">
                       <div className="text-lg font-bold text-indigo-600">
                         ${bid.amount}
-                      </div>
+                      </div>{" "}
                       <div className="text-sm text-gray-500">
-                        {formatDate(bid.createdAt!)}
+                        {formatDate(bid.createdAt!, t)}
                       </div>
                     </div>
                   </div>
@@ -980,7 +1013,9 @@ const TaskDetail: React.FC = () => {
                   {bid.status === "accepted" && (
                     <div className="flex items-center text-green-600 mb-3">
                       <CheckCircle className="h-5 w-5 mr-2" />
-                      <span className="font-medium">Accepted Bid</span>
+                      <span className="font-medium">
+                        {t("taskDetail.messages.acceptedBid")}
+                      </span>
                     </div>
                   )}
                   {/* Action buttons - Always show View Profile and Message for authenticated users */}
@@ -994,7 +1029,7 @@ const TaskDetail: React.FC = () => {
                             onClick={() => handleAcceptBid(bid._id)}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
                           >
-                            Accept Bid
+                            {t("taskDetail.buttons.acceptBid")}
                           </button>
                         )}
 
@@ -1003,13 +1038,13 @@ const TaskDetail: React.FC = () => {
                         onClick={() => handleViewProfile(bid)}
                         className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm"
                       >
-                        View Profile
+                        {t("taskDetail.buttons.viewProfile")}
                       </button>
                       <button
                         onClick={() => handleMessage(bid)}
                         className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
                       >
-                        Message
+                        {t("taskDetail.buttons.message")}
                       </button>
                     </div>
                   )}
@@ -1024,7 +1059,9 @@ const TaskDetail: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Edit Task</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t("taskDetail.modals.editTask")}
+              </h3>
               <button
                 onClick={() => setShowEditModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -1040,7 +1077,7 @@ const TaskDetail: React.FC = () => {
                   htmlFor="edit-title"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Title *
+                  {t("taskDetail.form.title")}
                 </label>
                 <input
                   type="text"
@@ -1058,7 +1095,7 @@ const TaskDetail: React.FC = () => {
                   htmlFor="edit-description"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Description *
+                  {t("taskDetail.form.description")}
                 </label>
                 <textarea
                   id="edit-description"
@@ -1077,7 +1114,7 @@ const TaskDetail: React.FC = () => {
                     htmlFor="edit-category"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Category *
+                    {t("taskDetail.form.category")}
                   </label>
                   <select
                     id="edit-category"
@@ -1100,7 +1137,7 @@ const TaskDetail: React.FC = () => {
                     htmlFor="edit-price"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Budget ($) *
+                    {t("taskDetail.form.budget")}
                   </label>
                   <input
                     type="number"
@@ -1117,8 +1154,9 @@ const TaskDetail: React.FC = () => {
               </div>{" "}
               {/* Location Type */}
               <div>
+                {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Tell us where *
+                  {t("taskDetail.form.tellUsWhere")}
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <label
@@ -1137,9 +1175,12 @@ const TaskDetail: React.FC = () => {
                       className="mt-1 mr-3"
                     />
                     <div>
-                      <div className="font-medium text-gray-900">In-person</div>
+                      {" "}
+                      <div className="font-medium text-gray-900">
+                        {t("taskDetail.form.inPerson")}
+                      </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        Select this if you need the Tasker physically there
+                        {t("taskDetail.descriptions.inPersonDesc")}
                       </div>
                     </div>
                   </label>
@@ -1160,9 +1201,12 @@ const TaskDetail: React.FC = () => {
                       className="mt-1 mr-3"
                     />
                     <div>
-                      <div className="font-medium text-gray-900">Online</div>
+                      {" "}
+                      <div className="font-medium text-gray-900">
+                        {t("taskDetail.form.online")}
+                      </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        Select this if the Tasker can do it from home
+                        {t("taskDetail.descriptions.onlineDesc")}
                       </div>
                     </div>
                   </label>
@@ -1175,7 +1219,7 @@ const TaskDetail: React.FC = () => {
                     htmlFor="edit-location"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Location *
+                    {t("taskDetail.form.location")}
                   </label>
                   <input
                     type="text"
@@ -1185,14 +1229,15 @@ const TaskDetail: React.FC = () => {
                     onChange={handleEditFormChange}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="e.g., Downtown Seattle, WA"
+                    placeholder={t("taskDetail.form.locationPlaceholder")}
                   />
                 </div>
               )}
               {/* Timing Section */}
               <div className="border-t pt-4">
+                {" "}
                 <h4 className="text-lg font-medium text-gray-900 mb-4">
-                  When do you need this done?
+                  {t("taskDetail.form.whenNeedDone")}
                 </h4>
                 {/* Timing Type */}
                 <div className="space-y-3 mb-4">
@@ -1210,7 +1255,7 @@ const TaskDetail: React.FC = () => {
                       htmlFor="edit-on-date"
                       className="ml-3 block text-sm text-gray-700"
                     >
-                      On a specific date
+                      {t("taskDetail.form.onSpecificDate")}
                     </label>
                   </div>
 
@@ -1230,7 +1275,7 @@ const TaskDetail: React.FC = () => {
                       htmlFor="edit-before-date"
                       className="ml-3 block text-sm text-gray-700"
                     >
-                      Before a specific date
+                      {t("taskDetail.form.beforeSpecificDate")}
                     </label>
                   </div>
 
@@ -1248,7 +1293,7 @@ const TaskDetail: React.FC = () => {
                       htmlFor="edit-flexible"
                       className="ml-3 block text-sm text-gray-700"
                     >
-                      I'm flexible
+                      {t("taskDetail.form.imFlexible")}
                     </label>
                   </div>
                 </div>
@@ -1260,7 +1305,7 @@ const TaskDetail: React.FC = () => {
                       htmlFor="edit-specificDate"
                       className="block text-sm font-medium text-gray-700 mb-1"
                     >
-                      Select Date *
+                      {t("taskDetail.form.selectDate")}
                     </label>
                     <input
                       type="date"
@@ -1297,14 +1342,15 @@ const TaskDetail: React.FC = () => {
                       htmlFor="edit-needsSpecificTime"
                       className="ml-2 block text-sm text-gray-700"
                     >
-                      I need this done at a specific time of day
+                      {t("taskDetail.form.needSpecificTime")}
                     </label>
                   </div>
 
                   {editFormData.needsSpecificTime && (
                     <div>
+                      {" "}
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Time of Day *
+                        {t("taskDetail.form.timeOfDay")}
                       </label>{" "}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {Object.values(TimeOfDay).map((time) => (
@@ -1338,14 +1384,16 @@ const TaskDetail: React.FC = () => {
                   disabled={editLoading}
                   className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
-                  Cancel
+                  {t("taskDetail.buttons.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={editLoading}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
                 >
-                  {editLoading ? "Updating..." : "Update Task"}
+                  {editLoading
+                    ? t("taskDetail.messages.updating")
+                    : t("taskDetail.buttons.updateTask")}
                 </button>
               </div>
             </form>
@@ -1357,26 +1405,23 @@ const TaskDetail: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center mb-4">
-              <Trash2 className="h-8 w-8 text-red-600 mr-3" />
+              <Trash2 className="h-8 w-8 text-red-600 mr-3" />{" "}
               <h3 className="text-lg font-semibold text-gray-900">
-                Delete Task
+                {t("taskDetail.modals.deleteTask")}
               </h3>
-            </div>
-
+            </div>{" "}
             <p className="text-gray-700 mb-6">
-              Are you sure you want to permanently delete this task? This action
-              cannot be undone. All associated bids and messages will also be
-              removed.
+              {t("taskDetail.confirmations.deleteMessage")}
             </p>
-
             <div className="flex space-x-3 justify-end">
+              {" "}
               <button
                 onClick={() => setShowDeleteConfirmation(false)}
                 disabled={deleteLoading}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <X className="h-4 w-4 mr-2" />
-                Cancel
+                {t("taskDetail.buttons.cancel")}
               </button>
               <button
                 onClick={handleDeleteTask}
@@ -1384,7 +1429,9 @@ const TaskDetail: React.FC = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                {deleteLoading ? "Deleting..." : "Delete Task"}
+                {deleteLoading
+                  ? t("taskDetail.messages.deleting")
+                  : t("taskDetail.messages.deleteTask")}
               </button>
             </div>
           </div>
@@ -1413,7 +1460,7 @@ const TaskDetail: React.FC = () => {
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <X className="h-4 w-4 mr-2" />
-                Cancel
+                {t("taskDetail.buttons.cancel")}
               </button>
               <button
                 onClick={handleCompleteTask}
@@ -1421,7 +1468,9 @@ const TaskDetail: React.FC = () => {
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {completingTask ? "Closing..." : "Close Task"}
+                {completingTask
+                  ? t("taskDetail.messages.closing")
+                  : t("taskDetail.messages.closeTask")}
               </button>
             </div>
           </div>
@@ -1450,7 +1499,7 @@ const TaskDetail: React.FC = () => {
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <X className="h-4 w-4 mr-2" />
-                No, keep it
+                {t("taskDetail.messages.noKeepIt")}
               </button>
               <button
                 onClick={handleCancelTask}
@@ -1458,7 +1507,9 @@ const TaskDetail: React.FC = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {cancellingTask ? "Cancelling..." : "Yes, cancel task"}
+                {cancellingTask
+                  ? t("taskDetail.messages.cancelling")
+                  : t("taskDetail.messages.yesCancelTask")}
               </button>
             </div>
           </div>
@@ -1477,7 +1528,7 @@ const TaskDetail: React.FC = () => {
           revieweeName={ratingTarget.name}
           onReviewSubmitted={() => {
             // Optionally refresh task data or show success message
-            console.log("Review submitted successfully");
+            console.log(t("taskDetail.messages.reviewSubmittedSuccess"));
           }}
         />
       )}

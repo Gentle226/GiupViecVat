@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -23,6 +24,7 @@ interface PopulatedMessage extends Omit<Message, "senderId"> {
 }
 
 const Messages: React.FC = () => {
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   const { socket, sendMessage, joinConversation } = useSocket();
   const { newMessageNotifications, markConversationAsRead } =
@@ -40,7 +42,7 @@ const Messages: React.FC = () => {
   const [usersTyping, setUsersTyping] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<number | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Utility function to extract sender ID from message
   const getSenderId = (message: PopulatedMessage): string => {
@@ -226,14 +228,17 @@ const Messages: React.FC = () => {
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-semibold text-gray-900 mb-3">Messages</h1>
+          {" "}
+          <h1 className="text-xl font-semibold text-gray-900 mb-3">
+            {t("messages.title")}
+          </h1>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search conversations..."
+              placeholder={t("messages.searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -245,9 +250,9 @@ const Messages: React.FC = () => {
             <div className="p-4 text-center text-gray-500">
               <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <User className="h-8 w-8 text-gray-400" />
-              </div>
-              <p>No conversations yet</p>
-              <p className="text-sm">Start a conversation with a Tasker!</p>
+              </div>{" "}
+              <p>{t("messages.noConversations")}</p>
+              <p className="text-sm">{t("messages.startConversation")}</p>
             </div>
           ) : (
             <div>
@@ -304,10 +309,10 @@ const Messages: React.FC = () => {
                             </p>
                           )}
                         </div>{" "}
-                        {/* Show task context if available */}
+                        {/* Show task context if available */}{" "}
                         {conversation.taskId && (
                           <p className="text-xs text-indigo-600 truncate">
-                            Task: {conversation.taskId.title}
+                            {t("messages.task")}: {conversation.taskId.title}
                           </p>
                         )}
                         {conversation.lastMessage && (
@@ -347,13 +352,15 @@ const Messages: React.FC = () => {
                       .filter((p) => p._id !== user?._id)
                       .map((p) => `${p.firstName} ${p.lastName}`)
                       .join(", ") || "Other User"}
-                  </h2>
+                  </h2>{" "}
                   {activeConversation.taskId && (
                     <p className="text-sm text-indigo-600">
-                      Task: {activeConversation.taskId.title}
+                      {t("messages.task")}: {activeConversation.taskId.title}
                     </p>
                   )}
-                  <p className="text-sm text-green-600">Online</p>
+                  <p className="text-sm text-green-600">
+                    {t("messages.online")}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -429,9 +436,9 @@ const Messages: React.FC = () => {
                         className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
                         style={{ animationDelay: "0.2s" }}
                       ></div>
-                    </div>
+                    </div>{" "}
                     <span className="text-xs text-gray-500 ml-2">
-                      typing...
+                      {t("messages.typing")}
                     </span>
                   </div>
                 </div>
@@ -453,7 +460,7 @@ const Messages: React.FC = () => {
                   setNewMessage(e.target.value);
                   handleTyping();
                 }}
-                placeholder="Type a message..."
+                placeholder={t("messages.typeMessage")}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 disabled={sendingMessage}
               />
@@ -473,12 +480,12 @@ const Messages: React.FC = () => {
           <div className="text-center">
             <div className="h-24 w-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
               <User className="h-12 w-12 text-gray-400" />
-            </div>
+            </div>{" "}
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Select a conversation
+              {t("messages.selectConversation")}
             </h3>
             <p className="text-gray-500">
-              Choose a conversation from the sidebar to start messaging
+              {t("messages.selectConversationDesc")}
             </p>
           </div>
         </div>

@@ -143,16 +143,15 @@ const Home: React.FC = () => {
       {/* Features Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {" "}
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose GiupViecVat?
+              {t("home.featuresSection.title")}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We make it easy to connect with local professionals and get your
-              tasks completed safely and efficiently.
+              {t("home.featuresSection.subtitle")}
             </p>
           </div>
-
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div
@@ -175,15 +174,15 @@ const Home: React.FC = () => {
       {/* Categories Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {" "}
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Popular Categories
+              {t("home.categoriesSection.title")}
             </h2>
             <p className="text-xl text-gray-600">
-              Find Taskers for any job category
+              {t("home.categoriesSection.subtitle")}
             </p>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map((category, index) => (
               <Link
@@ -205,52 +204,48 @@ const Home: React.FC = () => {
       {/* How It Works Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {" "}
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
+              {t("home.howItWorks.title")}
             </h2>
             <p className="text-xl text-gray-600">
-              Get your task done in 3 simple steps
+              {t("home.howItWorks.subtitle")}
             </p>
           </div>
-
           <div className="grid md:grid-cols-3 gap-8">
+            {" "}
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Post Your Task
+                {t("home.howItWorks.steps.postTask.title")}
               </h3>
               <p className="text-gray-600">
-                Describe what you need done, set your budget, and post your
-                task.
+                {t("home.howItWorks.steps.postTask.description")}
               </p>
             </div>
-
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Choose a Tasker
+                {t("home.howItWorks.steps.chooseTasker.title")}
               </h3>
               <p className="text-gray-600">
-                Review offers from qualified Taskers and select the best one for
-                your needs.
+                {t("home.howItWorks.steps.chooseTasker.description")}
               </p>
             </div>
-
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-white">3</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Get It Done
+                {t("home.howItWorks.steps.getItDone.title")}
               </h3>
               <p className="text-gray-600">
-                Your chosen Tasker completes the work, and you pay securely
-                through the app.
+                {t("home.howItWorks.steps.getItDone.description")}
               </p>
             </div>
           </div>
@@ -259,13 +254,13 @@ const Home: React.FC = () => {
 
       {/* CTA Section */}
       <section className="py-20 bg-blue-600">
+        {" "}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Get Started?
+            {t("home.cta.title")}
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust GiupViecVat for
-            their daily tasks.
+            {t("home.cta.subtitle")}
           </p>
           {!isAuthenticated && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -273,13 +268,13 @@ const Home: React.FC = () => {
                 to="/register"
                 className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors"
               >
-                Sign Up Now
+                {t("home.cta.signUpNow")}
               </Link>
               <Link
                 to="/login"
                 className="bg-blue-500 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-400 border-2 border-blue-400 transition-colors"
               >
-                Already have an account?
+                {t("home.cta.alreadyHaveAccount")}
               </Link>
             </div>
           )}
