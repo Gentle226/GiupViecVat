@@ -9,6 +9,8 @@ import {
   User,
   MapPin,
   AlertCircle,
+  CheckCircle,
+  DollarSign,
 } from "lucide-react";
 
 const Register: React.FC = () => {
@@ -143,26 +145,74 @@ const Register: React.FC = () => {
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {" "}
             {/* Role Selection */}
             <div>
-              <label
-                htmlFor="isTasker"
-                className="block text-sm font-medium text-gray-700"
-              >
-                I want to
-              </label>
-              <select
-                id="isTasker"
-                name="isTasker"
-                value={formData.isTasker.toString()}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="false">Hire Taskers (Client)</option>
-                <option value="true">Work as a Tasker</option>
-              </select>
-            </div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                What is your main goal on HomeEasy? *
+              </label>{" "}
+              <div className="grid grid-cols-2 gap-4">
+                <div
+                  className={`relative cursor-pointer rounded-lg border-2 p-4 focus:outline-none ${
+                    !formData.isTasker
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 bg-white hover:bg-gray-50"
+                  }`}
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, isTasker: false }))
+                  }
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <CheckCircle className="h-8 w-8 text-blue-600 mb-2" />
+                    <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                      Get things done
+                    </div>
+                    <div className="text-xs text-gray-500">Client</div>
+                    <div
+                      className={`mt-3 h-4 w-4 rounded-full border-2 ${
+                        !formData.isTasker
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {!formData.isTasker && (
+                        <div className="h-2 w-2 rounded-full bg-white m-0.5" />
+                      )}
+                    </div>
+                  </div>
+                </div>
 
+                <div
+                  className={`relative cursor-pointer rounded-lg border-2 p-4 focus:outline-none ${
+                    formData.isTasker
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 bg-white hover:bg-gray-50"
+                  }`}
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, isTasker: true }))
+                  }
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <DollarSign className="h-8 w-8 text-green-600 mb-2" />
+                    <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                      Earn money
+                    </div>
+                    <div className="text-xs text-gray-500">Tasker</div>
+                    <div
+                      className={`mt-3 h-4 w-4 rounded-full border-2 ${
+                        formData.isTasker
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      {formData.isTasker && (
+                        <div className="h-2 w-2 rounded-full bg-white m-0.5" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -208,7 +258,6 @@ const Register: React.FC = () => {
                 />
               </div>
             </div>
-
             {/* Email */}
             <div>
               <label
@@ -234,7 +283,6 @@ const Register: React.FC = () => {
                 />
               </div>
             </div>
-
             {/* Address */}
             <div>
               <label
@@ -259,7 +307,6 @@ const Register: React.FC = () => {
                 />
               </div>
             </div>
-
             {/* Password */}
             <div>
               <label
@@ -295,7 +342,6 @@ const Register: React.FC = () => {
                 </button>
               </div>
             </div>
-
             {/* Confirm Password */}
             <div>
               <label
@@ -340,7 +386,6 @@ const Register: React.FC = () => {
                 <p className="mt-1 text-sm text-red-600">{passwordError}</p>
               )}
             </div>
-
             <div>
               <button
                 type="submit"
