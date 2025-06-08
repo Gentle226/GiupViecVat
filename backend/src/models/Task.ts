@@ -125,5 +125,6 @@ const taskSchema = new Schema(
 taskSchema.index({ category: 1, status: 1 });
 taskSchema.index({ postedBy: 1 });
 taskSchema.index({ assignedTo: 1 });
+taskSchema.index({ "location.coordinates": "2dsphere" }); // Geospatial index for location queries
 
 export const Task = mongoose.model<ITask>("Task", taskSchema);

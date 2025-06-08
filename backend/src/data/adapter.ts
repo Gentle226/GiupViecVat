@@ -2,6 +2,26 @@ import mongoose from "mongoose";
 import { memoryStore } from "./memoryStore";
 import * as Models from "../models";
 
+// Helper function to calculate distance between two points using Haversine formula
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export class DatabaseAdapter {
   private useMemoryStore: boolean = false;
   async initialize(): Promise<void> {
@@ -81,7 +101,20 @@ export class DatabaseAdapter {
               .toLowerCase()
               .includes(options.search.toLowerCase())
         );
-      } // Apply sorting
+      }
+
+      // Apply location filtering
+      if (filter.location) {
+        const { lat, lng, radius } = filter.location;
+        tasks = tasks.filter((task: any) => {
+          if (!task.location?.coordinates) return false;
+          const [taskLng, taskLat] = task.location.coordinates;
+          const distance = calculateDistance(lat, lng, taskLat, taskLng);
+          return distance <= radius;
+        });
+      }
+
+      // Apply sorting
       if (options.sort) {
         tasks.sort((a: any, b: any) => {
           if (options.sort === "createdAt") {
@@ -111,7 +144,12 @@ export class DatabaseAdapter {
       };
     }
 
-    let query = Models.Task.find(filter);
+    // MongoDB queries - create base filter excluding location for now
+    const mongoFilter = { ...filter };
+    const locationFilter = mongoFilter.location;
+    delete mongoFilter.location;
+
+    let query = Models.Task.find(mongoFilter);
 
     // Apply search
     if (options.search) {
@@ -120,6 +158,18 @@ export class DatabaseAdapter {
           { title: { $regex: options.search, $options: "i" } },
           { description: { $regex: options.search, $options: "i" } },
         ],
+      });
+    }
+
+    // Apply location filtering using MongoDB's geospatial queries
+    if (locationFilter) {
+      const { lat, lng, radius } = locationFilter;
+      query = query.find({
+        "location.coordinates": {
+          $geoWithin: {
+            $centerSphere: [[lng, lat], radius / 6371], // radius in radians (Earth radius = 6371 km)
+          },
+        },
       });
     }
 
@@ -133,12 +183,33 @@ export class DatabaseAdapter {
     const page = options.page || 1;
     const limit = options.limit || 10;
     const skip = (page - 1) * limit;
+
+    let countQuery = Models.Task.find(mongoFilter);
+    if (options.search) {
+      countQuery = countQuery.find({
+        $or: [
+          { title: { $regex: options.search, $options: "i" } },
+          { description: { $regex: options.search, $options: "i" } },
+        ],
+      });
+    }
+    if (locationFilter) {
+      const { lat, lng, radius } = locationFilter;
+      countQuery = countQuery.find({
+        "location.coordinates": {
+          $geoWithin: {
+            $centerSphere: [[lng, lat], radius / 6371],
+          },
+        },
+      });
+    }
+
     const [tasks, total] = await Promise.all([
       query
         .populate("postedBy", "firstName lastName rating reviewCount avatar")
         .skip(skip)
         .limit(limit),
-      Models.Task.countDocuments(filter),
+      countQuery.countDocuments(),
     ]);
 
     return {

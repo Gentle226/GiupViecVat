@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
+import LocationInput from "../components/LocationInput";
+import type { LocationSuggestion, LatLng } from "../services/locationService";
+import type { Task } from "../../../shared/types";
 import {
   TaskCategory,
   TaskStatus,
@@ -17,6 +20,7 @@ import {
   User as UserIcon,
   ChevronLeft,
   ChevronRight,
+  Navigation,
 } from "lucide-react";
 
 const TaskList: React.FC = () => {
@@ -32,13 +36,99 @@ const TaskList: React.FC = () => {
     setFilters,
     clearError,
   } = useTask();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-
+  const [locationSearch, setLocationSearch] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
+  const [searchRadius, setSearchRadius] = useState(10); // km
+  const [useMyLocation, setUseMyLocation] = useState(false);
   useEffect(() => {
     loadTasks(1);
   }, [loadTasks]);
+
+  // Initialize with user's location if available
+  useEffect(() => {
+    if (user?.location?.coordinates && user.location.coordinates[0] !== 0) {
+      setSelectedLocation({
+        lat: user.location.coordinates[1],
+        lng: user.location.coordinates[0],
+      });
+      setLocationSearch(user.location.address);
+      setUseMyLocation(true);
+    }
+  }, [user]);
+
+  const handleLocationSelect = (location: LocationSuggestion) => {
+    setSelectedLocation({ lat: location.lat, lng: location.lon });
+    setLocationSearch(location.display_name);
+    setUseMyLocation(false);
+
+    // Apply location filter
+    const locationFilter = {
+      location: {
+        lat: location.lat,
+        lng: location.lon,
+        radius: searchRadius,
+      },
+    };
+    setFilters(locationFilter);
+    loadTasks(1);
+  };
+
+  const handleUseMyLocation = () => {
+    if (user?.location?.coordinates && user.location.coordinates[0] !== 0) {
+      setSelectedLocation({
+        lat: user.location.coordinates[1],
+        lng: user.location.coordinates[0],
+      });
+      setLocationSearch(user.location.address);
+      setUseMyLocation(true);
+
+      // Apply user location filter
+      const locationFilter = {
+        location: {
+          lat: user.location.coordinates[1],
+          lng: user.location.coordinates[0],
+          radius: searchRadius,
+        },
+      };
+      setFilters(locationFilter);
+      loadTasks(1);
+    }
+  };
+
+  const clearLocationFilter = () => {
+    setSelectedLocation(null);
+    setLocationSearch("");
+    setUseMyLocation(false);
+
+    // Remove location from filters
+    const newFilters = { ...filters };
+    delete newFilters.location;
+    setFilters(newFilters);
+    loadTasks(1);
+  };
+  const calculateDistance = (task: Task): number | null => {
+    if (!selectedLocation || !task.location?.coordinates) return null;
+
+    const [taskLng, taskLat] = task.location.coordinates;
+    const { lat, lng } = selectedLocation;
+
+    // Haversine formula for distance calculation
+    const R = 6371; // Earth's radius in km
+    const dLat = ((taskLat - lat) * Math.PI) / 180;
+    const dLng = ((taskLng - lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat * Math.PI) / 180) *
+        Math.cos((taskLat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return Math.round(distance * 10) / 10; // Round to 1 decimal place
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +343,6 @@ const TaskList: React.FC = () => {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -274,21 +363,67 @@ const TaskList: React.FC = () => {
                     </option>
                   ))}
               </select>
-            </div>
-
+            </div>{" "}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location
+                Tìm theo vị trí
               </label>
-              <input
-                type="text"
-                placeholder="Enter location..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Location filter coming soon
-              </p>
+              <div className="space-y-2">
+                <LocationInput
+                  value={locationSearch}
+                  onChange={setLocationSearch}
+                  onLocationSelect={handleLocationSelect}
+                  placeholder="Nhập địa chỉ để tìm việc gần đó..."
+                  className="border-gray-300"
+                />
+
+                <div className="flex items-center space-x-2">
+                  {user?.location?.coordinates &&
+                    user.location.coordinates[0] !== 0 && (
+                      <button
+                        onClick={handleUseMyLocation}
+                        className={`flex items-center px-3 py-1 text-xs rounded-full border transition-colors ${
+                          useMyLocation
+                            ? "bg-blue-100 text-blue-700 border-blue-300"
+                            : "bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200"
+                        }`}
+                      >
+                        <Navigation className="h-3 w-3 mr-1" />
+                        Gần tôi
+                      </button>
+                    )}
+
+                  {selectedLocation && (
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={searchRadius}
+                        onChange={(e) =>
+                          setSearchRadius(Number(e.target.value))
+                        }
+                        className="text-xs border border-gray-300 rounded px-2 py-1"
+                      >
+                        <option value={5}>5km</option>
+                        <option value={10}>10km</option>
+                        <option value={20}>20km</option>
+                        <option value={50}>50km</option>
+                      </select>
+
+                      <button
+                        onClick={clearLocationFilter}
+                        className="text-xs text-red-600 hover:text-red-800"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {selectedLocation && (
+                  <p className="text-xs text-green-600">
+                    🎯 Đang hiển thị việc trong bán kính {searchRadius}km
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -366,12 +501,21 @@ const TaskList: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-400 mb-4 font-mono">
                     ID: {task._id}
-                  </p>
+                  </p>{" "}
                   {/* Task Details */}
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <MapPin className="h-4 w-4" />
                       <span>{task.location.address}</span>
+                      {selectedLocation &&
+                        (() => {
+                          const distance = calculateDistance(task);
+                          return distance !== null ? (
+                            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              {distance}km away
+                            </span>
+                          ) : null;
+                        })()}
                     </div>{" "}
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar className="h-4 w-4" />

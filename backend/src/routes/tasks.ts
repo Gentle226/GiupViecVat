@@ -35,6 +35,15 @@ router.get("/", async (req, res) => {
       filter.search = search;
     }
 
+    // Add location filtering if coordinates are provided
+    if (lat && lng) {
+      filter.location = {
+        lat: parseFloat(lat as string),
+        lng: parseFloat(lng as string),
+        radius: parseFloat(radius as string),
+      };
+    }
+
     const options = {
       page: parseInt(page as string),
       limit: parseInt(limit as string),
