@@ -331,11 +331,10 @@ const TaskDetail: React.FC = () => {
                 : bid.bidderId._id;
             return bidderId === task.assignedTo && bid.status === "accepted";
           });
-
           if (assignedTasker) {
             const taskerName =
               typeof assignedTasker.bidderId === "string"
-                ? "Tasker"
+                ? t("taskDetail.messages.tasker")
                 : `${assignedTasker.bidderId.firstName} ${assignedTasker.bidderId.lastName}`;
 
             setRatingTarget({
@@ -707,7 +706,9 @@ const TaskDetail: React.FC = () => {
             </div>{" "}
             <div className="flex items-center text-gray-600">
               <Clock className="h-5 w-5 mr-2" />
-              <span>Posted: {formatDate(task.createdAt!, t)}</span>
+              <span>
+                {t("taskDetail.posted")}: {formatDate(task.createdAt!, t)}
+              </span>
             </div>
           </div>
           {/* Show Preferred Time of Day separately if specified */}
@@ -787,11 +788,10 @@ const TaskDetail: React.FC = () => {
                           bid.status === "accepted"
                         );
                       });
-
                       if (assignedTasker && task.assignedTo) {
                         const taskerName =
                           typeof assignedTasker.bidderId === "string"
-                            ? "Tasker"
+                            ? t("taskDetail.messages.tasker")
                             : `${assignedTasker.bidderId.firstName} ${assignedTasker.bidderId.lastName}`;
 
                         setRatingTarget({
