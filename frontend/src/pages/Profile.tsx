@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { usersAPI, tasksAPI, reviewsAPI, messagesAPI } from "../services/api";
+import {
+  usersAPI,
+  tasksAPI,
+  reviewsAPI,
+  messagesAPI,
+  authAPI,
+} from "../services/api";
 import type { User, Task, Review } from "../../../shared/types";
 import {
   User as UserIcon,
@@ -99,14 +105,43 @@ const Profile: React.FC = () => {
     e.preventDefault();
     if (!user) return;
     try {
-      // Note: This would require implementing an update profile endpoint
-      // const response = await usersAPI.updateProfile(editForm);
-      // setUser(response.data);
-      setIsEditing(false);
-      alert("Profile updated successfully!");
-    } catch (err) {
-      alert("Failed to update profile");
-      console.error("Error updating profile:", err);
+      // Prepare update data
+      const updateData = {
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        bio: editForm.bio,
+        skills: editForm.skills,
+        location: {
+          address: editForm.location,
+          coordinates: user.location.coordinates, // Keep existing coordinates
+        },
+      };
+
+      // Call the API to update profile
+      const response = await authAPI.updateProfile(updateData);
+
+      if (response.success && response.data) {
+        // Update local state with the returned data
+        setUser(response.data);
+        setIsEditing(false);
+        alert("Profile updated successfully!");
+
+        // Refresh the data to ensure consistency
+        await fetchUserData();
+      } else {
+        throw new Error(response.message || "Failed to update profile");
+      }
+    } catch (err: unknown) {
+      const error = err as {
+        message?: string;
+        response?: { data?: { message?: string } };
+      };
+      console.error("Error updating profile:", error);
+      const errorMessage =
+        error.message ||
+        error.response?.data?.message ||
+        "Unknown error occurred";
+      alert(`Failed to update profile: ${errorMessage}`);
     }
   };
   const handleMessageUser = async () => {
