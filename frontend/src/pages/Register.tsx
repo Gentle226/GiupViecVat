@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import LocationInput from "../components/LocationInput";
+import Logo from "../components/Logo";
 import type { LocationSuggestion } from "../services/locationService";
 import {
   Eye,
@@ -124,9 +125,13 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {" "}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-blue-600">HomeEasy</h1>
+          {/* Logo component */}
+          <div className="flex justify-center mb-4">
+            <Logo size="large" />
+          </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
@@ -141,7 +146,6 @@ const Register: React.FC = () => {
           </p>
         </div>
       </div>
-
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
