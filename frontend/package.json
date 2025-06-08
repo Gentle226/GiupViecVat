@@ -12,12 +12,15 @@
   "dependencies": {
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.8",
+    "@types/leaflet": "^1.9.18",
     "@types/react-router-dom": "^5.3.3",
     "@types/socket.io-client": "^1.4.36",
     "axios": "^1.9.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.6.1",
     "socket.io-client": "^4.8.1"
   },

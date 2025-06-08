@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
+import LocationInput from "../components/LocationInput";
+import LocationMap from "../components/LocationMap";
+import type { LocationSuggestion, LatLng } from "../services/locationService";
 import {
   TaskCategory,
   TimingType,
@@ -36,11 +39,12 @@ const CreateTask: React.FC = () => {
     needsSpecificTime: false,
     timeOfDay: [] as string[],
   });
-
   const [newRequirement, setNewRequirement] = useState("");
   const [newTag, setNewTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   // Redirect taskers away from task creation (after hooks)
   if (user?.isTasker) {
@@ -86,7 +90,6 @@ const CreateTask: React.FC = () => {
       }));
     }
   };
-
   const handleTimeOfDayChange = (time: string) => {
     setFormData((prev) => {
       const currentTimes = prev.timeOfDay;
@@ -109,6 +112,19 @@ const CreateTask: React.FC = () => {
         timeOfDay: "",
       }));
     }
+  };
+
+  const handleLocationSelect = (location: LocationSuggestion) => {
+    setSelectedLocation({ lat: location.lat, lng: location.lon });
+  };
+
+  const handleMapClick = (latLng: LatLng) => {
+    setSelectedLocation(latLng);
+  };
+
+  const handleLocationChange = (address: string, latLng: LatLng) => {
+    setFormData({ ...formData, location: address });
+    setSelectedLocation(latLng);
   };
 
   const addRequirement = () => {
@@ -210,7 +226,9 @@ const CreateTask: React.FC = () => {
             formData.locationType === LocationType.IN_PERSON
               ? formData.location.trim()
               : "Online",
-          coordinates: [0, 0] as [number, number], // Default coordinates - would need geolocation in real app
+          coordinates: selectedLocation
+            ? ([selectedLocation.lng, selectedLocation.lat] as [number, number])
+            : ([0, 0] as [number, number]),
         },
         locationType: formData.locationType as LocationType,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
@@ -419,37 +437,74 @@ const CreateTask: React.FC = () => {
             </div>{" "}
             {/* Location and Timing */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {" "}
               {formData.locationType === LocationType.IN_PERSON && (
-                <div>
-                  <label
-                    htmlFor="location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Location *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="location"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Location *
+                    </label>
+                    <LocationInput
                       value={formData.location}
-                      onChange={handleInputChange}
-                      className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      onChange={(value) =>
+                        setFormData({ ...formData, location: value })
+                      }
+                      onLocationSelect={handleLocationSelect}
+                      placeholder="Nhập địa chỉ tại Việt Nam..."
+                      className={
                         errors.location ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="e.g., Downtown Seattle, WA"
+                      }
                     />
+                    {errors.location && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.location}
+                      </p>
+                    )}
                   </div>
-                  {errors.location && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.location}
-                    </p>
+
+                  {/* Map Toggle */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMap(!showMap)}
+                      className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {showMap ? "Ẩn bản đồ" : "Xem trên bản đồ"}
+                    </button>
+                  </div>
+
+                  {/* Map Display */}
+                  {showMap && (
+                    <div className="mt-4">
+                      <LocationMap
+                        center={selectedLocation || undefined}
+                        zoom={selectedLocation ? 15 : 6}
+                        markers={
+                          selectedLocation
+                            ? [
+                                {
+                                  position: selectedLocation,
+                                  popup:
+                                    formData.location || "Vị trí được chọn",
+                                  title: "Vị trí nhiệm vụ",
+                                },
+                              ]
+                            : []
+                        }
+                        onClick={handleMapClick}
+                        onLocationChange={handleLocationChange}
+                        height="300px"
+                        className="w-full"
+                      />
+                    </div>
                   )}
                 </div>
               )}
-
               <div
                 className={
                   formData.locationType === LocationType.ONLINE

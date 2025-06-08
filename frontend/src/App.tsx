@@ -14,6 +14,7 @@ import CreateTask from "./pages/CreateTask";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import DevTools from "./pages/DevTools";
+import MapDemo from "./pages/MapDemo";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
 
@@ -32,10 +33,11 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    <Route path="/register" element={<Register />} />{" "}
                     <Route path="/tasks" element={<TaskList />} />
                     <Route path="/tasks/:id" element={<TaskDetail />} />
-                    <Route path="/dev-tools" element={<DevTools />} />{" "}
+                    <Route path="/dev-tools" element={<DevTools />} />
+                    <Route path="/map-demo" element={<MapDemo />} />{" "}
                     <Route
                       path="/post-task"
                       element={
