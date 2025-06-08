@@ -191,7 +191,6 @@
       "adjustFilters": "Try adjusting your filters or search keywords",
       "loading": "Loading tasks...",
       "loadingError": "Error loading tasks",
-      "tryAgain": "Try Again",
       "refreshTasks": "Refresh Tasks",
       "taskPostedBy": "Posted by",
       "bids": "bids",
@@ -289,7 +288,20 @@
       "TECH_SUPPORT": "Tech Support",
       "TUTORING": "Tutoring",
       "PHOTOGRAPHY": "Photography",
-      "OTHER": "Other"
+      "OTHER": "Other",
+      "other": "Other",
+      "household": "Household",
+      "tech": "Tech Support",
+      "transportation": "Transportation",
+      "repairs": "Repairs",
+      "cleaning": "Cleaning",
+      "gardening": "Gardening",
+      "moving": "Moving",
+      "handyman": "Handyman"
+    },
+    "descriptions": {
+      "inPersonDesc": "Select this if you need the Tasker physically there",
+      "onlineDesc": "Select this if the Tasker can do it from home"
     },
     "validation": {
       "titleRequired": "Title is required",

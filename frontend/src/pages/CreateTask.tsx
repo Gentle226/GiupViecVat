@@ -642,8 +642,9 @@ const CreateTask: React.FC = () => {
                         className="mr-2"
                       />{" "}
                       <div>
+                        {" "}
                         <div className="font-medium">
-                          {t("createTask.form.morningLabel")}
+                          {t("createTask.form.morning")}
                         </div>
                         <div className="text-sm text-gray-500">
                           {t("createTask.form.morningTime")}
@@ -659,8 +660,9 @@ const CreateTask: React.FC = () => {
                         className="mr-2"
                       />{" "}
                       <div>
+                        {" "}
                         <div className="font-medium">
-                          {t("createTask.form.middayLabel")}
+                          {t("createTask.form.midday")}
                         </div>
                         <div className="text-sm text-gray-500">
                           {t("createTask.form.middayTime")}
@@ -680,8 +682,9 @@ const CreateTask: React.FC = () => {
                         className="mr-2"
                       />{" "}
                       <div>
+                        {" "}
                         <div className="font-medium">
-                          {t("createTask.form.afternoonLabel")}
+                          {t("createTask.form.afternoon")}
                         </div>
                         <div className="text-sm text-gray-500">
                           {t("createTask.form.afternoonTime")}
@@ -699,8 +702,9 @@ const CreateTask: React.FC = () => {
                         className="mr-2"
                       />{" "}
                       <div>
+                        {" "}
                         <div className="font-medium">
-                          {t("createTask.form.eveningLabel")}
+                          {t("createTask.form.evening")}
                         </div>
                         <div className="text-sm text-gray-500">
                           {t("createTask.form.eveningTime")}
@@ -721,7 +725,7 @@ const CreateTask: React.FC = () => {
             <div>
               {" "}
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("createTask.form.requirementsOptional")}
+                {t("createTask.form.requirements")}
               </label>
               <div className="flex gap-2 mb-2">
                 <input
@@ -766,7 +770,7 @@ const CreateTask: React.FC = () => {
             <div>
               {" "}
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("createTask.form.tagsOptional")}
+                {t("createTask.form.tags")}
               </label>
               <div className="flex gap-2 mb-2">
                 <div className="relative flex-1">
