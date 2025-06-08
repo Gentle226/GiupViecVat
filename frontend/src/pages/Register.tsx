@@ -164,7 +164,7 @@ const Register: React.FC = () => {
             {/* Role Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                What is your main goal on HomeEasy? *
+                What is your main goal on GiupViecVat? *
               </label>{" "}
               <div className="grid grid-cols-2 gap-4">
                 <div

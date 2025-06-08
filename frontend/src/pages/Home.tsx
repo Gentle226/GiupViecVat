@@ -37,7 +37,7 @@ const Home: React.FC = () => {
       icon: Shield,
       title: "Secure Payments",
       description:
-        "Pay safely through HomeEasy Pay with buyer protection guaranteed.",
+        "Pay safely through GiupViecVat Pay with buyer protection guaranteed.",
     },
     {
       icon: Star,
@@ -79,7 +79,7 @@ const Home: React.FC = () => {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Get Things Done with{" "}
-              <span className="text-blue-200">HomeEasy</span>
+              <span className="text-blue-200">GiupViecVat</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               Connect with local Taskers for all your daily needs. From cleaning
@@ -148,7 +148,7 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose HomeEasy?
+              Why Choose GiupViecVat?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               We make it easy to connect with local professionals and get your
@@ -267,8 +267,8 @@ const Home: React.FC = () => {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust HomeEasy for their
-            daily tasks.
+            Join thousands of satisfied customers who trust GiupViecVat for
+            their daily tasks.
           </p>
           {!isAuthenticated && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

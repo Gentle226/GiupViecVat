@@ -28,11 +28,17 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       {/* Custom logo image */}
-      <img src={logoImage} alt="HomeEasy" className={sizeClasses[size]} />
-
+      <img
+        src={logoImage}
+        alt="GiupViecVat"
+        className={sizeClasses[size]}
+      />{" "}
       {showText && (
-        <span className={`font-bold text-gray-900 ${textSizeClasses[size]}`}>
-          HomeEasy
+        <span
+          className={`font-bold ${textSizeClasses[size]}`}
+          style={{ color: "#0092ff" }}
+        >
+          GiupViecVat
         </span>
       )}
     </div>

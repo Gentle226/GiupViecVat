@@ -1,4 +1,4 @@
-# HomeEasy
+# GiupViecVat
 
 A modern task marketplace platform connecting clients with skilled taskers for various household and professional services.
 
@@ -75,9 +75,8 @@ A modern task marketplace platform connecting clients with skilled taskers for v
 
 1. **Clone the repository**
 
-   ```bash
-   git clone https://github.com/Gentle226/HomeEasy.git
-   cd HomeEasy
+   ```bash git clone https://github.com/Gentle226/GiupViecVat.git
+   cd GiupViecVat
    ```
 
 2. **Install dependencies**
@@ -106,7 +105,7 @@ A modern task marketplace platform connecting clients with skilled taskers for v
    ```env
    NODE_ENV=development
    PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/homeeasy
+   MONGODB_URI=mongodb://localhost:27017/giupviecvat
    JWT_SECRET=your-super-secret-jwt-key
    STRIPE_SECRET_KEY=your-stripe-secret-key
    STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
@@ -142,7 +141,7 @@ A modern task marketplace platform connecting clients with skilled taskers for v
 ## 📁 Project Structure
 
 ```
-HomeEasy/
+GiupViecVat/
 ├── frontend/                 # React TypeScript frontend
 │   ├── src/
 │   │   ├── components/       # Reusable UI components
@@ -384,4 +383,4 @@ For support, please open an issue in the repository or contact the development t
 
 ---
 
-**HomeEasy** - Connecting communities through trusted task sharing. 🏠✨
+**GiupViecVat** - Connecting communities through trusted task sharing. 🏠✨

@@ -28,7 +28,7 @@ export class DatabaseAdapter {
     try {
       // Try to connect to MongoDB
       await mongoose.connect(
-        process.env.MONGODB_URI || "mongodb://localhost:27017/homeeasy"
+        process.env.MONGODB_URI || "mongodb://localhost:27017/giupviecvat"
       );
       console.log("Connected to MongoDB");
       this.useMemoryStore = false;
