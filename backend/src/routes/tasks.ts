@@ -12,10 +12,15 @@ router.get("/", async (req, res) => {
   try {
     const {
       category,
+      categories, // Support array of categories
       status = "open",
+      locationType,
       lat,
       lng,
       radius = 50, // km
+      priceMin,
+      priceMax,
+      availableOnly,
       page = 1,
       limit = 20,
       search,
@@ -23,7 +28,10 @@ router.get("/", async (req, res) => {
 
     const filter: any = {};
 
-    if (category) {
+    // Handle categories (can be single or array)
+    if (categories) {
+      filter.category = Array.isArray(categories) ? categories : [categories];
+    } else if (category) {
       filter.category = category;
     }
 
@@ -31,8 +39,24 @@ router.get("/", async (req, res) => {
       filter.status = status;
     }
 
+    if (locationType) {
+      filter.locationType = locationType;
+    }
+
     if (search) {
       filter.search = search;
+    }
+
+    if (priceMin !== undefined) {
+      filter.priceMin = parseFloat(priceMin as string);
+    }
+
+    if (priceMax !== undefined) {
+      filter.priceMax = parseFloat(priceMax as string);
+    }
+
+    if (availableOnly === "true") {
+      filter.availableOnly = true;
     }
 
     // Add location filtering if coordinates are provided

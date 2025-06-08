@@ -89,7 +89,6 @@ class MemoryStore {
     this.tasks.push(task);
     return task;
   }
-
   async findTasks(
     filter: any = {},
     options: any = {}
@@ -104,7 +103,12 @@ class MemoryStore {
       tasks = tasks.filter((task) => task.status === filter.status);
     }
     if (filter.category) {
-      tasks = tasks.filter((task) => task.category === filter.category);
+      // Support both single category and array of categories
+      if (Array.isArray(filter.category)) {
+        tasks = tasks.filter((task) => filter.category.includes(task.category));
+      } else {
+        tasks = tasks.filter((task) => task.category === filter.category);
+      }
     }
     if (filter.clientId) {
       tasks = tasks.filter((task) => task.postedBy === filter.clientId);
@@ -116,6 +120,52 @@ class MemoryStore {
           task.title.toLowerCase().includes(searchLower) ||
           task.description.toLowerCase().includes(searchLower)
       );
+    }
+    if (filter.locationType) {
+      tasks = tasks.filter((task) => task.locationType === filter.locationType);
+    }
+    if (filter.priceMin !== undefined) {
+      tasks = tasks.filter((task) => task.suggestedPrice >= filter.priceMin);
+    }
+    if (filter.priceMax !== undefined) {
+      tasks = tasks.filter((task) => task.suggestedPrice <= filter.priceMax);
+    }
+    if (filter.availableOnly) {
+      tasks = tasks.filter(
+        (task) => task.status === TaskStatus.OPEN && !task.assignedTo
+      );
+    } // Location filtering (if coordinates are provided)
+    if (filter.location && filter.location.lat && filter.location.lng) {
+      const { lat, lng, radius = 50 } = filter.location;
+      tasks = tasks.filter((task) => {
+        // Skip location filter for string locations or tasks without location
+        if (!task.location || typeof task.location === "string") return true;
+
+        // Check if location has coordinates
+        const taskLocation = task.location as {
+          address: string;
+          coordinates: [number, number];
+        };
+        if (!taskLocation.coordinates) return true;
+
+        // Calculate distance using Haversine formula
+        const taskLat = taskLocation.coordinates[1];
+        const taskLng = taskLocation.coordinates[0];
+
+        const R = 6371; // Earth's radius in km
+        const dLat = ((taskLat - lat) * Math.PI) / 180;
+        const dLng = ((taskLng - lng) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((lat * Math.PI) / 180) *
+            Math.cos((taskLat * Math.PI) / 180) *
+            Math.sin(dLng / 2) *
+            Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+
+        return distance <= radius;
+      });
     }
 
     // Apply sorting

@@ -135,9 +135,15 @@ export const getAllTasks = async (filters?: any): Promise<Task[]> => {
   }
 
   if (filters?.location) {
-    filteredTasks = filteredTasks.filter((task) =>
-      task.location.toLowerCase().includes(filters.location.toLowerCase())
-    );
+    filteredTasks = filteredTasks.filter((task) => {
+      const taskLocation =
+        typeof task.location === "string"
+          ? task.location
+          : task.location.address;
+      return taskLocation
+        .toLowerCase()
+        .includes(filters.location.toLowerCase());
+    });
   }
 
   // Populate user data for each task

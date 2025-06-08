@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import TaskList from "./pages/TaskList";
+import FindTasks from "./pages/FindTasks";
 import Dashboard from "./pages/Dashboard";
 import TaskDetail from "./pages/TaskDetail";
 import CreateTask from "./pages/CreateTask";
@@ -35,6 +36,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />{" "}
                     <Route path="/tasks" element={<TaskList />} />
+                    <Route path="/find-tasks" element={<FindTasks />} />
                     <Route path="/tasks/:id" element={<TaskDetail />} />
                     <Route path="/dev-tools" element={<DevTools />} />
                     <Route path="/map-demo" element={<MapDemo />} />{" "}

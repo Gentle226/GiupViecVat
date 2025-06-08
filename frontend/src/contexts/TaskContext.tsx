@@ -3,6 +3,8 @@ import React, {
   useContext,
   useReducer,
   useCallback,
+  useRef,
+  useEffect,
 } from "react";
 import type {
   Task,
@@ -23,8 +25,13 @@ interface TaskState {
   currentPage: number;
   filters: {
     category?: TaskCategory;
+    categories?: TaskCategory[];
     status?: TaskStatus;
+    locationType?: string;
     location?: { lat: number; lng: number; radius: number };
+    priceMin?: number;
+    priceMax?: number;
+    availableOnly?: boolean;
     search?: string;
   };
 }
@@ -174,14 +181,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, dispatch] = useReducer(taskReducer, initialState);
 
+  // Use ref to track current filters without causing re-renders
+  const filtersRef = useRef(state.filters);
+
+  // Update ref when filters change
+  useEffect(() => {
+    filtersRef.current = state.filters;
+  }, [state.filters]);
+
   const loadTasks = useCallback(
     async (page: number = 1) => {
       try {
         dispatch({ type: "LOAD_TASKS_START" });
         dispatch({ type: "SET_PAGE", payload: page });
-
         const response = await tasksAPI.getTasks({
-          ...state.filters,
+          ...filtersRef.current, // Use ref instead of state.filters
           page,
           limit: 12,
         });
@@ -205,7 +219,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       }
     },
-    [state.filters]
+    [] // Remove state.filters dependency to prevent infinite loops
   );
 
   const loadTask = useCallback(async (id: string) => {

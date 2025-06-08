@@ -108,8 +108,13 @@ export const authAPI = {
 export const tasksAPI = {
   getTasks: async (params?: {
     category?: TaskCategory;
+    categories?: TaskCategory[];
     status?: TaskStatus;
+    locationType?: string;
     location?: { lat: number; lng: number; radius: number };
+    priceMin?: number;
+    priceMax?: number;
+    availableOnly?: boolean;
     page?: number;
     limit?: number;
     search?: string;

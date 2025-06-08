@@ -26,7 +26,8 @@ export interface Task {
   title: string;
   description: string;
   category: TaskCategory;
-  location: string; // Simplified to string for now
+  location: string | { address: string; coordinates: [number, number] }; // Support both string and object
+  locationType?: LocationType; // Add this field
   suggestedPrice: number;
   status: TaskStatus;
   postedBy: string; // User ID
@@ -121,6 +122,11 @@ export enum TimeOfDay {
   MIDDAY = "midday",
   AFTERNOON = "afternoon",
   EVENING = "evening",
+}
+
+export enum LocationType {
+  IN_PERSON = "in_person",
+  ONLINE = "online",
 }
 
 export enum TaskStatus {
