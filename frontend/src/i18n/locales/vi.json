@@ -135,7 +135,6 @@
     }
   },
   "tasks": {
-    "createTask": "Tạo Công Việc",
     "title": "Tiêu Đề Công Việc",
     "description": "Mô Tả",
     "budget": "Ngân Sách",
@@ -533,6 +532,10 @@
       "totalEarnings": "Tổng Thu Nhập",
       "rating": "Đánh Giá"
     },
+    "activeTasks": "Nhiệm Vụ Đang Hoạt Động",
+    "completedTasks": "Nhiệm Vụ Đã Hoàn Thành",
+    "totalEarnings": "Tổng Thu Nhập",
+    "rating": "Đánh Giá",
     "recentTasks": "Nhiệm Vụ Gần Đây",
     "availableTasks": "Nhiệm Vụ Có Sẵn",
     "newTask": "Nhiệm Vụ Mới",
@@ -565,7 +568,6 @@
     "tasksPosted": "Nhiệm Vụ Đã Đăng",
     "tasksCompleted": "Nhiệm Vụ Đã Hoàn Thành",
     "earnings": "Thu Nhập",
-    "activeTasks": "Nhiệm Vụ Đang Hoạt Động",
     "successRate": "Tỷ Lệ Thành Công",
     "responseRate": "Tỷ Lệ Phản Hồi",
     "memberSince": "Thành viên từ",
