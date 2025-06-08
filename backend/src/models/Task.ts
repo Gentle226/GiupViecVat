@@ -8,6 +8,7 @@ export interface ITask extends Document {
     address: string;
     coordinates: [number, number];
   };
+  locationType: string;
   suggestedPrice: number;
   status: string;
   postedBy: mongoose.Types.ObjectId;
@@ -58,6 +59,12 @@ const taskSchema = new Schema(
         type: [Number],
         required: true,
       },
+    },
+    locationType: {
+      type: String,
+      enum: ["in_person", "online"],
+      required: true,
+      default: "in_person",
     },
     suggestedPrice: {
       type: Number,

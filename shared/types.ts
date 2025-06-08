@@ -26,6 +26,7 @@ export interface Task {
     address: string;
     coordinates: [number, number];
   };
+  locationType: LocationType;
   suggestedPrice: number;
   status: TaskStatus;
   postedBy: string | PopulatedUser; // User ID or populated user data
@@ -161,6 +162,13 @@ export const TimeOfDay = {
 
 export type TimeOfDay = (typeof TimeOfDay)[keyof typeof TimeOfDay];
 
+export const LocationType = {
+  IN_PERSON: "in_person",
+  ONLINE: "online",
+} as const;
+
+export type LocationType = (typeof LocationType)[keyof typeof LocationType];
+
 export const TaskStatus = {
   OPEN: "open",
   ASSIGNED: "assigned",
@@ -222,6 +230,7 @@ export interface CreateTaskRequest {
     address: string;
     coordinates: [number, number];
   };
+  locationType: LocationType;
   suggestedPrice: number;
   dueDate?: Date;
   // New timing fields
@@ -239,6 +248,7 @@ export interface UpdateTaskRequest {
     address: string;
     coordinates: [number, number];
   };
+  locationType?: LocationType;
   suggestedPrice?: number;
   dueDate?: Date;
   status?: TaskStatus;

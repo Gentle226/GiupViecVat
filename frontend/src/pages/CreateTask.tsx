@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
-import { TaskCategory, TimingType, TimeOfDay } from "../../../shared/types";
+import {
+  TaskCategory,
+  TimingType,
+  TimeOfDay,
+  LocationType,
+} from "../../../shared/types";
 import {
   MapPin,
   Calendar,
@@ -22,6 +27,7 @@ const CreateTask: React.FC = () => {
     category: TaskCategory.OTHER,
     budget: "",
     location: "",
+    locationType: LocationType.IN_PERSON as string,
     dueDate: "",
     requirements: [] as string[],
     tags: [] as string[], // New timing fields
@@ -150,13 +156,14 @@ const CreateTask: React.FC = () => {
     } else if (formData.description.trim().length < 10) {
       newErrors.description = "Description must be at least 10 characters";
     }
-
     if (!formData.budget || parseFloat(formData.budget) <= 0) {
       newErrors.budget = "Budget must be greater than 0";
     }
-
-    if (!formData.location.trim()) {
-      newErrors.location = "Location is required";
+    if (
+      formData.locationType === LocationType.IN_PERSON &&
+      !formData.location.trim()
+    ) {
+      newErrors.location = "Location is required for in-person tasks";
     } // Validate timing fields
     if (
       formData.timingType === TimingType.ON_DATE ||
@@ -199,9 +206,13 @@ const CreateTask: React.FC = () => {
         category: formData.category,
         suggestedPrice: parseFloat(formData.budget),
         location: {
-          address: formData.location.trim(),
+          address:
+            formData.locationType === LocationType.IN_PERSON
+              ? formData.location.trim()
+              : "Online",
           coordinates: [0, 0] as [number, number], // Default coordinates - would need geolocation in real app
         },
+        locationType: formData.locationType as LocationType,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         // New timing fields
         timingType: formData.timingType as TimingType,
@@ -322,7 +333,6 @@ const CreateTask: React.FC = () => {
                   ))}
                 </select>
               </div>
-
               <div>
                 <label
                   htmlFor="budget"
@@ -352,40 +362,101 @@ const CreateTask: React.FC = () => {
                     {errors.budget}
                   </p>
                 )}
+              </div>{" "}
+            </div>{" "}
+            {/* Location Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Tell us where *
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label
+                  className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    formData.locationType === LocationType.IN_PERSON
+                      ? "border-indigo-500 bg-indigo-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="locationType"
+                    value={LocationType.IN_PERSON}
+                    checked={formData.locationType === LocationType.IN_PERSON}
+                    onChange={handleInputChange}
+                    className="mt-1 mr-3"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900">In-person</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Select this if you need the Tasker physically there
+                    </div>
+                  </div>
+                </label>
+
+                <label
+                  className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                    formData.locationType === LocationType.ONLINE
+                      ? "border-indigo-500 bg-indigo-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="locationType"
+                    value={LocationType.ONLINE}
+                    checked={formData.locationType === LocationType.ONLINE}
+                    onChange={handleInputChange}
+                    className="mt-1 mr-3"
+                  />
+                  <div>
+                    <div className="font-medium text-gray-900">Online</div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Select this if the Tasker can do it from home
+                    </div>
+                  </div>
+                </label>
               </div>
             </div>{" "}
             {/* Location and Timing */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Location *
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      errors.location ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder="e.g., Downtown Seattle, WA"
-                  />
+              {formData.locationType === LocationType.IN_PERSON && (
+                <div>
+                  <label
+                    htmlFor="location"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Location *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      id="location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        errors.location ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="e.g., Downtown Seattle, WA"
+                    />
+                  </div>
+                  {errors.location && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
-                {errors.location && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.location}
-                  </p>
-                )}
-              </div>
+              )}
 
-              <div>
+              <div
+                className={
+                  formData.locationType === LocationType.ONLINE
+                    ? "md:col-span-2"
+                    : ""
+                }
+              >
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   When do you need this done? *
                 </label>
