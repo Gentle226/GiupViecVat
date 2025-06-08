@@ -540,7 +540,6 @@ const TaskDetail: React.FC = () => {
       setShowDeleteConfirmation(false);
     }
   };
-
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.OPEN:
@@ -556,6 +555,18 @@ const TaskDetail: React.FC = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const formatTaskStatus = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      open: "tasks.status.open",
+      assigned: "tasks.status.assigned",
+      in_progress: "tasks.status.inProgress",
+      completed: "tasks.status.completed",
+      cancelled: "tasks.status.cancelled",
+    };
+
+    return t(statusMap[status] || status);
   };
 
   if (loading) {
@@ -667,7 +678,7 @@ const TaskDetail: React.FC = () => {
                     task.status
                   )}`}
                 >
-                  {task.status.replace("_", " ")}
+                  {formatTaskStatus(task.status)}
                 </span>{" "}
                 {/* Task Owner Information - Show to all users */}
                 <button

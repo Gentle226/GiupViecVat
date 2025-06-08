@@ -149,7 +149,7 @@
     "viewDetails": "Xem Chi Tiết",
     "placeBid": "Đặt Giá",
     "status": {
-      "open": "Mở",
+      "open": "Đang Mở",
       "assigned": "Đã Giao",
       "inProgress": "Đang Thực Hiện",
       "completed": "Hoàn Thành",

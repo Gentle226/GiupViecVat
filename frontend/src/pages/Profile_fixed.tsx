@@ -219,7 +219,6 @@ const Profile: React.FC = () => {
       day: "numeric",
     });
   };
-
   const formatBidStatus = (status: string) => {
     switch (status) {
       case "pending":
@@ -239,6 +238,41 @@ const Profile: React.FC = () => {
         };
       default:
         return { text: status, color: "bg-gray-100 text-gray-800" };
+    }
+  };
+
+  const formatTaskStatus = (status: string) => {
+    switch (status) {
+      case "open":
+        return {
+          text: t("tasks.status.open"),
+          color: "bg-yellow-100 text-yellow-800",
+        };
+      case "assigned":
+        return {
+          text: t("tasks.status.assigned"),
+          color: "bg-blue-100 text-blue-800",
+        };
+      case "in_progress":
+        return {
+          text: t("tasks.status.inProgress"),
+          color: "bg-blue-100 text-blue-800",
+        };
+      case "completed":
+        return {
+          text: t("tasks.status.completed"),
+          color: "bg-green-100 text-green-800",
+        };
+      case "cancelled":
+        return {
+          text: t("tasks.status.cancelled"),
+          color: "bg-red-100 text-red-800",
+        };
+      default:
+        return {
+          text: status.replace("_", " "),
+          color: "bg-gray-100 text-gray-800",
+        };
     }
   };
 
@@ -543,21 +577,17 @@ const Profile: React.FC = () => {
                             <div>
                               <h4 className="font-medium text-gray-900">
                                 {task.title}
-                              </h4>
+                              </h4>{" "}
                               <p className="text-sm text-gray-500">
                                 {formatDate(task.createdAt.toString())}
                               </p>
                             </div>
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                task.status === "completed"
-                                  ? "bg-green-100 text-green-800"
-                                  : task.status === "in_progress"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                formatTaskStatus(task.status).color
                               }`}
                             >
-                              {task.status.replace("_", " ")}
+                              {formatTaskStatus(task.status).text}
                             </span>
                           </div>
                         ))}
@@ -646,20 +676,17 @@ const Profile: React.FC = () => {
                         {task.description}
                       </p>
                       <div className="flex items-center justify-between">
+                        {" "}
                         <div className="flex items-center text-gray-500 text-sm">
                           <Calendar className="h-4 w-4 mr-1" />
                           <span>{formatDate(task.createdAt.toString())}</span>
                         </div>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            task.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : task.status === "in_progress"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-yellow-100 text-yellow-800"
+                            formatTaskStatus(task.status).color
                           }`}
                         >
-                          {task.status.replace("_", " ")}
+                          {formatTaskStatus(task.status).text}
                         </span>
                       </div>
                     </div>

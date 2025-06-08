@@ -78,6 +78,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const formatTaskStatus = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      open: "tasks.status.open",
+      assigned: "tasks.status.assigned",
+      in_progress: "tasks.status.inProgress",
+      completed: "tasks.status.completed",
+      cancelled: "tasks.status.cancelled",
+    };
+
+    return t(statusMap[status] || status);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -203,7 +215,7 @@ const Dashboard: React.FC = () => {
                                 task.status
                               )}`}
                             >
-                              {task.status.replace(/_/g, " ")}
+                              {formatTaskStatus(task.status)}
                             </span>
                           </div>{" "}
                           <p className="text-sm text-gray-600 mb-2 line-clamp-2">

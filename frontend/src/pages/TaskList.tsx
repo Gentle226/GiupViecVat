@@ -321,7 +321,6 @@ const TaskList: React.FC = () => {
   const formatCategoryName = (category: TaskCategory) => {
     return t(`tasks.findTasks.categoryNames.${category.toLowerCase()}`);
   };
-
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.OPEN:
@@ -337,6 +336,18 @@ const TaskList: React.FC = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const formatTaskStatus = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      open: "tasks.status.open",
+      assigned: "tasks.status.assigned",
+      in_progress: "tasks.status.inProgress",
+      completed: "tasks.status.completed",
+      cancelled: "tasks.status.cancelled",
+    };
+
+    return t(statusMap[status] || status);
   };
   // Generate map markers from filtered tasks
   const mapMarkers = filteredAndSortedTasks
@@ -831,7 +842,7 @@ const TaskList: React.FC = () => {
                                 task.status
                               )}`}
                             >
-                              {task.status.replace(/_/g, " ")}
+                              {formatTaskStatus(task.status)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
