@@ -195,11 +195,17 @@ const TaskDetail: React.FC = () => {
       console.error("Error accepting bid:", err);
     }
   };
-
   const handleViewProfile = (bid: TaskBid) => {
     const userId =
       typeof bid.bidderId === "string" ? bid.bidderId : bid.bidderId._id;
     navigate(`/profile/${userId}`);
+  };
+
+  const handleViewTaskOwnerProfile = () => {
+    if (!task) return;
+    const ownerId =
+      typeof task.postedBy === "string" ? task.postedBy : task.postedBy._id;
+    navigate(`/profile/${ownerId}`);
   };
   const handleMessage = async (bid: TaskBid) => {
     try {
@@ -525,20 +531,35 @@ const TaskDetail: React.FC = () => {
         {" "}
         {/* Header */}{" "}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="flex justify-between items-start mb-4 gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 pr-4 break-words">
                 {task.title}
               </h1>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                  task.status
-                )}`}
-              >
-                {task.status.replace("_", " ")}
-              </span>
+              <div className="flex flex-wrap items-center gap-3 mb-2">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                    task.status
+                  )}`}
+                >
+                  {task.status.replace("_", " ")}
+                </span>{" "}
+                {/* Task Owner Information - Show to all users */}
+                <button
+                  onClick={handleViewTaskOwnerProfile}
+                  className="flex items-center text-sm text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer"
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  <span>
+                    Posted by{" "}
+                    {typeof task.postedBy === "string" || !task.postedBy
+                      ? "User"
+                      : `${task.postedBy.firstName} ${task.postedBy.lastName}`}
+                  </span>
+                </button>
+              </div>
             </div>
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
               <div className="text-2xl font-bold text-indigo-600">
                 ${task.suggestedPrice}
               </div>
