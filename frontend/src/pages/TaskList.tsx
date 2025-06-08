@@ -187,7 +187,7 @@ const TaskList: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
-              </label>
+              </label>{" "}
               <select
                 value={filters.status || ""}
                 onChange={(e) =>
@@ -196,11 +196,13 @@ const TaskList: React.FC = () => {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Status</option>
-                {Object.values(TaskStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {status.replace(/_/g, " ")}
-                  </option>
-                ))}
+                {Object.values(TaskStatus)
+                  .filter((status) => status !== TaskStatus.IN_PROGRESS)
+                  .map((status) => (
+                    <option key={status} value={status}>
+                      {status.replace(/_/g, " ")}
+                    </option>
+                  ))}
               </select>
             </div>
 
