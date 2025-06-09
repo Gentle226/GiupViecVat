@@ -13,6 +13,7 @@ export interface ITask extends Document {
   status: string;
   postedBy: mongoose.Types.ObjectId;
   assignedTo?: mongoose.Types.ObjectId;
+  images: string[];
   createdAt: Date;
   updatedAt: Date;
   dueDate?: Date;
@@ -85,6 +86,16 @@ const taskSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       default: null,
+    },
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function (images: string[]) {
+          return images.length <= 5; // Maximum 5 images per task
+        },
+        message: "Maximum 5 images allowed per task",
+      },
     },
     dueDate: {
       type: Date,

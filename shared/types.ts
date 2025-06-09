@@ -33,6 +33,7 @@ export interface Task {
   status: TaskStatus;
   postedBy: string | PopulatedUser; // User ID or populated user data
   assignedTo?: string; // User ID
+  images: string[]; // Image URLs/paths
   createdAt: Date;
   updatedAt: Date;
   dueDate?: Date;
@@ -69,6 +70,8 @@ export interface Message {
   conversationId: string;
   senderId: string;
   content: string;
+  messageType?: "text" | "image";
+  images?: string[]; // Image URLs/paths
   timestamp: Date;
   readBy: string[]; // User IDs who have read the message
 }

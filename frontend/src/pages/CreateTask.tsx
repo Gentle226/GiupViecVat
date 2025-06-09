@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
 import LocationInput from "../components/LocationInputWithGPS";
 import LocationMap from "../components/LocationMap";
+import ImageUpload from "../components/ImageUpload";
 import type { LocationSuggestion, LatLng } from "../services/locationService";
 import {
   TaskCategory,
@@ -47,6 +48,7 @@ const CreateTask: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedLocation, setSelectedLocation] = useState<LatLng | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
   // Redirect taskers away from task creation (after hooks)
   if (user?.isTasker) {
@@ -216,34 +218,48 @@ const CreateTask: React.FC = () => {
 
     try {
       setLoading(true);
-      const taskData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        category: formData.category,
-        suggestedPrice: parseFloat(formData.budget),
-        location: {
-          address:
-            formData.locationType === LocationType.IN_PERSON
-              ? formData.location.trim()
-              : "Online",
-          coordinates: selectedLocation
-            ? ([selectedLocation.lng, selectedLocation.lat] as [number, number])
-            : ([0, 0] as [number, number]),
-        },
-        locationType: formData.locationType as LocationType,
-        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        // New timing fields
-        timingType: formData.timingType as TimingType,
-        specificDate: formData.specificDate
-          ? new Date(formData.specificDate)
-          : undefined,
-        needsSpecificTime: formData.needsSpecificTime,
-        timeOfDay:
-          formData.timeOfDay.length > 0
-            ? (formData.timeOfDay as TimeOfDay[])
-            : undefined,
+
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+
+      // Add all the task data
+      formDataToSend.append("title", formData.title.trim());
+      formDataToSend.append("description", formData.description.trim());
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append("suggestedPrice", formData.budget);
+      formDataToSend.append("locationType", formData.locationType);
+
+      // Add location data
+      const locationData = {
+        address:
+          formData.locationType === LocationType.IN_PERSON
+            ? formData.location.trim()
+            : "Online",
+        coordinates: selectedLocation
+          ? [selectedLocation.lng, selectedLocation.lat]
+          : [0, 0],
       };
-      const response = await tasksAPI.createTask(taskData);
+      formDataToSend.append("location", JSON.stringify(locationData));
+
+      // Add timing data
+      formDataToSend.append("timingType", formData.timingType);
+      if (formData.specificDate) {
+        formDataToSend.append("specificDate", formData.specificDate);
+      }
+      formDataToSend.append(
+        "needsSpecificTime",
+        formData.needsSpecificTime.toString()
+      );
+      if (formData.timeOfDay.length > 0) {
+        formDataToSend.append("timeOfDay", JSON.stringify(formData.timeOfDay));
+      }
+
+      // Add images
+      selectedImages.forEach((image) => {
+        formDataToSend.append("images", image);
+      });
+
+      const response = await tasksAPI.createTaskWithImages(formDataToSend);
       alert(t("createTask.alerts.taskCreated"));
       if (response.data?._id) {
         navigate(`/tasks/${response.data._id}`);
@@ -324,7 +340,21 @@ const CreateTask: React.FC = () => {
                   <AlertCircle className="h-4 w-4 mr-1" />
                   {errors.description}
                 </p>
-              )}
+              )}{" "}
+            </div>
+            {/* Images */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("createTask.form.images")}
+              </label>
+              <p className="text-sm text-gray-500 mb-3">
+                {t("createTask.form.imagesDescription")}
+              </p>
+              <ImageUpload
+                images={selectedImages}
+                onImagesChange={setSelectedImages}
+                maxImages={5}
+              />
             </div>
             {/* Category and Budget */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

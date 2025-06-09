@@ -5,16 +5,9 @@ import { useSocket } from "../hooks/useSocket";
 import { useNotifications } from "../contexts/NotificationContext";
 import { messagesAPI } from "../services/api";
 import type { PopulatedConversation, Message } from "../../../shared/types";
-import {
-  Search,
-  Send,
-  Phone,
-  Video,
-  MoreVertical,
-  User,
-  Check,
-  CheckCheck,
-} from "lucide-react";
+import MessageInput from "../components/MessageInput";
+import MessageBubble from "../components/MessageBubble";
+import { Search, Phone, Video, MoreVertical, User } from "lucide-react";
 
 // Extended message type that handles populated senderId
 interface PopulatedMessage extends Omit<Message, "senderId"> {
@@ -35,14 +28,12 @@ const Messages: React.FC = () => {
   const [activeConversation, setActiveConversation] =
     useState<PopulatedConversation | null>(null);
   const [messages, setMessages] = useState<PopulatedMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [usersTyping, setUsersTyping] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Utility function to extract sender ID from message
   const getSenderId = (message: PopulatedMessage): string => {
@@ -146,48 +137,45 @@ const Messages: React.FC = () => {
       console.error("Error marking conversation as read:", error);
     }
   };
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !activeConversation || !user) return;
+  const handleSendMessage = async (content: string, images: File[] = []) => {
+    if (
+      (!content.trim() && images.length === 0) ||
+      !activeConversation ||
+      !user
+    )
+      return;
 
     try {
       setSendingMessage(true);
 
-      // Send message via socket for real-time delivery to all participants
-      sendMessage(activeConversation._id, newMessage.trim());
+      if (images.length > 0) {
+        // Send message with images using FormData
+        const formData = new FormData();
+        if (content.trim()) {
+          formData.append("content", content.trim());
+        }
+        images.forEach((image) => {
+          formData.append("images", image);
+        });
 
-      setNewMessage("");
+        await messagesAPI.sendMessageWithImages(
+          activeConversation._id,
+          formData
+        );
+      } else {
+        // Send text-only message via socket for real-time delivery
+        sendMessage(activeConversation._id, content.trim());
+      }
     } catch (err) {
       console.error("Error sending message:", err);
     } finally {
       setSendingMessage(false);
     }
   };
-  const handleTyping = () => {
-    if (!activeConversation || !socket) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (socket as any).emit("typing", {
-      conversationId: activeConversation._id,
-      userId: user?._id,
-    });
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (socket as any).emit("stopTyping", {
-        conversationId: activeConversation._id,
-        userId: user?._id,
-      });
-    }, 1000);
-  };
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
   const formatTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -383,41 +371,13 @@ const Messages: React.FC = () => {
               const isOwnMessage = senderId === user?._id && user?._id != null;
 
               return (
-                <div
+                <MessageBubble
                   key={message._id}
-                  className={`flex ${
-                    isOwnMessage ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      isOwnMessage
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-200 text-gray-900"
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <div
-                      className={`flex items-center justify-between mt-1 ${
-                        isOwnMessage ? "text-indigo-200" : "text-gray-500"
-                      }`}
-                    >
-                      {" "}
-                      <span className="text-xs">
-                        {formatTime(message.timestamp)}
-                      </span>
-                      {isOwnMessage && (
-                        <div className="ml-2">
-                          {message.readBy && message.readBy.length > 1 ? (
-                            <CheckCheck className="h-3 w-3" />
-                          ) : (
-                            <Check className="h-3 w-3" />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  message={message}
+                  isOwnMessage={isOwnMessage}
+                  currentUserId={user?._id}
+                  showAvatar={true}
+                />
               );
             })}
 
@@ -446,33 +406,13 @@ const Messages: React.FC = () => {
             )}
 
             <div ref={messagesEndRef} />
-          </div>
+          </div>{" "}
           {/* Message Input */}
-          <div className="bg-white border-t border-gray-200 p-4">
-            <form
-              onSubmit={handleSendMessage}
-              className="flex items-center space-x-3"
-            >
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => {
-                  setNewMessage(e.target.value);
-                  handleTyping();
-                }}
-                placeholder={t("messages.typeMessage")}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                disabled={sendingMessage}
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || sendingMessage}
-                className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="h-5 w-5" />
-              </button>
-            </form>
-          </div>
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            disabled={sendingMessage}
+            placeholder={t("messages.typeMessage")}
+          />
         </div>
       ) : (
         /* No Conversation Selected */

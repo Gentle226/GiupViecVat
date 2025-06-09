@@ -3,6 +3,7 @@ import { Task } from "../models/Task";
 import { Bid } from "../models/Bid";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { requireClient } from "../middleware/roleAuth";
+import { uploadMultiple, processImages } from "../middleware/upload";
 import { db } from "../data/adapter";
 import ResponseHelper from "../utils/ResponseHelper";
 
@@ -130,11 +131,14 @@ router.post(
   "/",
   authenticateToken,
   requireClient,
+  uploadMultiple,
+  processImages,
   async (req: AuthRequest, res) => {
     try {
       const taskData = {
         ...req.body,
         postedBy: req.userId, // Use req.userId instead of req.user._id
+        images: req.body.images || [], // Images processed by middleware
       };
 
       const task = await db.createTask(taskData);

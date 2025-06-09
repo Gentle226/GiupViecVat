@@ -2,7 +2,9 @@ import express from "express";
 import mongoose from "mongoose";
 import { Message, Conversation } from "../models/Message";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
+import { uploadMultiple, processImages } from "../middleware/upload";
 import ResponseHelper from "../utils/ResponseHelper";
+import { getSocketInstance } from "../services/socketService";
 
 const router = express.Router();
 
@@ -124,11 +126,16 @@ router.post(
 router.post(
   "/conversations/:id/messages",
   authenticateToken,
+  uploadMultiple,
+  processImages,
   async (req: AuthRequest, res) => {
     try {
       const { content } = req.body;
-      const conversationId = req.params.id; // Validate input
-      if (!content || !content.trim()) {
+      const conversationId = req.params.id;
+      const images = req.body.images || [];
+
+      // Validate input - either content or images must be provided
+      if ((!content || !content.trim()) && images.length === 0) {
         return ResponseHelper.error(
           res,
           req,
@@ -150,21 +157,57 @@ router.post(
           req,
           "messages.unauthorizedAccess"
         );
-      }
-
-      // Create the message
+      } // Create the message
       const message = new Message({
         conversationId: new mongoose.Types.ObjectId(conversationId),
         senderId: new mongoose.Types.ObjectId(req.userId),
-        content: content.trim(),
+        content: content ? content.trim() : "",
+        messageType: images.length > 0 ? "image" : "text",
+        images: images,
       });
 
       await message.save();
-      await message.populate("senderId", "firstName lastName avatar"); // Update conversation's last message
+      await message.populate("senderId", "firstName lastName avatar");
+
+      // Update conversation's last message
       await Conversation.findByIdAndUpdate(conversationId, {
         lastMessage: message._id,
         updatedAt: new Date(),
       });
+
+      // Emit real-time message via socket
+      const io = getSocketInstance();
+      if (io) {
+        // Emit to conversation room for real-time updates
+        io.to(`conversation_${conversationId}`).emit("newMessage", message); // Also emit to individual user rooms for notifications
+        conversation.participants.forEach((participantId) => {
+          const participantIdStr = participantId.toString();
+          if (participantIdStr !== req.userId) {
+            const senderName =
+              (message.senderId as any)?.firstName &&
+              (message.senderId as any)?.lastName
+                ? `${(message.senderId as any).firstName} ${
+                    (message.senderId as any).lastName
+                  }`
+                : "Unknown User";
+
+            io.to(`user_${participantIdStr}`).emit("message_notification", {
+              conversationId,
+              message,
+              senderName,
+            });
+          }
+        });
+
+        console.log(
+          `Message emitted to conversation_${conversationId} and participant rooms`
+        );
+      } else {
+        console.warn(
+          "Socket instance not available for real-time message emission"
+        );
+      }
+
       return ResponseHelper.success(res, req, "messages.messageSent", message);
     } catch (error: any) {
       return ResponseHelper.serverError(res, req, error.message);

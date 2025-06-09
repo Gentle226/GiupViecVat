@@ -134,11 +134,21 @@ export const tasksAPI = {
     const response = await api.get(`/api/tasks/${id}`);
     return response.data;
   },
-
   createTask: async (
     taskData: CreateTaskRequest
   ): Promise<ApiResponse<Task>> => {
     const response = await api.post("/api/tasks", taskData);
+    return response.data;
+  },
+
+  createTaskWithImages: async (
+    formData: FormData
+  ): Promise<ApiResponse<Task>> => {
+    const response = await api.post("/api/tasks", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   },
   updateTask: async (
@@ -231,7 +241,6 @@ export const messagesAPI = {
     );
     return response.data;
   },
-
   sendMessage: async (
     conversationId: string,
     content: string
@@ -240,6 +249,22 @@ export const messagesAPI = {
       `/api/messages/conversations/${conversationId}/messages`,
       {
         content,
+      }
+    );
+    return response.data;
+  },
+
+  sendMessageWithImages: async (
+    conversationId: string,
+    formData: FormData
+  ): Promise<ApiResponse<Message>> => {
+    const response = await api.post(
+      `/api/messages/conversations/${conversationId}/messages`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
     return response.data;

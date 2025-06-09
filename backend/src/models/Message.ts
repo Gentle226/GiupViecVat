@@ -4,6 +4,8 @@ export interface IMessage extends Document {
   conversationId: mongoose.Types.ObjectId;
   senderId: mongoose.Types.ObjectId;
   content: string;
+  messageType: "text" | "image";
+  images: string[];
   timestamp: Date;
   readBy: mongoose.Types.ObjectId[];
 }
@@ -29,8 +31,28 @@ const messageSchema = new Schema({
   },
   content: {
     type: String,
-    required: true,
+    required: function (this: IMessage) {
+      return (
+        this.messageType === "text" || (this.images && this.images.length === 0)
+      );
+    },
     maxlength: 1000,
+  },
+  messageType: {
+    type: String,
+    enum: ["text", "image"],
+    default: "text",
+    required: true,
+  },
+  images: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function (images: string[]) {
+        return images.length <= 3; // Maximum 3 images per message
+      },
+      message: "Maximum 3 images allowed per message",
+    },
   },
   timestamp: {
     type: Date,

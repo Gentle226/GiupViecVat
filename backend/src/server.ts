@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
 
 // Load environment variables first
 dotenv.config();
@@ -36,11 +37,16 @@ const io = new Server(httpServer, {
             "http://localhost:5174",
           ],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(
   cors({
     origin:
@@ -52,10 +58,15 @@ app.use(
             "http://localhost:5174",
           ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files for uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // i18n middleware for language detection and translation
 app.use(middleware.handle(i18n));

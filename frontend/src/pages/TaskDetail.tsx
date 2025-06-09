@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import RatingModal from "../components/RatingModal";
 import LocationInputWithGPS from "../components/LocationInputWithGPS";
+import ImageGallery from "../components/ImageGallery";
 
 const formatDate = (
   date: Date | undefined,
@@ -745,7 +746,16 @@ const TaskDetail: React.FC = () => {
             <p className="text-gray-700 whitespace-pre-wrap">
               {task.description}
             </p>
-          </div>{" "}
+          </div>
+          {/* Task Images Gallery */}
+          {task.images && task.images.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                {t("taskDetail.images")}
+              </h3>
+              <ImageGallery images={task.images} />
+            </div>
+          )}{" "}
           <div className="flex flex-wrap gap-2 mb-4">
             {task.category && (
               <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">

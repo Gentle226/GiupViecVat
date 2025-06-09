@@ -292,6 +292,8 @@
       "addRequirement": "Add a requirement...",
       "tags": "Tags (Optional)",
       "addTag": "Add a tag...",
+      "images": "Images (Optional)",
+      "imagesDescription": "Add up to 5 images to help Taskers understand your task better",
       "postTask": "Post Task",
       "creatingTask": "Creating Task...",
       "cancel": "Cancel"
@@ -498,6 +500,7 @@
     "postedBy": "Posted by",
     "taskDetails": "Task Details",
     "description": "Description",
+    "images": "Images",
     "requirements": "Requirements",
     "noRequirements": "No specific requirements",
     "tags": "Tags",
@@ -742,5 +745,14 @@
   "languages": {
     "en": "English",
     "vi": "Tiếng Việt"
+  },
+  "imageUpload": {
+    "selectImages": "Select Images",
+    "imageCount": "{{current}}/{{max}} images",
+    "dropZoneText": "Drag and drop images here, or click to select",
+    "fileRequirements": "JPG, PNG, WEBP files up to 5MB each",
+    "invalidFileType": "Please select only image files (JPG, PNG, WEBP)",
+    "fileTooLarge": "File size must be less than 5MB",
+    "tooManyImages": "Maximum {{max}} images allowed"
   }
 }
