@@ -22,6 +22,7 @@ import {
   MessageCircle,
   DollarSign,
   Key,
+  X,
 } from "lucide-react";
 import RatingDisplay from "../components/RatingDisplay";
 import ChangePasswordModal from "../components/ChangePasswordModal";
@@ -42,6 +43,7 @@ const Profile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
     useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
@@ -382,8 +384,11 @@ const Profile: React.FC = () => {
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     {t("profile.message")}
-                  </button>
-                  <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
+                  </button>{" "}
+                  <button
+                    onClick={() => setIsContactModalOpen(true)}
+                    className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center"
+                  >
                     <Mail className="h-4 w-4 mr-2" />
                     {t("profile.contact")}
                   </button>
@@ -701,7 +706,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-
       {/* Edit Profile Modal */}
       {isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -794,8 +798,77 @@ const Profile: React.FC = () => {
             </form>
           </div>
         </div>
-      )}
+      )}{" "}
+      {/* Contact Modal */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t("profile.contactInfo")}
+              </h3>
+              <button
+                onClick={() => setIsContactModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-5 w-5 text-indigo-600" />
+                <div>
+                  <p className="text-sm text-gray-500">{t("profile.email")}</p>
+                  <p className="text-gray-900 font-medium">{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <UserIcon className="h-5 w-5 text-indigo-600" />
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {t("profile.fullName")}
+                  </p>
+                  <p className="text-gray-900 font-medium">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                </div>
+              </div>
+
+              {user?.location && (
+                <div className="flex items-center space-x-3">
+                  <MapPin className="h-5 w-5 text-indigo-600" />{" "}
+                  <div>
+                    <p className="text-sm text-gray-500">
+                      {t("profile.location")}
+                    </p>
+                    <p className="text-gray-900 font-medium">
+                      {user.location.address}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => setIsContactModalOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                {t("common.close")}
+              </button>
+              <a
+                href={`mailto:${user?.email}`}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {t("profile.sendEmail")}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}

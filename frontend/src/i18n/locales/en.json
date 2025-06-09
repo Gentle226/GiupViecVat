@@ -402,7 +402,10 @@
     "location": "Location",
     "saveChanges": "Save Changes",
     "cancel": "Cancel",
-    "editProfileModal": "Edit Profile"
+    "editProfileModal": "Edit Profile",
+    "email": "Email",
+    "fullName": "Full Name",
+    "sendEmail": "Send Email"
   },
   "dashboard": {
     "welcome": "Welcome back",
