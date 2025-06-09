@@ -7,6 +7,9 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
+// Load environment variables first
+dotenv_1.default.config();
 const passport_1 = __importDefault(require("./config/passport"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
@@ -23,7 +26,6 @@ const auth_2 = require("./middleware/auth");
 const handlers_1 = require("./socket/handlers");
 const socketService_1 = require("./services/socketService");
 const adapter_1 = require("./data/adapter");
-dotenv_1.default.config();
 const app = (0, express_1.default)();
 const httpServer = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(httpServer, {
@@ -36,10 +38,13 @@ const io = new socket_io_1.Server(httpServer, {
                 "http://localhost:5174",
             ],
         methods: ["GET", "POST"],
+        credentials: true,
     },
 });
 // Middleware
-app.use((0, helmet_1.default)());
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 app.use((0, cors_1.default)({
     origin: process.env.NODE_ENV === "production"
         ? false
@@ -49,9 +54,13 @@ app.use((0, cors_1.default)({
             "http://localhost:5174",
         ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 }));
 app.use(express_1.default.json({ limit: "10mb" }));
 app.use(express_1.default.urlencoded({ extended: true }));
+// Serve static files for uploaded images
+app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
 // i18n middleware for language detection and translation
 app.use(i18next_http_middleware_1.default.handle(i18n_1.default));
 // Initialize Passport

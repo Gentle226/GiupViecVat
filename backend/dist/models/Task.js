@@ -96,6 +96,16 @@ const taskSchema = new mongoose_1.Schema({
         ref: "User",
         default: null,
     },
+    images: {
+        type: [String],
+        default: [],
+        validate: {
+            validator: function (images) {
+                return images.length <= 5; // Maximum 5 images per task
+            },
+            message: "Maximum 5 images allowed per task",
+        },
+    },
     dueDate: {
         type: Date,
         default: null,

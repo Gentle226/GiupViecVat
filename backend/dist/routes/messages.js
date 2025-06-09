@@ -7,7 +7,9 @@ const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const Message_1 = require("../models/Message");
 const auth_1 = require("../middleware/auth");
+const upload_1 = require("../middleware/upload");
 const ResponseHelper_1 = __importDefault(require("../utils/ResponseHelper"));
+const socketService_1 = require("../services/socketService");
 const router = express_1.default.Router();
 // Get user's conversations
 router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
@@ -94,11 +96,13 @@ router.post("/conversations", auth_1.authenticateToken, async (req, res) => {
     }
 });
 // Send message to a conversation
-router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req, res) => {
+router.post("/conversations/:id/messages", auth_1.authenticateToken, upload_1.uploadMultiple, upload_1.processImages, async (req, res) => {
     try {
         const { content } = req.body;
-        const conversationId = req.params.id; // Validate input
-        if (!content || !content.trim()) {
+        const conversationId = req.params.id;
+        const images = req.body.images || [];
+        // Validate input - either content or images must be provided
+        if ((!content || !content.trim()) && images.length === 0) {
             return ResponseHelper_1.default.error(res, req, "messages.messageContentRequired", 400);
         }
         // Check if user is participant in the conversation
@@ -106,19 +110,45 @@ router.post("/conversations/:id/messages", auth_1.authenticateToken, async (req,
         if (!conversation ||
             !conversation.participants.includes(new mongoose_1.default.Types.ObjectId(req.userId))) {
             return ResponseHelper_1.default.forbidden(res, req, "messages.unauthorizedAccess");
-        }
-        // Create the message
+        } // Create the message
         const message = new Message_1.Message({
             conversationId: new mongoose_1.default.Types.ObjectId(conversationId),
             senderId: new mongoose_1.default.Types.ObjectId(req.userId),
-            content: content.trim(),
+            content: content ? content.trim() : "",
+            messageType: images.length > 0 ? "image" : "text",
+            images: images,
         });
         await message.save();
-        await message.populate("senderId", "firstName lastName avatar"); // Update conversation's last message
+        await message.populate("senderId", "firstName lastName avatar");
+        // Update conversation's last message
         await Message_1.Conversation.findByIdAndUpdate(conversationId, {
             lastMessage: message._id,
             updatedAt: new Date(),
         });
+        // Emit real-time message via socket
+        const io = (0, socketService_1.getSocketInstance)();
+        if (io) {
+            // Emit to conversation room for real-time updates
+            io.to(`conversation_${conversationId}`).emit("newMessage", message); // Also emit to individual user rooms for notifications
+            conversation.participants.forEach((participantId) => {
+                const participantIdStr = participantId.toString();
+                if (participantIdStr !== req.userId) {
+                    const senderName = message.senderId?.firstName &&
+                        message.senderId?.lastName
+                        ? `${message.senderId.firstName} ${message.senderId.lastName}`
+                        : "Unknown User";
+                    io.to(`user_${participantIdStr}`).emit("message_notification", {
+                        conversationId,
+                        message,
+                        senderName,
+                    });
+                }
+            });
+            console.log(`Message emitted to conversation_${conversationId} and participant rooms`);
+        }
+        else {
+            console.warn("Socket instance not available for real-time message emission");
+        }
         return ResponseHelper_1.default.success(res, req, "messages.messageSent", message);
     }
     catch (error) {

@@ -48,8 +48,26 @@ const messageSchema = new mongoose_1.Schema({
     },
     content: {
         type: String,
-        required: true,
+        required: function () {
+            return (this.messageType === "text" || (this.images && this.images.length === 0));
+        },
         maxlength: 1000,
+    },
+    messageType: {
+        type: String,
+        enum: ["text", "image"],
+        default: "text",
+        required: true,
+    },
+    images: {
+        type: [String],
+        default: [],
+        validate: {
+            validator: function (images) {
+                return images.length <= 3; // Maximum 3 images per message
+            },
+            message: "Maximum 3 images allowed per message",
+        },
     },
     timestamp: {
         type: Date,

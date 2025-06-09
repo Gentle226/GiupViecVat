@@ -181,6 +181,7 @@ router.put("/change-password", auth_1.authenticateToken, async (req, res) => {
 // Google OAuth routes
 router.get("/google", passport_1.default.authenticate("google", { scope: ["profile", "email"] }));
 router.get("/google/callback", passport_1.default.authenticate("google", { failureRedirect: "/login" }), async (req, res) => {
+    // Successful authentication, generate a token and redirect.
     const token = generateToken(req.user._id);
     const user = transformUser(req.user);
     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}&user=${JSON.stringify(user)}`);

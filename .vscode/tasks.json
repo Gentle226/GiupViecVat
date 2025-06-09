@@ -2,10 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "command": "npm run dev",
+      "args": ["run", "dev"],
+      "command": "npm",
       "group": "build",
       "isBackground": true,
-      "label": "backend-dev",
+      "label": "Start Frontend",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
       "problemMatcher": [],
       "type": "shell"
     }
