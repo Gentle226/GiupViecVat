@@ -40,7 +40,8 @@ const Messages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [usersTyping, setUsersTyping] = useState<string[]>([]);
-  const [isTyping, setIsTyping] = useState(false);  const [userStatuses, setUserStatuses] = useState<{
+  const [isTyping, setIsTyping] = useState(false);
+  const [userStatuses, setUserStatuses] = useState<{
     [userId: string]: { isOnline: boolean; lastSeen?: Date };
   }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -471,7 +472,8 @@ const Messages: React.FC = () => {
                     }
                     return null;
                   })()}
-                </div>              </div>{" "}
+                </div>{" "}
+              </div>{" "}
               <div className="flex items-center space-x-2">
                 <button className="p-2 text-gray-400 hover:text-gray-600">
                   <Phone className="h-5 w-5" />
@@ -483,7 +485,8 @@ const Messages: React.FC = () => {
                   <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
-            </div>{" "}          </div>{" "}
+            </div>{" "}
+          </div>{" "}
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => {
