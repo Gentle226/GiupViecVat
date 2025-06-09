@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { db } from "../data/adapter";
 import { authenticateSocket } from "../middleware/auth";
+import { userStatusService } from "../services/userStatusService";
 
 export const setupSocketHandlers = (io: Server) => {
   // Authentication middleware for socket connections
@@ -8,13 +9,21 @@ export const setupSocketHandlers = (io: Server) => {
   io.on("connection", (socket: Socket) => {
     const userId = (socket as any).user?.userId;
     console.log(`=== SOCKET CONNECTION DEBUG ===`);
-    console.log(`User connected: ${userId}`);
-
-    // Join user to their own room for private messages
+    console.log(`User connected: ${userId}`); // Join user to their own room for private messages
     if (userId) {
       const room = `user_${userId}`;
       socket.join(room);
       console.log(`User ${userId} joined room: ${room}`);
+
+      // Mark user as online
+      userStatusService.setUserOnline(userId);
+
+      // Broadcast user online status to all other users
+      socket.broadcast.emit("user_status", {
+        userId,
+        status: "online",
+        timestamp: new Date(),
+      });
 
       // Log all rooms this socket is in
       console.log(`Socket rooms for user ${userId}:`, Array.from(socket.rooms));
@@ -165,23 +174,49 @@ export const setupSocketHandlers = (io: Server) => {
         console.error("Error handling new bid notification:", error);
         socket.emit("error", { message: "Failed to process bid notification" });
       }
+    }); // Handle user presence - when user explicitly goes online
+    socket.on("user_online", () => {
+      if (userId) {
+        userStatusService.setUserOnline(userId);
+        socket.broadcast.emit("user_status", {
+          userId,
+          status: "online",
+          timestamp: new Date(),
+        });
+      }
     });
 
-    // Handle user presence
-    socket.on("user_online", () => {
-      socket.broadcast.emit("user_status", {
-        userId,
-        status: "online",
-      });
+    // Handle getting online users
+    socket.on("get_online_users", (callback) => {
+      if (typeof callback === "function") {
+        const onlineUsers = userStatusService.getOnlineUsers();
+        callback(onlineUsers);
+      }
+    });
+
+    // Handle getting status for specific users
+    socket.on("get_users_status", (data: { userIds: string[] }, callback) => {
+      if (typeof callback === "function") {
+        const usersStatus = userStatusService.getUsersStatus(data.userIds);
+        callback(usersStatus);
+      }
     });
 
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${userId}`);
-      socket.broadcast.emit("user_status", {
-        userId,
-        status: "offline",
-      });
+
+      if (userId) {
+        // Mark user as offline
+        userStatusService.setUserOffline(userId);
+
+        // Broadcast user offline status
+        socket.broadcast.emit("user_status", {
+          userId,
+          status: "offline",
+          timestamp: new Date(),
+        });
+      }
     });
 
     // Handle errors

@@ -4,10 +4,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { useNotifications } from "../contexts/NotificationContext";
 import { messagesAPI } from "../services/api";
+import { userStatus } from "../services/userStatus";
 import type { PopulatedConversation, Message } from "../../../shared/types";
 import MessageInput from "../components/MessageInput";
 import MessageBubble from "../components/MessageBubble";
-import { Search, Phone, Video, MoreVertical, User } from "lucide-react";
+import OnlineStatus from "../components/OnlineStatus";
+import OnlineUsersList from "../components/OnlineUsersList";
+import { Search, Phone, Video, MoreVertical, User, Users } from "lucide-react";
 
 // Extended message type that handles populated senderId
 interface PopulatedMessage extends Omit<Message, "senderId"> {
@@ -19,7 +22,13 @@ interface PopulatedMessage extends Omit<Message, "senderId"> {
 const Messages: React.FC = () => {
   const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
-  const { socket, sendMessage, joinConversation } = useSocket();
+  const {
+    socket,
+    sendMessage,
+    joinConversation,
+    onUserStatus,
+    getUsersStatus,
+  } = useSocket();
   const { newMessageNotifications, markConversationAsRead } =
     useNotifications();
   const [conversations, setConversations] = useState<PopulatedConversation[]>(
@@ -33,6 +42,10 @@ const Messages: React.FC = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [usersTyping, setUsersTyping] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [userStatuses, setUserStatuses] = useState<{
+    [userId: string]: { isOnline: boolean; lastSeen?: Date };
+  }>({});
+  const [showOnlineUsers, setShowOnlineUsers] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Utility function to extract sender ID from message
@@ -100,6 +113,70 @@ const Messages: React.FC = () => {
       };
     }
   }, [socket, activeConversation, joinConversation, user?._id]);
+
+  // Fetch user statuses for conversation participants
+  useEffect(() => {
+    const fetchUserStatuses = async () => {
+      if (conversations.length > 0) {
+        // Get all unique participant IDs from conversations
+        const allParticipantIds = new Set<string>();
+        conversations.forEach((conv) => {
+          conv.participants.forEach((p) => {
+            if (p._id !== user?._id) {
+              allParticipantIds.add(p._id);
+            }
+          });
+        });
+
+        const participantIds = Array.from(allParticipantIds);
+
+        if (participantIds.length > 0) {
+          try {
+            // Fetch via API
+            const response = await userStatus.getUsersStatus(participantIds);
+            if (response.success) {
+              setUserStatuses(response.data);
+            }
+
+            // Also fetch via socket for real-time updates
+            if (getUsersStatus) {
+              getUsersStatus(participantIds, (status) => {
+                setUserStatuses((prev) => ({ ...prev, ...status }));
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching user statuses:", error);
+          }
+        }
+      }
+    };
+
+    fetchUserStatuses();
+  }, [conversations, user?._id, getUsersStatus]);
+
+  // Listen for real-time user status updates
+  useEffect(() => {
+    if (onUserStatus) {
+      const handleUserStatus = (data: {
+        userId: string;
+        status: "online" | "offline";
+        timestamp: Date;
+      }) => {
+        setUserStatuses((prev) => ({
+          ...prev,
+          [data.userId]: {
+            isOnline: data.status === "online",
+            lastSeen:
+              data.status === "offline"
+                ? data.timestamp
+                : prev[data.userId]?.lastSeen,
+          },
+        }));
+      };
+
+      onUserStatus(handleUserStatus);
+    }
+  }, [onUserStatus]);
 
   const fetchConversations = async () => {
     try {
@@ -214,13 +291,14 @@ const Messages: React.FC = () => {
     <div className="h-screen bg-gray-50 flex">
       {/* Conversations Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        {" "}
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           {" "}
           <h1 className="text-xl font-semibold text-gray-900 mb-3">
             {t("messages.title")}
           </h1>
-          <div className="relative">
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             <input
               type="text"
@@ -230,8 +308,21 @@ const Messages: React.FC = () => {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
+          {/* Online status summary */}
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>
+              {
+                Object.values(userStatuses).filter((status) => status.isOnline)
+                  .length
+              }{" "}
+              online
+            </span>
+            <div className="flex items-center gap-1">
+              <OnlineStatus isOnline={true} size="sm" />
+              <span>Online</span>
+            </div>
+          </div>
         </div>
-
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto">
           {filteredConversations.length === 0 ? (
@@ -262,6 +353,7 @@ const Messages: React.FC = () => {
                         : ""
                     }`}
                   >
+                    {" "}
                     <div className="flex items-center">
                       <div
                         className={`h-12 w-12 rounded-full flex items-center justify-center relative ${
@@ -269,6 +361,21 @@ const Messages: React.FC = () => {
                         }`}
                       >
                         <User className="h-6 w-6 text-white" />
+                        {/* Online status indicator */}
+                        {(() => {
+                          const otherParticipant =
+                            conversation.participants.find(
+                              (p) => p._id !== user?._id
+                            );
+                          const isOnline = otherParticipant
+                            ? userStatuses[otherParticipant._id]?.isOnline
+                            : false;
+                          return isOnline ? (
+                            <div className="absolute -bottom-1 -right-1">
+                              <OnlineStatus isOnline={true} size="sm" />
+                            </div>
+                          ) : null;
+                        })()}
                         {hasUnread && (
                           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
                             {unreadCount > 99 ? "99+" : unreadCount}
@@ -346,12 +453,39 @@ const Messages: React.FC = () => {
                       {t("messages.task")}: {activeConversation.taskId.title}
                     </p>
                   )}
-                  <p className="text-sm text-green-600">
-                    {t("messages.online")}
-                  </p>
+                  {/* Dynamic online status */}
+                  {(() => {
+                    const otherParticipant =
+                      activeConversation.participants.find(
+                        (p) => p._id !== user?._id
+                      );
+                    if (otherParticipant) {
+                      const status = userStatuses[otherParticipant._id];
+                      return (
+                        <div className="flex items-center gap-2">
+                          <OnlineStatus
+                            isOnline={status?.isOnline || false}
+                            size="sm"
+                            showText={true}
+                            lastSeen={status?.lastSeen}
+                          />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
-              </div>
+              </div>{" "}
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setShowOnlineUsers(!showOnlineUsers)}
+                  className={`p-2 hover:text-gray-600 ${
+                    showOnlineUsers ? "text-indigo-600" : "text-gray-400"
+                  }`}
+                  title="Show online users"
+                >
+                  <Users className="h-5 w-5" />
+                </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600">
                   <Phone className="h-5 w-5" />
                 </button>
@@ -362,8 +496,18 @@ const Messages: React.FC = () => {
                   <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
-            </div>
+            </div>{" "}
           </div>{" "}
+          {/* Online Users Sidebar */}
+          {showOnlineUsers && (
+            <div className="bg-gray-50 border-b border-gray-200 p-4">
+              <OnlineUsersList
+                conversationParticipants={activeConversation.participants
+                  .filter((p) => p._id !== user?._id)
+                  .map((p) => p._id)}
+              />
+            </div>
+          )}
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => {

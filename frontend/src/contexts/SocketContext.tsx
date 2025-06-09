@@ -19,6 +19,20 @@ interface SocketContextType {
       isTyping: boolean;
     }) => void
   ) => void;
+  onUserStatus: (
+    callback: (data: {
+      userId: string;
+      status: "online" | "offline";
+      timestamp: Date;
+    }) => void
+  ) => void;
+  getOnlineUsers: (callback: (users: string[]) => void) => void;
+  getUsersStatus: (
+    userIds: string[],
+    callback: (status: {
+      [userId: string]: { isOnline: boolean; lastSeen?: Date };
+    }) => void
+  ) => void;
   removeAllListeners: () => void;
 }
 
@@ -136,13 +150,51 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const onUserStatus = (
+    callback: (data: {
+      userId: string;
+      status: "online" | "offline";
+      timestamp: Date;
+    }) => void
+  ) => {
+    if (socketRef.current) {
+      // Remove existing listener first to prevent duplicates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("user_status", callback);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).on("user_status", callback);
+    }
+  };
+
+  const getOnlineUsers = (callback: (users: string[]) => void) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("get_online_users", callback);
+    }
+  };
+
+  const getUsersStatus = (
+    userIds: string[],
+    callback: (status: {
+      [userId: string]: { isOnline: boolean; lastSeen?: Date };
+    }) => void
+  ) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit(
+        "get_users_status",
+        { userIds },
+        callback
+      );
+    }
+  };
+
   const removeAllListeners = () => {
     if (socketRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socketRef.current as any).removeAllListeners();
     }
   };
-
   return (
     <SocketContext.Provider
       value={{
@@ -155,6 +207,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         stopTyping,
         onNewMessage,
         onTyping,
+        onUserStatus,
+        getOnlineUsers,
+        getUsersStatus,
         removeAllListeners,
       }}
     >

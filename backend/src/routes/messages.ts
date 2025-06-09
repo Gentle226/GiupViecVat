@@ -5,6 +5,7 @@ import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { uploadMultiple, processImages } from "../middleware/upload";
 import ResponseHelper from "../utils/ResponseHelper";
 import { getSocketInstance } from "../services/socketService";
+import { userStatusService } from "../services/userStatusService";
 
 const router = express.Router();
 
@@ -290,6 +291,46 @@ router.post(
       res.json({
         success: true,
         data: { success: true },
+      });
+    } catch (error: any) {
+      return ResponseHelper.serverError(res, req, error.message);
+    }
+  }
+);
+
+// Get online users
+router.get(
+  "/online-users",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const onlineUsers = userStatusService.getOnlineUsers();
+      res.json({
+        success: true,
+        data: { onlineUsers, count: onlineUsers.length },
+      });
+    } catch (error: any) {
+      return ResponseHelper.serverError(res, req, error.message);
+    }
+  }
+);
+
+// Get status for specific users (for conversation participants)
+router.post(
+  "/users-status",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { userIds } = req.body;
+
+      if (!Array.isArray(userIds)) {
+        return ResponseHelper.error(res, req, "general.validationError", 400);
+      }
+
+      const usersStatus = userStatusService.getUsersStatus(userIds);
+      res.json({
+        success: true,
+        data: usersStatus,
       });
     } catch (error: any) {
       return ResponseHelper.serverError(res, req, error.message);
