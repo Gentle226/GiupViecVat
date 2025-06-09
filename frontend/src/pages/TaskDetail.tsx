@@ -26,6 +26,7 @@ import {
   Trash2,
 } from "lucide-react";
 import RatingModal from "../components/RatingModal";
+import LocationInputWithGPS from "../components/LocationInputWithGPS";
 
 const formatDate = (
   date: Date | undefined,
@@ -1222,7 +1223,7 @@ const TaskDetail: React.FC = () => {
                     </div>
                   </label>
                 </div>
-              </div>
+              </div>{" "}
               {/* Location - Only show for in-person tasks */}
               {editFormData.locationType === "in_person" && (
                 <div>
@@ -1232,15 +1233,19 @@ const TaskDetail: React.FC = () => {
                   >
                     {t("taskDetail.form.location")}
                   </label>
-                  <input
-                    type="text"
-                    id="edit-location"
-                    name="location"
+                  <LocationInputWithGPS
                     value={editFormData.location}
-                    onChange={handleEditFormChange}
-                    required
+                    onChange={(location) =>
+                      setEditFormData((prev) => ({
+                        ...prev,
+                        location: location,
+                      }))
+                    }
+                    placeholder={
+                      t("taskDetail.form.locationPlaceholder") ||
+                      "Enter task location"
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder={t("taskDetail.form.locationPlaceholder")}
                   />
                 </div>
               )}

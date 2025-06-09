@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import RatingDisplay from "../components/RatingDisplay";
 import ChangePasswordModal from "../components/ChangePasswordModal";
+import LocationInputWithGPS from "../components/LocationInputWithGPS";
 
 const Profile: React.FC = () => {
   const { t } = useTranslation();
@@ -739,7 +740,6 @@ const Profile: React.FC = () => {
                   />
                 </div>
               </div>
-
               <div>
                 {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -753,26 +753,26 @@ const Profile: React.FC = () => {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-              </div>
-
+              </div>{" "}
               <div>
                 {" "}
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("profile.location")}
                 </label>
-                <input
-                  type="text"
+                <LocationInputWithGPS
                   value={editForm.location}
-                  onChange={(e) =>
+                  onChange={(location) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      location: e.target.value,
+                      location: location,
                     }))
+                  }
+                  placeholder={
+                    t("profile.locationPlaceholder") || "Enter your location"
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />{" "}
               </div>
-
               <div className="flex space-x-3 pt-4">
                 {" "}
                 <button

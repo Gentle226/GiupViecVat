@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { tasksAPI } from "../services/api";
-import LocationInput from "../components/LocationInput";
+import LocationInput from "../components/LocationInputWithGPS";
 import LocationMap from "../components/LocationMap";
 import type { LocationSuggestion, LatLng } from "../services/locationService";
 import {

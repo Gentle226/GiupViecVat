@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
-import LocationInput from "../components/LocationInput";
+import LocationInputWithGPS from "../components/LocationInputWithGPS";
 import Logo from "../components/Logo";
 import type { LocationSuggestion } from "../services/locationService";
 import {
@@ -315,8 +315,8 @@ const Register: React.FC = () => {
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
                 {t("auth.register.address")}
-              </label>
-              <LocationInput
+              </label>{" "}
+              <LocationInputWithGPS
                 value={formData.location.address}
                 onChange={(value) =>
                   setFormData((prev) => ({

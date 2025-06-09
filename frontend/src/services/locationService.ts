@@ -41,6 +41,24 @@ export interface LatLng {
   lng: number;
 }
 
+export interface GeolocationResult {
+  success: boolean;
+  position?: LatLng;
+  address?: string;
+  error?: string;
+  errorCode?: GeolocationErrorCode;
+}
+
+export const GeolocationErrorCode = {
+  PERMISSION_DENIED: 1,
+  POSITION_UNAVAILABLE: 2,
+  TIMEOUT: 3,
+  NOT_SUPPORTED: 4,
+} as const;
+
+export type GeolocationErrorCode =
+  (typeof GeolocationErrorCode)[keyof typeof GeolocationErrorCode];
+
 // Vietnam major cities for quick suggestions
 const VIETNAM_CITIES = [
   { name: "Hà Nội", lat: 21.0285, lng: 105.8542 },
@@ -213,10 +231,215 @@ class LocationService {
   getDefaultCenter(): LatLng {
     return { lat: 16.0, lng: 107.0 };
   }
-
   // Clear cache
   clearCache() {
     this.cache.clear();
+  }
+
+  // Get current GPS location
+  async getCurrentLocation(
+    options?: PositionOptions
+  ): Promise<GeolocationResult> {
+    return new Promise((resolve) => {
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        resolve({
+          success: false,
+          error: "Geolocation is not supported by this browser",
+          errorCode: GeolocationErrorCode.NOT_SUPPORTED,
+        });
+        return;
+      }
+
+      const defaultOptions: PositionOptions = {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 seconds
+        maximumAge: 300000, // 5 minutes
+      };
+
+      const finalOptions = { ...defaultOptions, ...options };
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const coords = position.coords;
+          const latLng: LatLng = {
+            lat: coords.latitude,
+            lng: coords.longitude,
+          };
+
+          try {
+            // Get address from coordinates
+            const address = await this.reverseGeocode(
+              coords.latitude,
+              coords.longitude
+            );
+
+            resolve({
+              success: true,
+              position: latLng,
+              address: address,
+            });
+          } catch {
+            // Even if reverse geocoding fails, we still have coordinates
+            resolve({
+              success: true,
+              position: latLng,
+              address: `${coords.latitude.toFixed(
+                6
+              )}, ${coords.longitude.toFixed(6)}`,
+            });
+          }
+        },
+        (error) => {
+          let errorMessage: string;
+          let errorCode: GeolocationErrorCode;
+
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access denied by user";
+              errorCode = GeolocationErrorCode.PERMISSION_DENIED;
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable";
+              errorCode = GeolocationErrorCode.POSITION_UNAVAILABLE;
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out";
+              errorCode = GeolocationErrorCode.TIMEOUT;
+              break;
+            default:
+              errorMessage = "An unknown error occurred";
+              errorCode = GeolocationErrorCode.POSITION_UNAVAILABLE;
+              break;
+          }
+
+          resolve({
+            success: false,
+            error: errorMessage,
+            errorCode: errorCode,
+          });
+        },
+        finalOptions
+      );
+    });
+  }
+
+  // Watch user position (for real-time tracking)
+  watchPosition(
+    onSuccess: (result: GeolocationResult) => void,
+    onError: (result: GeolocationResult) => void,
+    options?: PositionOptions
+  ): number | null {
+    if (!navigator.geolocation) {
+      onError({
+        success: false,
+        error: "Geolocation is not supported by this browser",
+        errorCode: GeolocationErrorCode.NOT_SUPPORTED,
+      });
+      return null;
+    }
+
+    const defaultOptions: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000, // 1 minute
+    };
+
+    const finalOptions = { ...defaultOptions, ...options };
+
+    return navigator.geolocation.watchPosition(
+      async (position) => {
+        const coords = position.coords;
+        const latLng: LatLng = {
+          lat: coords.latitude,
+          lng: coords.longitude,
+        };
+
+        try {
+          const address = await this.reverseGeocode(
+            coords.latitude,
+            coords.longitude
+          );
+
+          onSuccess({
+            success: true,
+            position: latLng,
+            address: address,
+          });
+        } catch {
+          onSuccess({
+            success: true,
+            position: latLng,
+            address: `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(
+              6
+            )}`,
+          });
+        }
+      },
+      (error) => {
+        let errorMessage: string;
+        let errorCode: GeolocationErrorCode;
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied by user";
+            errorCode = GeolocationErrorCode.PERMISSION_DENIED;
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable";
+            errorCode = GeolocationErrorCode.POSITION_UNAVAILABLE;
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out";
+            errorCode = GeolocationErrorCode.TIMEOUT;
+            break;
+          default:
+            errorMessage = "An unknown error occurred";
+            errorCode = GeolocationErrorCode.POSITION_UNAVAILABLE;
+            break;
+        }
+
+        onError({
+          success: false,
+          error: errorMessage,
+          errorCode: errorCode,
+        });
+      },
+      finalOptions
+    );
+  }
+
+  // Stop watching position
+  clearWatch(watchId: number): void {
+    if (navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchId);
+    }
+  }
+
+  // Check if geolocation is available
+  isGeolocationAvailable(): boolean {
+    return "geolocation" in navigator;
+  }
+
+  // Request location permission (returns promise)
+  async requestLocationPermission(): Promise<PermissionState> {
+    if (!navigator.permissions) {
+      // Fallback for browsers without permissions API
+      try {
+        await this.getCurrentLocation({ timeout: 1000 });
+        return "granted";
+      } catch {
+        return "denied";
+      }
+    }
+
+    try {
+      const result = await navigator.permissions.query({ name: "geolocation" });
+      return result.state;
+    } catch (error) {
+      console.error("Error checking geolocation permission:", error);
+      return "prompt";
+    }
   }
 }
 

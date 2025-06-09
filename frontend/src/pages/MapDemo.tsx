@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import LocationInput from "../components/LocationInput";
+import LocationInputWithGPS from "../components/LocationInputWithGPS";
 import LocationMap from "../components/LocationMap";
 import type { LocationSuggestion, LatLng } from "../services/locationService";
 
@@ -49,8 +49,8 @@ const MapDemo: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nhập địa chỉ tại Việt Nam:
-                </label>
-                <LocationInput
+                </label>{" "}
+                <LocationInputWithGPS
                   value={selectedAddress}
                   onChange={setSelectedAddress}
                   onLocationSelect={handleLocationSelect}

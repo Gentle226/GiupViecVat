@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useTask } from "../contexts/TaskContext";
-import LocationInput from "../components/LocationInput";
+import LocationInput from "../components/LocationInputWithGPS";
 import LocationMap from "../components/LocationMap";
 import type { LocationSuggestion, LatLng } from "../services/locationService";
 import type { Task } from "../../../shared/types";
