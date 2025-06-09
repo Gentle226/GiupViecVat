@@ -1,7 +1,12 @@
 import React, { createContext, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import { useAuth } from "./AuthContext";
-import type { Message } from "../../../shared/types";
+import type {
+  Message,
+  Call,
+  CallSignaling,
+  CallType,
+} from "../../../shared/types";
 
 interface SocketContextType {
   socket: unknown | null;
@@ -34,6 +39,24 @@ interface SocketContextType {
     }) => void
   ) => void;
   removeAllListeners: () => void;
+  // Call methods
+  initiateCall: (
+    receiverId: string,
+    callType: CallType,
+    conversationId: string
+  ) => void;
+  answerCall: (callId: string) => void;
+  declineCall: (callId: string) => void;
+  endCall: (callId: string) => void;
+  sendCallSignal: (signaling: CallSignaling) => void;
+  onIncomingCall: (callback: (call: Call) => void) => void;
+  onCallInitiated: (
+    callback: (data: { call: Call; status: string }) => void
+  ) => void;
+  onCallStatusUpdate: (
+    callback: (data: { callId: string; status: string }) => void
+  ) => void;
+  onCallSignal: (callback: (signaling: CallSignaling) => void) => void;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -188,11 +211,93 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
   };
-
   const removeAllListeners = () => {
     if (socketRef.current) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (socketRef.current as any).removeAllListeners();
+    }
+  };
+
+  // Call methods
+  const initiateCall = (
+    receiverId: string,
+    callType: CallType,
+    conversationId: string
+  ) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("call:initiate", {
+        receiverId,
+        callType,
+        conversationId,
+      });
+    }
+  };
+
+  const answerCall = (callId: string) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("call:answer", { callId });
+    }
+  };
+
+  const declineCall = (callId: string) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("call:decline", { callId });
+    }
+  };
+
+  const endCall = (callId: string) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("call:end", { callId });
+    }
+  };
+
+  const sendCallSignal = (signaling: CallSignaling) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).emit("call:signal", signaling);
+    }
+  };
+  const onIncomingCall = (callback: (call: Call) => void) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("call:incoming", callback);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).on("call:incoming", callback);
+    }
+  };
+
+  const onCallInitiated = (
+    callback: (data: { call: Call; status: string }) => void
+  ) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("call:initiated", callback);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).on("call:initiated", callback);
+    }
+  };
+
+  const onCallStatusUpdate = (
+    callback: (data: { callId: string; status: string }) => void
+  ) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("call:status_update", callback);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).on("call:status_update", callback);
+    }
+  };
+
+  const onCallSignal = (callback: (signaling: CallSignaling) => void) => {
+    if (socketRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).off("call:signal", callback);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (socketRef.current as any).on("call:signal", callback);
     }
   };
   return (
@@ -211,6 +316,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         getOnlineUsers,
         getUsersStatus,
         removeAllListeners,
+        initiateCall,
+        answerCall,
+        declineCall,
+        endCall,
+        sendCallSignal,
+        onIncomingCall,
+        onCallInitiated,
+        onCallStatusUpdate,
+        onCallSignal,
       }}
     >
       {children}{" "}

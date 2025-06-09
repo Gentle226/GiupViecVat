@@ -277,3 +277,57 @@ export const UserType = {
 } as const;
 
 export type UserType = (typeof UserType)[keyof typeof UserType];
+
+// Call-related types
+export interface Call {
+  _id: string;
+  conversationId: string;
+  callerId: string;
+  receiverId: string;
+  callType: CallType;
+  status: CallStatus;
+  startTime?: Date;
+  endTime?: Date;
+  duration?: number; // in seconds
+  createdAt: Date;
+}
+
+export interface CallSignaling {
+  type: "offer" | "answer" | "ice-candidate";
+  data: any;
+  callId: string;
+  from: string;
+  to: string;
+}
+
+export const CallType = {
+  VOICE: "voice",
+  VIDEO: "video",
+} as const;
+
+export type CallType = (typeof CallType)[keyof typeof CallType];
+
+export const CallStatus = {
+  PENDING: "pending",
+  RINGING: "ringing",
+  ANSWERED: "answered",
+  ENDED: "ended",
+  MISSED: "missed",
+  DECLINED: "declined",
+  FAILED: "failed",
+} as const;
+
+export type CallStatus = (typeof CallStatus)[keyof typeof CallStatus];
+
+// Socket events for calls
+export const CallEvents = {
+  CALL_INITIATE: "call:initiate",
+  CALL_RINGING: "call:ringing",
+  CALL_ANSWER: "call:answer",
+  CALL_DECLINE: "call:decline",
+  CALL_END: "call:end",
+  CALL_SIGNAL: "call:signal",
+  CALL_STATUS_UPDATE: "call:status_update",
+} as const;
+
+export type CallEvents = (typeof CallEvents)[keyof typeof CallEvents];

@@ -151,7 +151,7 @@ router.post("/", auth_1.authenticateToken, roleAuth_1.requireClient, upload_1.up
     }
 });
 // Update task
-router.put("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, upload_1.uploadMultiple, upload_1.processImages, async (req, res) => {
+router.put("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, async (req, res) => {
     try {
         const task = await adapter_1.db.findTaskById(req.params.id);
         if (!task) {
@@ -164,24 +164,7 @@ router.put("/:id", auth_1.authenticateToken, roleAuth_1.requireClient, upload_1.
         if (!isTaskOwner) {
             return ResponseHelper_1.default.forbidden(res, req, "tasks.unauthorizedAccess");
         }
-        // Prepare update data
-        let updateData = { ...req.body };
-        // Handle images if provided
-        if (req.processedImages && req.processedImages.length > 0) {
-            // Add new images to existing ones (if any)
-            const existingImages = task.images || [];
-            const imagesToRemove = req.body.imagesToRemove ? JSON.parse(req.body.imagesToRemove) : [];
-            // Filter out images that should be removed
-            const filteredExistingImages = existingImages.filter((img) => !imagesToRemove.includes(img));
-            updateData.images = [...filteredExistingImages, ...req.processedImages];
-        }
-        else if (req.body.imagesToRemove) {
-            // Only removing images, no new ones
-            const imagesToRemove = JSON.parse(req.body.imagesToRemove);
-            const existingImages = task.images || [];
-            updateData.images = existingImages.filter((img) => !imagesToRemove.includes(img));
-        }
-        const updatedTask = await adapter_1.db.updateTask(req.params.id, updateData);
+        const updatedTask = await adapter_1.db.updateTask(req.params.id, req.body);
         return ResponseHelper_1.default.success(res, req, "tasks.taskUpdated", updatedTask);
     }
     catch (error) {

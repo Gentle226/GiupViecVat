@@ -37,7 +37,7 @@ const io = new socket_io_1.Server(httpServer, {
                 "http://localhost:5173",
                 "http://localhost:5174",
             ],
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         credentials: true,
     },
 });
@@ -54,7 +54,7 @@ app.use((0, cors_1.default)({
             "http://localhost:5174",
         ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 }));
 app.use(express_1.default.json({ limit: "10mb" }));

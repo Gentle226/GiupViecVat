@@ -10,6 +10,7 @@ const auth_1 = require("../middleware/auth");
 const upload_1 = require("../middleware/upload");
 const ResponseHelper_1 = __importDefault(require("../utils/ResponseHelper"));
 const socketService_1 = require("../services/socketService");
+const userStatusService_1 = require("../services/userStatusService");
 const router = express_1.default.Router();
 // Get user's conversations
 router.get("/conversations", auth_1.authenticateToken, async (req, res) => {
@@ -207,6 +208,36 @@ router.post("/conversations/:id/mark-read", auth_1.authenticateToken, async (req
         res.json({
             success: true,
             data: { success: true },
+        });
+    }
+    catch (error) {
+        return ResponseHelper_1.default.serverError(res, req, error.message);
+    }
+});
+// Get online users
+router.get("/online-users", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const onlineUsers = userStatusService_1.userStatusService.getOnlineUsers();
+        res.json({
+            success: true,
+            data: { onlineUsers, count: onlineUsers.length },
+        });
+    }
+    catch (error) {
+        return ResponseHelper_1.default.serverError(res, req, error.message);
+    }
+});
+// Get status for specific users (for conversation participants)
+router.post("/users-status", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const { userIds } = req.body;
+        if (!Array.isArray(userIds)) {
+            return ResponseHelper_1.default.error(res, req, "general.validationError", 400);
+        }
+        const usersStatus = userStatusService_1.userStatusService.getUsersStatus(userIds);
+        res.json({
+            success: true,
+            data: usersStatus,
         });
     }
     catch (error) {

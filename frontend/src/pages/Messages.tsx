@@ -4,12 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { useNotifications } from "../contexts/NotificationContext";
+import { useCall } from "../hooks/useCall";
 import { messagesAPI } from "../services/api";
 import { userStatus } from "../services/userStatus";
 import type { PopulatedConversation, Message } from "../../../shared/types";
 import MessageInput from "../components/MessageInput";
 import MessageBubble from "../components/MessageBubble";
 import OnlineStatus from "../components/OnlineStatus";
+import { CallHandler } from "../components/CallHandler";
 import {
   Search,
   Phone,
@@ -39,6 +41,7 @@ const Messages: React.FC = () => {
   } = useSocket();
   const { newMessageNotifications, markConversationAsRead } =
     useNotifications();
+  const { startCall } = useCall();
   const [conversations, setConversations] = useState<PopulatedConversation[]>(
     []
   );
@@ -61,10 +64,45 @@ const Messages: React.FC = () => {
       ? message.senderId
       : message.senderId._id;
   };
-
   // Handle viewing user profile
   const handleViewProfile = (userId: string) => {
     navigate(`/profile/${userId}`);
+  };
+
+  // Handle voice call
+  const handleVoiceCall = async () => {
+    if (!activeConversation || !user) return;
+
+    const otherParticipant = activeConversation.participants.find(
+      (p) => p._id !== user._id
+    );
+
+    if (otherParticipant) {
+      try {
+        await startCall(otherParticipant._id, "voice", activeConversation._id);
+      } catch (error) {
+        console.error("Failed to start voice call:", error);
+        // You might want to show a user-friendly error message here
+      }
+    }
+  };
+
+  // Handle video call
+  const handleVideoCall = async () => {
+    if (!activeConversation || !user) return;
+
+    const otherParticipant = activeConversation.participants.find(
+      (p) => p._id !== user._id
+    );
+
+    if (otherParticipant) {
+      try {
+        await startCall(otherParticipant._id, "video", activeConversation._id);
+      } catch (error) {
+        console.error("Failed to start video call:", error);
+        // You might want to show a user-friendly error message here
+      }
+    }
   };
   useEffect(() => {
     if (user) {
@@ -298,9 +336,11 @@ const Messages: React.FC = () => {
       </div>
     );
   }
-
   return (
     <div className="h-screen bg-gray-50 flex">
+      {/* Call Handler */}
+      <CallHandler />
+
       {/* Conversations Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         {" "}
@@ -521,11 +561,19 @@ const Messages: React.FC = () => {
                   title={t("messages.viewProfile")}
                 >
                   <UserCheck className="h-5 w-5" />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-gray-600">
+                </button>{" "}
+                <button
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:text-blue-600 transition-colors"
+                  onClick={handleVoiceCall}
+                  title={t("messages.voiceCall")}
+                >
                   <Phone className="h-5 w-5" />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-gray-600">
+                <button
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:text-blue-600 transition-colors"
+                  onClick={handleVideoCall}
+                  title={t("messages.videoCall")}
+                >
                   <Video className="h-5 w-5" />
                 </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600">

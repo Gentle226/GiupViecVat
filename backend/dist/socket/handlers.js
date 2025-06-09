@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupSocketHandlers = void 0;
 const adapter_1 = require("../data/adapter");
 const auth_1 = require("../middleware/auth");
+const userStatusService_1 = require("../services/userStatusService");
+// Store active calls in memory (in production, use Redis or database)
+const activeCalls = new Map();
 const setupSocketHandlers = (io) => {
     // Authentication middleware for socket connections
     io.use(auth_1.authenticateSocket);
@@ -15,6 +18,14 @@ const setupSocketHandlers = (io) => {
             const room = `user_${userId}`;
             socket.join(room);
             console.log(`User ${userId} joined room: ${room}`);
+            // Mark user as online
+            userStatusService_1.userStatusService.setUserOnline(userId);
+            // Broadcast user online status to all other users
+            socket.broadcast.emit("user_status", {
+                userId,
+                status: "online",
+                timestamp: new Date(),
+            });
             // Log all rooms this socket is in
             console.log(`Socket rooms for user ${userId}:`, Array.from(socket.rooms));
         }
@@ -25,7 +36,8 @@ const setupSocketHandlers = (io) => {
         socket.on("join_conversation", (conversationId) => {
             socket.join(`conversation_${conversationId}`);
             console.log(`User ${userId} joined conversation ${conversationId}`);
-        }); // Handle leaving conversation rooms
+        });
+        // Handle leaving conversation rooms
         socket.on("leave_conversation", (conversationId) => {
             socket.leave(`conversation_${conversationId}`);
             console.log(`User ${userId} left conversation ${conversationId}`);
@@ -41,7 +53,8 @@ const setupSocketHandlers = (io) => {
                         message: "Unauthorized to send message to this conversation",
                     });
                     return;
-                } // Create message
+                }
+                // Create message
                 const message = await adapter_1.db.createMessage({
                     conversationId,
                     senderId: userId,
@@ -138,20 +151,180 @@ const setupSocketHandlers = (io) => {
                 socket.emit("error", { message: "Failed to process bid notification" });
             }
         });
-        // Handle user presence
+        // Handle user presence - when user explicitly goes online
         socket.on("user_online", () => {
-            socket.broadcast.emit("user_status", {
-                userId,
-                status: "online",
-            });
+            if (userId) {
+                userStatusService_1.userStatusService.setUserOnline(userId);
+                socket.broadcast.emit("user_status", {
+                    userId,
+                    status: "online",
+                    timestamp: new Date(),
+                });
+            }
+        });
+        // Handle getting online users
+        socket.on("get_online_users", (callback) => {
+            if (typeof callback === "function") {
+                const onlineUsers = userStatusService_1.userStatusService.getOnlineUsers();
+                callback(onlineUsers);
+            }
+        });
+        // Handle getting status for specific users
+        socket.on("get_users_status", (data, callback) => {
+            if (typeof callback === "function") {
+                const usersStatus = userStatusService_1.userStatusService.getUsersStatus(data.userIds);
+                callback(usersStatus);
+            }
+        });
+        // Call-related handlers
+        socket.on("call:initiate", async (data) => {
+            try {
+                const { receiverId, callType, conversationId } = data;
+                // Create a call record
+                const call = {
+                    _id: `call_${Date.now()}_${Math.random()
+                        .toString(36)
+                        .substr(2, 9)}`,
+                    conversationId,
+                    callerId: userId,
+                    receiverId,
+                    callType,
+                    status: "pending",
+                    createdAt: new Date(),
+                };
+                // Store the call in memory
+                activeCalls.set(call._id, call);
+                // Join the caller to the call room immediately
+                const callRoom = `call_${call._id}`;
+                socket.join(callRoom);
+                // Emit to the receiver with the actual call object
+                io.to(`user_${receiverId}`).emit("call:incoming", call);
+                // Emit back to caller with call details and real call ID
+                socket.emit("call:initiated", {
+                    call,
+                    status: "ringing",
+                });
+                console.log(`Call initiated: ${userId} -> ${receiverId} (${callType}), Call ID: ${call._id}, Caller joined room: ${callRoom}`);
+            }
+            catch (error) {
+                console.error("Error initiating call:", error);
+                socket.emit("error", { message: "Failed to initiate call" });
+            }
+        });
+        socket.on("call:answer", async (data) => {
+            try {
+                const { callId } = data;
+                // Get call from memory
+                const call = activeCalls.get(callId);
+                if (!call) {
+                    socket.emit("error", { message: "Call not found" });
+                    return;
+                }
+                // Update call status
+                call.status = "answered";
+                activeCalls.set(callId, call);
+                // Join the answering user to the call room
+                const callRoom = `call_${callId}`;
+                socket.join(callRoom);
+                // Notify all participants that call was answered
+                io.to(callRoom).emit("call:status_update", { callId, status: "answered" });
+                console.log(`Call answered: ${callId} by user ${userId}, joined room: ${callRoom}`);
+            }
+            catch (error) {
+                console.error("Error answering call:", error);
+                socket.emit("error", { message: "Failed to answer call" });
+            }
+        });
+        socket.on("call:decline", async (data) => {
+            try {
+                const { callId } = data;
+                // Get call from memory
+                const call = activeCalls.get(callId);
+                if (call) {
+                    call.status = "declined";
+                    activeCalls.set(callId, call);
+                }
+                // Notify all participants that call was declined
+                const callRoom = `call_${callId}`;
+                socket
+                    .to(callRoom)
+                    .emit("call:status_update", { callId, status: "declined" });
+                socket.emit("call:status_update", { callId, status: "declined" });
+                // Remove call from memory
+                activeCalls.delete(callId);
+                console.log(`Call declined: ${callId} by user ${userId}`);
+            }
+            catch (error) {
+                console.error("Error declining call:", error);
+                socket.emit("error", { message: "Failed to decline call" });
+            }
+        });
+        socket.on("call:end", async (data) => {
+            try {
+                const { callId } = data;
+                // Get call from memory
+                const call = activeCalls.get(callId);
+                if (call) {
+                    call.status = "ended";
+                    activeCalls.set(callId, call);
+                }
+                // Notify all participants that call was ended
+                const callRoom = `call_${callId}`;
+                socket
+                    .to(callRoom)
+                    .emit("call:status_update", { callId, status: "ended" });
+                socket.emit("call:status_update", { callId, status: "ended" });
+                // Leave call room
+                socket.leave(callRoom);
+                // Remove call from memory
+                activeCalls.delete(callId);
+                console.log(`Call ended: ${callId} by user ${userId}`);
+            }
+            catch (error) {
+                console.error("Error ending call:", error);
+                socket.emit("error", { message: "Failed to end call" });
+            }
+        });
+        socket.on("call:signal", (signaling) => {
+            try {
+                const { callId, to, type } = signaling;
+                console.log(`Call signaling received: ${type} for call ${callId} from user ${userId}`);
+                if (to) {
+                    // Send signaling data to specific user
+                    console.log(`Forwarding ${type} signaling to user ${to}`);
+                    io.to(`user_${to}`).emit("call:signal", {
+                        ...signaling,
+                        from: userId,
+                    });
+                }
+                else {
+                    // Broadcast to call room
+                    const callRoom = `call_${callId}`;
+                    console.log(`Broadcasting ${type} signaling to call room ${callRoom}`);
+                    socket.to(callRoom).emit("call:signal", {
+                        ...signaling,
+                        from: userId,
+                    });
+                }
+            }
+            catch (error) {
+                console.error("Error handling call signaling:", error);
+                socket.emit("error", { message: "Failed to handle call signaling" });
+            }
         });
         // Handle disconnection
         socket.on("disconnect", () => {
             console.log(`User disconnected: ${userId}`);
-            socket.broadcast.emit("user_status", {
-                userId,
-                status: "offline",
-            });
+            if (userId) {
+                // Mark user as offline
+                userStatusService_1.userStatusService.setUserOffline(userId);
+                // Broadcast user offline status
+                socket.broadcast.emit("user_status", {
+                    userId,
+                    status: "offline",
+                    timestamp: new Date(),
+                });
+            }
         });
         // Handle errors
         socket.on("error", (error) => {
