@@ -21,6 +21,7 @@ interface MessageBubbleProps {
   isOwnMessage: boolean;
   currentUserId?: string;
   showAvatar?: boolean;
+  onProfileClick?: (userId: string) => void;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -28,15 +29,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   isOwnMessage,
   currentUserId,
   showAvatar = true,
+  onProfileClick,
 }) => {
   const getSenderName = () => {
     if (typeof message.senderId === "string") return "";
     return `${message.senderId.firstName} ${message.senderId.lastName}`;
   };
 
+  const getSenderId = () => {
+    return typeof message.senderId === "string"
+      ? message.senderId
+      : message.senderId._id;
+  };
+
   const getSenderAvatar = () => {
     if (typeof message.senderId === "string") return null;
     return message.senderId.avatar;
+  };
+
+  const handleProfileClick = () => {
+    if (onProfileClick && !isOwnMessage) {
+      onProfileClick(getSenderId());
+    }
   };
 
   const formatTime = (timestamp: string | Date) => {
@@ -80,10 +94,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <img
               src={getSenderAvatar() || ""}
               alt={getSenderName()}
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={handleProfileClick}
             />
           ) : (
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <div
+              className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-400 transition-colors"
+              onClick={handleProfileClick}
+            >
               <User className="h-4 w-4 text-gray-600" />
             </div>
           )}
@@ -94,13 +112,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           isOwnMessage ? "items-end" : "items-start"
         }`}
       >
+        {" "}
         {/* Sender name (for received messages) */}
         {!isOwnMessage && showAvatar && (
-          <span className="text-xs text-gray-500 mb-1 ml-2">
+          <span
+            className="text-xs text-gray-500 mb-1 ml-2 cursor-pointer hover:text-blue-500 transition-colors"
+            onClick={handleProfileClick}
+          >
             {getSenderName()}
           </span>
         )}
-
         {/* Message content */}
         <div
           className={`px-4 py-2 rounded-lg ${
@@ -141,7 +162,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
           )}
         </div>
-
         {/* Message metadata */}
         <div
           className={`flex items-center gap-1 mt-1 text-xs text-gray-500 ${

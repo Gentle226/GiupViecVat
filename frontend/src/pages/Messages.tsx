@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../hooks/useSocket";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -9,7 +10,14 @@ import type { PopulatedConversation, Message } from "../../../shared/types";
 import MessageInput from "../components/MessageInput";
 import MessageBubble from "../components/MessageBubble";
 import OnlineStatus from "../components/OnlineStatus";
-import { Search, Phone, Video, MoreVertical, User } from "lucide-react";
+import {
+  Search,
+  Phone,
+  Video,
+  MoreVertical,
+  User,
+  UserCheck,
+} from "lucide-react";
 
 // Extended message type that handles populated senderId
 interface PopulatedMessage extends Omit<Message, "senderId"> {
@@ -21,6 +29,7 @@ interface PopulatedMessage extends Omit<Message, "senderId"> {
 const Messages: React.FC = () => {
   const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const {
     socket,
     sendMessage,
@@ -51,6 +60,11 @@ const Messages: React.FC = () => {
     return typeof message.senderId === "string"
       ? message.senderId
       : message.senderId._id;
+  };
+
+  // Handle viewing user profile
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
   useEffect(() => {
     if (user) {
@@ -385,7 +399,7 @@ const Messages: React.FC = () => {
                         <div className="flex items-center justify-between">
                           {" "}
                           <p
-                            className={`text-sm truncate ${
+                            className={`text-sm truncate flex-1 ${
                               hasUnread
                                 ? "font-semibold text-gray-900"
                                 : "font-medium text-gray-900"
@@ -396,11 +410,29 @@ const Messages: React.FC = () => {
                               .map((p) => `${p.firstName} ${p.lastName}`)
                               .join(", ") || "Other User"}
                           </p>{" "}
-                          {conversation.lastMessage && (
-                            <p className="text-xs text-gray-500">
-                              {formatTime(conversation.lastMessage.timestamp)}
-                            </p>
-                          )}
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const otherParticipant =
+                                  conversation.participants.find(
+                                    (p) => p._id !== user?._id
+                                  );
+                                if (otherParticipant) {
+                                  handleViewProfile(otherParticipant._id);
+                                }
+                              }}
+                              className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                              title={t("messages.viewProfile")}
+                            >
+                              <UserCheck className="h-3 w-3" />
+                            </button>
+                            {conversation.lastMessage && (
+                              <p className="text-xs text-gray-500">
+                                {formatTime(conversation.lastMessage.timestamp)}
+                              </p>
+                            )}
+                          </div>
                         </div>{" "}
                         {/* Show task context if available */}{" "}
                         {conversation.taskId && (
@@ -475,6 +507,21 @@ const Messages: React.FC = () => {
                 </div>{" "}
               </div>{" "}
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    const otherParticipant =
+                      activeConversation.participants.find(
+                        (p) => p._id !== user?._id
+                      );
+                    if (otherParticipant) {
+                      handleViewProfile(otherParticipant._id);
+                    }
+                  }}
+                  className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                  title={t("messages.viewProfile")}
+                >
+                  <UserCheck className="h-5 w-5" />
+                </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600">
                   <Phone className="h-5 w-5" />
                 </button>
@@ -500,6 +547,7 @@ const Messages: React.FC = () => {
                   isOwnMessage={isOwnMessage}
                   currentUserId={user?._id}
                   showAvatar={true}
+                  onProfileClick={handleViewProfile}
                 />
               );
             })}

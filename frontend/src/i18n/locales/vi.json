@@ -520,7 +520,8 @@
     "typeMessage": "Nhập tin nhắn...",
     "send": "Gửi",
     "offline": "Ngoại Tuyến",
-    "newMessage": "Tin Nhắn Mới"
+    "newMessage": "Tin Nhắn Mới",
+    "viewProfile": "Xem Hồ Sơ"
   },
   "profile": {
     "client": "Khách Hàng",

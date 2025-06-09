@@ -351,7 +351,8 @@
     "typeMessage": "Type a message...",
     "send": "Send",
     "offline": "Offline",
-    "newMessage": "New Message"
+    "newMessage": "New Message",
+    "viewProfile": "View Profile"
   },
   "profile": {
     "client": "Client",
